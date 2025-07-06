@@ -1,7 +1,9 @@
 import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
-import { Colors } from '@/constants/colors';
+import { View, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/stores/auth-store';
+import { useThemeStore } from '@/stores/theme-store';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import * as Icons from 'lucide-react-native';
 
 function TabBarIcon({ name, color }: { name: keyof typeof Icons; color: string }) {
@@ -11,6 +13,7 @@ function TabBarIcon({ name, color }: { name: keyof typeof Icons; color: string }
 
 export default function CustomerTabLayout() {
   const { user, isAuthenticated } = useAuthStore();
+  const { colors } = useThemeStore();
 
   // Redirect to auth if not authenticated or not a customer
   if (!isAuthenticated || !user || user.role !== 'customer') {
@@ -18,24 +21,28 @@ export default function CustomerTabLayout() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: Colors.surface,
-          borderTopColor: Colors.border,
-          borderTopWidth: 1,
-        },
-        headerStyle: {
-          backgroundColor: Colors.background,
-        },
-        headerTintColor: Colors.text,
-        headerTitleStyle: {
-          fontWeight: '600',
-        },
-      }}
-    >
+    <>
+      <View style={styles.themeToggleContainer}>
+        <ThemeToggle />
+      </View>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textMuted,
+          tabBarStyle: {
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+            borderTopWidth: 1,
+          },
+          headerStyle: {
+            backgroundColor: colors.background,
+          },
+          headerTintColor: colors.text,
+          headerTitleStyle: {
+            fontWeight: '600',
+          },
+        }}
+      >
       <Tabs.Screen
         name="index"
         options={{
@@ -72,6 +79,16 @@ export default function CustomerTabLayout() {
           tabBarIcon: ({ color }) => <TabBarIcon name="User" color={color} />,
         }}
       />
-    </Tabs>
+      </Tabs>
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  themeToggleContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 16,
+    zIndex: 1000,
+  },
+});

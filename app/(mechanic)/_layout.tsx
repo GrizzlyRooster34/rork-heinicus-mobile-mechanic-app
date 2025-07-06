@@ -1,7 +1,9 @@
 import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
-import { Colors } from '@/constants/colors';
+import { View, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/stores/auth-store';
+import { useThemeStore } from '@/stores/theme-store';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import * as Icons from 'lucide-react-native';
 
 function TabBarIcon({ name, color }: { name: keyof typeof Icons; color: string }) {
@@ -11,6 +13,7 @@ function TabBarIcon({ name, color }: { name: keyof typeof Icons; color: string }
 
 export default function MechanicTabLayout() {
   const { user, isAuthenticated } = useAuthStore();
+  const { colors } = useThemeStore();
 
   // Production security: Only allow Cody as mechanic
   if (!isAuthenticated || !user || user.role !== 'mechanic' || user.id !== 'mechanic-cody') {
@@ -24,60 +27,74 @@ export default function MechanicTabLayout() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors.mechanic,
-        tabBarInactiveTintColor: Colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: Colors.surface,
-          borderTopColor: Colors.border,
-          borderTopWidth: 1,
-        },
-        headerStyle: {
-          backgroundColor: Colors.background,
-        },
-        headerTintColor: Colors.text,
-        headerTitleStyle: {
-          fontWeight: '600',
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Dashboard',
-          headerTitle: 'Mechanic Dashboard',
-          tabBarIcon: ({ color }) => <TabBarIcon name="LayoutDashboard" color={color} />,
+    <>
+      <View style={styles.themeToggleContainer}>
+        <ThemeToggle />
+      </View>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: colors.mechanic,
+          tabBarInactiveTintColor: colors.textMuted,
+          tabBarStyle: {
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+            borderTopWidth: 1,
+          },
+          headerStyle: {
+            backgroundColor: colors.background,
+          },
+          headerTintColor: colors.text,
+          headerTitleStyle: {
+            fontWeight: '600',
+          },
         }}
-      />
-      <Tabs.Screen
-        name="jobs"
-        options={{
-          title: 'Jobs',
-          tabBarIcon: ({ color }) => <TabBarIcon name="Briefcase" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: 'Map',
-          tabBarIcon: ({ color }) => <TabBarIcon name="Map" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="customers"
-        options={{
-          title: 'Customers',
-          tabBarIcon: ({ color }) => <TabBarIcon name="Users" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <TabBarIcon name="Settings" color={color} />,
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Dashboard',
+            headerTitle: 'Mechanic Dashboard',
+            tabBarIcon: ({ color }) => <TabBarIcon name="LayoutDashboard" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="jobs"
+          options={{
+            title: 'Jobs',
+            tabBarIcon: ({ color }) => <TabBarIcon name="Briefcase" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="map"
+          options={{
+            title: 'Map',
+            tabBarIcon: ({ color }) => <TabBarIcon name="Map" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="customers"
+          options={{
+            title: 'Customers',
+            tabBarIcon: ({ color }) => <TabBarIcon name="Users" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ color }) => <TabBarIcon name="Settings" color={color} />,
+          }}
+        />
+      </Tabs>
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  themeToggleContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 16,
+    zIndex: 1000,
+  },
+});
