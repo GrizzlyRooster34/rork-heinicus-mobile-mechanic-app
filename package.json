@@ -9,12 +9,14 @@
     "android": "bunx rork start --android",
     "ios": "bunx rork start --ios",
     "web": "bunx rork start --web",
-    "build:android:dev": "eas build --platform android --profile development",
-    "build:android:preview": "eas build --platform android --profile preview",
+    "build:android:dev": "eas build --platform android --profile development --local",
+    "build:android:preview": "eas build --platform android --profile preview --local",
     "build:android:production": "eas build --platform android --profile production",
+    "build:android:apk": "eas build --platform android --profile standalone --local",
     "submit:android": "eas submit --platform android",
     "prebuild": "bunx expo prebuild --clean",
-    "prebuild:android": "bunx expo prebuild --platform android --clean"
+    "prebuild:android": "bunx expo prebuild --platform android --clean",
+    "install:android": "adb install android/app/build/outputs/apk/release/app-release.apk"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
