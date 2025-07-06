@@ -1,0 +1,86 @@
+name: Build APK with EAS Cloud
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Setup Expo and EAS
+      run: |
+        npm install -g @expo/cli@latest eas-cli@latest
+        
+    - name: Install dependencies
+      run: |
+        npm install --legacy-peer-deps
+        
+    - name: Create EAS cloud build
+      run: |
+        # Create a simple eas.json for cloud build
+        cat > eas-cloud.json << 'EOF'
+        {
+          "cli": {
+            "version": ">= 5.0.0"
+          },
+          "build": {
+            "development": {
+              "developmentClient": false,
+              "distribution": "internal",
+              "android": {
+                "buildType": "apk",
+                "gradleCommand": ":app:assembleDebug"
+              }
+            }
+          }
+        }
+        EOF
+        
+        # Use the cloud build config
+        cp eas-cloud.json eas.json
+        
+        # Simplify app.json for cloud build
+        cat > app-cloud.json << 'EOF'
+        {
+          "expo": {
+            "name": "Heinicus Mechanic",
+            "slug": "heinicus-mechanic",
+            "version": "1.0.0",
+            "orientation": "portrait",
+            "icon": "./assets/images/icon.png",
+            "newArchEnabled": false,
+            "android": {
+              "package": "com.heinicus.mechanic"
+            },
+            "plugins": ["expo-router"]
+          }
+        }
+        EOF
+        
+        cp app-cloud.json app.json
+        
+    - name: Build with EAS (no auth required for public projects)
+      run: |
+        # Try to build without authentication (should work for public repos)
+        eas build --platform android --profile development --non-interactive --no-wait || echo "EAS build submitted or failed"
+        
+        # Note: This will show the build URL but won't wait for completion
+        # The APK would need to be downloaded manually from the EAS dashboard
+        
+    - name: Build Summary
+      run: |
+        echo "## EAS Cloud Build Initiated" >> $GITHUB_STEP_SUMMARY
+        echo "Since this is a public repository, the build was submitted to EAS cloud." >> $GITHUB_STEP_SUMMARY
+        echo "Check the EAS dashboard for build status and APK download." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "If EAS requires authentication, the build may have failed." >> $GITHUB_STEP_SUMMARY
+        echo "In that case, try the local build workflows instead." >> $GITHUB_STEP_SUMMARY

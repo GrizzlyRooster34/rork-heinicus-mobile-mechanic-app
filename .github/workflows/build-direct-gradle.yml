@@ -1,0 +1,216 @@
+name: Build Direct with Gradle
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Create minimal Android project structure
+      run: |
+        mkdir -p android-minimal/app/src/main/java/com/heinicus/mechanic
+        mkdir -p android-minimal/app/src/main/res/{layout,values,drawable,mipmap-hdpi,mipmap-mdpi,mipmap-xhdpi,mipmap-xxhdpi,mipmap-xxxhdpi}
+        
+        # Create build.gradle (app level)
+        cat > android-minimal/app/build.gradle << 'EOF'
+        plugins {
+            id 'com.android.application'
+        }
+        
+        android {
+            namespace 'com.heinicus.mechanic'
+            compileSdk 34
+            
+            defaultConfig {
+                applicationId "com.heinicus.mechanic"
+                minSdk 21
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+            
+            buildTypes {
+                debug {
+                    minifyEnabled false
+                }
+                release {
+                    minifyEnabled false
+                }
+            }
+            
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_1_8
+                targetCompatibility JavaVersion.VERSION_1_8
+            }
+        }
+        
+        dependencies {
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'com.google.android.material:material:1.10.0'
+            implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+        }
+        EOF
+        
+        # Create build.gradle (project level)
+        cat > android-minimal/build.gradle << 'EOF'
+        plugins {
+            id 'com.android.application' version '8.1.0' apply false
+        }
+        EOF
+        
+        # Create gradle.properties
+        cat > android-minimal/gradle.properties << 'EOF'
+        android.useAndroidX=true
+        android.enableJetifier=true
+        org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+        EOF
+        
+        # Create settings.gradle
+        cat > android-minimal/settings.gradle << 'EOF'
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        
+        rootProject.name = "Heinicus Mechanic"
+        include ':app'
+        EOF
+        
+        # Create MainActivity.java
+        cat > android-minimal/app/src/main/java/com/heinicus/mechanic/MainActivity.java << 'EOF'
+        package com.heinicus.mechanic;
+        
+        import androidx.appcompat.app.AppCompatActivity;
+        import android.os.Bundle;
+        import android.widget.TextView;
+        
+        public class MainActivity extends AppCompatActivity {
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                
+                TextView textView = new TextView(this);
+                textView.setText("Heinicus Mobile Mechanic App\n\nThis is a test build to verify the Android build system works.\n\nIf you see this, the APK was built successfully!");
+                textView.setTextSize(16);
+                textView.setPadding(50, 50, 50, 50);
+                
+                setContentView(textView);
+            }
+        }
+        EOF
+        
+        # Create AndroidManifest.xml
+        cat > android-minimal/app/src/main/AndroidManifest.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools">
+        
+            <application
+                android:allowBackup="true"
+                android:dataExtractionRules="@xml/data_extraction_rules"
+                android:fullBackupContent="@xml/backup_rules"
+                android:icon="@mipmap/ic_launcher"
+                android:label="Heinicus Mechanic"
+                android:roundIcon="@mipmap/ic_launcher_round"
+                android:supportsRtl="true"
+                android:theme="@style/Theme.Material3.DayNight"
+                tools:targetApi="31">
+                <activity
+                    android:name=".MainActivity"
+                    android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+            </application>
+        
+        </manifest>
+        EOF
+        
+        # Create basic resource files
+        cat > android-minimal/app/src/main/res/values/strings.xml << 'EOF'
+        <resources>
+            <string name="app_name">Heinicus Mechanic</string>
+        </resources>
+        EOF
+        
+        # Copy icon if available
+        if [ -f "assets/images/icon.png" ]; then
+          cp assets/images/icon.png android-minimal/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp assets/images/icon.png android-minimal/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp assets/images/icon.png android-minimal/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp assets/images/icon.png android-minimal/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp assets/images/icon.png android-minimal/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          cp assets/images/icon.png android-minimal/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+          cp assets/images/icon.png android-minimal/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+          cp assets/images/icon.png android-minimal/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+          cp assets/images/icon.png android-minimal/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+          cp assets/images/icon.png android-minimal/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+        fi
+        
+    - name: Setup Gradle Wrapper
+      run: |
+        cd android-minimal
+        gradle wrapper --gradle-version=8.0
+        chmod +x ./gradlew
+        
+    - name: Build APK with Gradle
+      run: |
+        cd android-minimal
+        ./gradlew assembleDebug --no-daemon --stacktrace
+        
+    - name: Verify and upload APK
+      run: |
+        cd android-minimal
+        APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+        if [ -f "$APK_PATH" ]; then
+          cp "$APK_PATH" ../heinicus-direct-gradle.apk
+          APK_SIZE=$(du -h ../heinicus-direct-gradle.apk | cut -f1)
+          echo "✅ Direct Gradle APK built successfully!"
+          echo "📦 APK size: $APK_SIZE"
+        else
+          echo "❌ Direct Gradle build failed"
+          find . -name "*.apk" || echo "No APK files found"
+          exit 1
+        fi
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: heinicus-direct-gradle-apk
+        path: heinicus-direct-gradle.apk
+        
+    - name: Build Summary
+      run: |
+        echo "## 🎉 Direct Gradle Build Completed!" >> $GITHUB_STEP_SUMMARY
+        echo "This APK was built directly with Gradle, bypassing Expo entirely." >> $GITHUB_STEP_SUMMARY
+        echo "It contains a simple Android app to test the build system." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 Installation:" >> $GITHUB_STEP_SUMMARY
+        echo "1. Download APK from artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "2. Install: \`adb install heinicus-direct-gradle.apk\`" >> $GITHUB_STEP_SUMMARY
