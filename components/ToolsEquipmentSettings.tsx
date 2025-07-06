@@ -220,9 +220,18 @@ export function ToolsEquipmentSettings({ onSettingsChange, vehicleType = 'car' }
           <Text style={styles.overviewTitle}>
             {serviceCategories.find(c => c.key === selectedCategory)?.title} Tools
           </Text>
-          <View style={styles.vehicleTypeBadge}>
-            <Text style={styles.vehicleTypeText}>
-              {vehicleType === 'motorcycle' ? '🏍️' : vehicleType === 'scooter' ? '🛵' : '🚗'} {vehicleType.toUpperCase()}
+          <View style={[styles.vehicleTypeBadge, {
+            backgroundColor: vehicleType === 'motorcycle' ? '#FF6B35' + '20' : 
+                           vehicleType === 'scooter' ? '#9B59B6' + '20' : Colors.primary + '20',
+            borderColor: vehicleType === 'motorcycle' ? '#FF6B35' : 
+                        vehicleType === 'scooter' ? '#9B59B6' : Colors.primary
+          }]}>
+            <Text style={[styles.vehicleTypeText, {
+              color: vehicleType === 'motorcycle' ? '#FF6B35' : 
+                     vehicleType === 'scooter' ? '#9B59B6' : Colors.primary
+            }]}>
+              {vehicleType === 'motorcycle' ? '🏍️ MOTORCYCLE' : 
+               vehicleType === 'scooter' ? '🛵 SCOOTER' : '🚗 CAR/TRUCK'}
             </Text>
           </View>
         </View>

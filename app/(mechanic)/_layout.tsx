@@ -1,9 +1,7 @@
 import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { useThemeStore } from '@/stores/theme-store';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import * as Icons from 'lucide-react-native';
 
 function TabBarIcon({ name, color }: { name: keyof typeof Icons; color: string }) {
@@ -27,11 +25,7 @@ export default function MechanicTabLayout() {
   }
 
   return (
-    <>
-      <View style={styles.themeToggleContainer}>
-        <ThemeToggle />
-      </View>
-      <Tabs
+    <Tabs
         screenOptions={{
           tabBarActiveTintColor: colors.mechanic,
           tabBarInactiveTintColor: colors.textMuted,
@@ -86,15 +80,6 @@ export default function MechanicTabLayout() {
           }}
         />
       </Tabs>
-    </>
   );
 }
 
-const styles = StyleSheet.create({
-  themeToggleContainer: {
-    position: 'absolute',
-    top: 50,
-    right: 16,
-    zIndex: 1000,
-  },
-});

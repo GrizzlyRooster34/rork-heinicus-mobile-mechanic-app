@@ -106,6 +106,16 @@ export const mechanicRouter = router({
           return { verified: false, status: null };
         }
 
+        // For development, return a mock pending status for Cody
+        if (user.id === 'mechanic-cody') {
+          return {
+            verified: false,
+            status: 'pending' as const,
+            submittedAt: new Date().toISOString(),
+            reviewNotes: 'Verification documents under review'
+          };
+        }
+
         // Find the latest verification submission for this user
         const latestSubmission = verificationSubmissions
           .filter(sub => sub.userId === user.id)

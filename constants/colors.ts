@@ -80,5 +80,5 @@ export const DarkColors = {
   development: '#FFB347',
 };
 
-// Default to dark theme
-export const Colors = DarkColors;
+// Default to light theme for better visibility
+export const Colors = LightColors;

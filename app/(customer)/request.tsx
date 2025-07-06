@@ -390,6 +390,9 @@ Would you like to add this vehicle to your profile?`,
         {/* Vehicle Selection */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Select Vehicle</Text>
+          <Text style={styles.sectionSubtitle}>
+            We service cars, trucks, motorcycles, and scooters
+          </Text>
           {vehicles.length > 0 ? (
             <View style={styles.vehicleSelector}>
               {vehicles.map((vehicle) => {
@@ -509,9 +512,18 @@ Would you like to add this vehicle to your profile?`,
 
         {/* Service Selection */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Service Type for {getVehicleTypeLabel(selectedVehicleType)}
-          </Text>
+          <View style={styles.serviceHeader}>
+            <Text style={styles.sectionTitle}>
+              Service Type for {getVehicleTypeLabel(selectedVehicleType)}
+            </Text>
+            <View style={styles.vehicleTypeBadge}>
+              <Text style={styles.vehicleTypeBadgeText}>
+                {selectedVehicleType === 'motorcycle' ? '🏍️' : 
+                 selectedVehicleType === 'scooter' ? '🛵' : '🚗'} 
+                {selectedVehicleType.toUpperCase()}
+              </Text>
+            </View>
+          </View>
           {selectedServiceData ? (
             <View style={styles.selectedService}>
               <Text style={styles.selectedServiceTitle}>{selectedServiceData.title}</Text>
@@ -909,6 +921,25 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: 'center',
     padding: 20,
+  },
+  serviceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  vehicleTypeBadge: {
+    backgroundColor: Colors.primary + '20',
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  vehicleTypeBadgeText: {
+    fontSize: 10,
+    color: Colors.primary,
+    fontWeight: '600',
   },
   toolsPreview: {
     backgroundColor: Colors.card,

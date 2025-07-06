@@ -1,18 +1,12 @@
 import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
 import { useThemeStore } from '@/stores/theme-store';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import * as Icons from 'lucide-react-native';
 
 export default function AdminLayout() {
   const { colors } = useThemeStore();
 
   return (
-    <>
-      <View style={styles.themeToggleContainer}>
-        <ThemeToggle />
-      </View>
-      <Tabs
+    <Tabs
         screenOptions={{
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
@@ -76,15 +70,6 @@ export default function AdminLayout() {
           }}
         />
       </Tabs>
-    </>
   );
 }
 
-const styles = StyleSheet.create({
-  themeToggleContainer: {
-    position: 'absolute',
-    top: 50,
-    right: 16,
-    zIndex: 1000,
-  },
-});

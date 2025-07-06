@@ -87,7 +87,7 @@ export default function CustomerTabLayout() {
 const styles = StyleSheet.create({
   themeToggleContainer: {
     position: 'absolute',
-    top: 50,
+    top: 60,
     right: 16,
     zIndex: 1000,
   },

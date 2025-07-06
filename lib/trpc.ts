@@ -36,10 +36,10 @@ const getBaseUrl = () => {
 };
 
 export const trpcClient = trpc.createClient({
+  transformer: superjson,
   links: [
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
-      transformer: superjson,
       headers: () => {
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
