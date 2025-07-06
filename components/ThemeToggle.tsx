@@ -14,24 +14,24 @@ export function ThemeToggle() {
   return (
     <TouchableOpacity
       style={[styles.container, { 
-        backgroundColor: theme === 'dark' ? '#2A2A2A' : '#FFFFFF', 
-        borderColor: theme === 'dark' ? '#3A3A3A' : '#E1E5E9',
-        shadowColor: theme === 'dark' ? '#FFFFFF' : '#000000'
+        backgroundColor: colors.card,
+        borderColor: colors.border,
+        shadowColor: colors.text
       }]}
       onPress={toggleTheme}
       activeOpacity={0.7}
     >
       <View style={[styles.iconContainer, {
-        backgroundColor: theme === 'dark' ? '#00BFFF' : '#FFB347'
+        backgroundColor: theme === 'dark' ? colors.primary : colors.warning
       }]}>
         {theme === 'dark' ? (
-          <Sun size={14} color="#FFFFFF" />
+          <Sun size={16} color={colors.white} />
         ) : (
-          <Moon size={14} color="#FFFFFF" />
+          <Moon size={16} color={colors.white} />
         )}
       </View>
       <Text style={[styles.text, { 
-        color: theme === 'dark' ? '#FFFFFF' : '#1A1A1A',
+        color: colors.text,
         fontWeight: '600'
       }]}>
         {theme === 'dark' ? 'Light' : 'Dark'}
@@ -44,27 +44,28 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 22,
     borderWidth: 1,
     gap: 8,
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 4,
+    elevation: 3,
   },
   iconContainer: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
   text: {
-    fontSize: 12,
+    fontSize: 13,
+    letterSpacing: 0.2,
   },
 });

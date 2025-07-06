@@ -1,34 +1,34 @@
 export const LightColors = {
   // Primary brand colors - blue/cyan theme
-  primary: '#00BFFF',
-  primaryDark: '#0099CC',
-  secondary: '#1E90FF',
+  primary: '#007AFF',
+  primaryDark: '#0056CC',
+  secondary: '#5856D6',
   
   // Role-specific colors
   mechanic: '#FF6B35',
-  customer: '#4A90E2',
-  admin: '#9B59B6',
+  customer: '#007AFF',
+  admin: '#AF52DE',
   
   // Background colors
   background: '#FFFFFF',
-  surface: '#F8F9FA',
+  surface: '#F2F2F7',
   card: '#FFFFFF',
   
   // Border and divider colors
-  border: '#E1E5E9',
+  border: '#C6C6C8',
   
   // Text colors
-  text: '#1A1A1A',
-  textSecondary: '#4A4A4A',
-  textMuted: '#888888',
+  text: '#000000',
+  textSecondary: '#3C3C43',
+  textMuted: '#8E8E93',
   
   // Status colors
-  success: '#00C851',
+  success: '#34C759',
   successBackground: '#E8F5E8',
-  warning: '#FFB347',
-  error: '#FF4444',
+  warning: '#FF9500',
+  error: '#FF3B30',
   errorBackground: '#FFE8E8',
-  info: '#33B5E5',
+  info: '#007AFF',
   
   // Utility colors
   white: '#FFFFFF',
@@ -36,40 +36,40 @@ export const LightColors = {
   transparent: 'transparent',
   
   // Development colors
-  development: '#FFB347',
+  development: '#FF9500',
 };
 
 export const DarkColors = {
   // Primary brand colors - blue/cyan theme
-  primary: '#00BFFF',
-  primaryDark: '#0099CC',
-  secondary: '#1E90FF',
+  primary: '#0A84FF',
+  primaryDark: '#0056CC',
+  secondary: '#5E5CE6',
   
   // Role-specific colors
   mechanic: '#FF6B35',
-  customer: '#4A90E2',
-  admin: '#9B59B6',
+  customer: '#0A84FF',
+  admin: '#BF5AF2',
   
   // Background colors
-  background: '#0A0A0A',
-  surface: '#1A1A1A',
-  card: '#2A2A2A',
+  background: '#000000',
+  surface: '#1C1C1E',
+  card: '#2C2C2E',
   
   // Border and divider colors
-  border: '#3A3A3A',
+  border: '#38383A',
   
   // Text colors
   text: '#FFFFFF',
-  textSecondary: '#CCCCCC',
-  textMuted: '#888888',
+  textSecondary: '#EBEBF5',
+  textMuted: '#8E8E93',
   
   // Status colors
-  success: '#00C851',
-  successBackground: '#00C851',
-  warning: '#FFB347',
-  error: '#FF4444',
-  errorBackground: '#FF4444',
-  info: '#33B5E5',
+  success: '#30D158',
+  successBackground: '#1E3A1E',
+  warning: '#FF9F0A',
+  error: '#FF453A',
+  errorBackground: '#3A1E1E',
+  info: '#64D2FF',
   
   // Utility colors
   white: '#FFFFFF',
@@ -77,7 +77,7 @@ export const DarkColors = {
   transparent: 'transparent',
   
   // Development colors
-  development: '#FFB347',
+  development: '#FF9F0A',
 };
 
 // Default to light theme for better visibility

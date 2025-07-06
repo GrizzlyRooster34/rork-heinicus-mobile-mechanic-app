@@ -8,10 +8,10 @@ export default function AdminLayout() {
   return (
     <Tabs
         screenOptions={{
-          tabBarActiveTintColor: colors.primary,
+          tabBarActiveTintColor: colors.admin,
           tabBarInactiveTintColor: colors.textMuted,
           tabBarStyle: {
-            backgroundColor: colors.card,
+            backgroundColor: colors.surface,
             borderTopColor: colors.border,
             borderTopWidth: 1,
           },
@@ -72,4 +72,3 @@ export default function AdminLayout() {
       </Tabs>
   );
 }
-

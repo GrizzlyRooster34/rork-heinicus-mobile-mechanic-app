@@ -21,7 +21,7 @@ const verificationSubmissions: Array<{
 
 // Mock user data (in production, this would come from authentication)
 const mockUsers: Record<string, { id: string; role: 'mechanic' | 'admin' | 'customer' }> = {
-  'mechanic-1': { id: 'mechanic-1', role: 'mechanic' },
+  'mechanic-cody': { id: 'mechanic-cody', role: 'mechanic' },
   'admin-1': { id: 'admin-1', role: 'admin' },
   'customer-1': { id: 'customer-1', role: 'customer' },
 };
@@ -29,8 +29,8 @@ const mockUsers: Record<string, { id: string; role: 'mechanic' | 'admin' | 'cust
 // Helper function to get user from request (mock implementation)
 function getUserFromRequest(req: Request): { id: string; role: 'mechanic' | 'admin' | 'customer' } {
   // In production, this would extract user from JWT token or session
-  const userId = req.headers.get('x-user-id') || 'mechanic-1';
-  return mockUsers[userId] || mockUsers['mechanic-1'];
+  const userId = req.headers.get('x-user-id') || 'mechanic-cody';
+  return mockUsers[userId] || mockUsers['mechanic-cody'];
 }
 
 export const mechanicRouter = router({
@@ -134,8 +134,12 @@ export const mechanicRouter = router({
         };
       } catch (error) {
         console.error('Error in getVerificationStatus:', error);
-        // Always return a valid response structure
-        return { verified: false, status: null };
+        // Always return a valid response structure to prevent crashes
+        return { 
+          verified: false, 
+          status: null,
+          error: 'Failed to fetch verification status'
+        };
       }
     }),
 
