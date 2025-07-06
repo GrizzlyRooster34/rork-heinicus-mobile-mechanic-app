@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { publicProcedure, createTRPCRouter } from '../../create-context';
+import { publicProcedure, router } from '../../trpc';
 
-export const adminRouter = createTRPCRouter({
+export const adminRouter = router({
   getAllUsers: publicProcedure
     .query(async () => {
       // In a real app, this would fetch from database with admin auth check

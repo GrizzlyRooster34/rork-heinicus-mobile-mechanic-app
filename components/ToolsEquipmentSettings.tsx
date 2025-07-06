@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { useSettingsStore } from '@/stores/settings-store';
 import * as Icons from 'lucide-react-native';
 import { ServiceTool, ServiceType } from '@/types/service';
 import { SERVICE_TOOLS } from '@/constants/services';
@@ -17,12 +18,12 @@ interface ToolsSettings {
 }
 
 export function ToolsEquipmentSettings({ onSettingsChange }: ToolsEquipmentSettingsProps) {
-  const [settings, setSettings] = useState<ToolsSettings>({
-    availableTools: {},
-    customTools: [],
-    toolConditions: {},
-    toolNotes: {},
-  });
+  const { tools, updateToolsSettings } = useSettingsStore();
+  const [settings, setSettings] = useState<ToolsSettings>(tools);
+
+  useEffect(() => {
+    setSettings(tools);
+  }, [tools]);
 
   const [selectedCategory, setSelectedCategory] = useState<ServiceType>('oil_change');
   const [showAddTool, setShowAddTool] = useState(false);
@@ -42,6 +43,7 @@ export function ToolsEquipmentSettings({ onSettingsChange }: ToolsEquipmentSetti
       },
     };
     setSettings(newSettings);
+    updateToolsSettings(newSettings);
     onSettingsChange(newSettings);
   };
 
@@ -54,6 +56,7 @@ export function ToolsEquipmentSettings({ onSettingsChange }: ToolsEquipmentSetti
       },
     };
     setSettings(newSettings);
+    updateToolsSettings(newSettings);
     onSettingsChange(newSettings);
   };
 
@@ -66,6 +69,7 @@ export function ToolsEquipmentSettings({ onSettingsChange }: ToolsEquipmentSetti
       },
     };
     setSettings(newSettings);
+    updateToolsSettings(newSettings);
     onSettingsChange(newSettings);
   };
 
@@ -93,6 +97,7 @@ export function ToolsEquipmentSettings({ onSettingsChange }: ToolsEquipmentSetti
     };
 
     setSettings(newSettings);
+    updateToolsSettings(newSettings);
     onSettingsChange(newSettings);
     setNewTool({ name: '', category: 'basic', required: false, description: '' });
     setShowAddTool(false);

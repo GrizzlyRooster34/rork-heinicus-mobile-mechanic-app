@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Vehicle, Contact, ServiceRequest, Quote, MaintenanceReminder, MaintenanceRecord, JobLog, ToolCheckItem, JobPhoto, StatusTimestamp, ServiceStatus } from '@/types/service';
 import { PRODUCTION_CONFIG, logProductionEvent } from '@/utils/firebase-config';
+import { withErrorHandling, logStoreAction } from './store-utils';
 
 interface JobPart {
   name: string;
@@ -112,10 +113,11 @@ export const useAppStore = create<AppState>()(
       currentLocation: null,
       
       // Actions
-      setContact: (contact) => {
+      setContact: withErrorHandling('SET_CONTACT', (contact) => {
+        logStoreAction('AppStore', 'set_contact', { contactId: contact.id });
         logProductionEvent('contact_updated', { contactId: contact.id });
         set({ contact });
-      },
+      }),
       
       addVehicle: (vehicle) => {
         logProductionEvent('vehicle_added', { 

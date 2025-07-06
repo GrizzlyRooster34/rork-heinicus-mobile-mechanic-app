@@ -1,11 +1,11 @@
 {
   "expo": {
     "name": "Mobile Mechanic Service App",
-    "slug": "mobile-mechanic-service-app-xkxuef89",
+    "slug": "mobile-mechanic-service-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "mobilemechanic",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -15,14 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.rork.mobile-mechanic-service-app-xkxuef89"
+      "bundleIdentifier": "com.mobilemechanic.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.mobile-mechanic-service-app-xkxuef89"
+      "package": "com.mobilemechanic.app"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -31,7 +31,7 @@
       [
         "expo-router",
         {
-          "origin": "https://rork.com/"
+          "origin": "https://mobilemechanic.app/"
         }
       ]
     ],

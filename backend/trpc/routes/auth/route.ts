@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { publicProcedure, createTRPCRouter } from '../../create-context';
+import { publicProcedure, router } from '../../trpc';
 
-export const authRouter = createTRPCRouter({
+export const authRouter = router({
   signup: publicProcedure
     .input(z.object({
       email: z.string().email(),

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { useSettingsStore } from '@/stores/settings-store';
 import * as Icons from 'lucide-react-native';
 import { ServiceType } from '@/types/service';
 import { SERVICE_PRICING } from '@/constants/pricing';
@@ -29,34 +30,19 @@ interface PricingSettings {
 }
 
 export function ServicePricingSettings({ onSettingsChange }: ServicePricingSettingsProps) {
-  const [settings, setSettings] = useState<PricingSettings>({
-    laborRate: 85,
-    emergencyRate: 125,
-    travelFee: 25,
-    minimumCharge: 50,
-    servicePricing: {
-      oil_change: { basePrice: 45, laborRate: 75, estimatedHours: 0.5 },
-      brake_service: { basePrice: 150, laborRate: 85, estimatedHours: 2 },
-      tire_service: { basePrice: 80, laborRate: 75, estimatedHours: 1 },
-      battery_service: { basePrice: 120, laborRate: 75, estimatedHours: 0.75 },
-      engine_diagnostic: { basePrice: 100, laborRate: 85, estimatedHours: 1.5 },
-      transmission: { basePrice: 200, laborRate: 95, estimatedHours: 3 },
-      ac_service: { basePrice: 90, laborRate: 85, estimatedHours: 1.5 },
-      general_repair: { basePrice: 75, laborRate: 85, estimatedHours: 2 },
-      emergency_roadside: { basePrice: 65, laborRate: 95, estimatedHours: 1 },
-    },
-    discounts: {
-      seniorDiscount: 10,
-      militaryDiscount: 15,
-      repeatCustomerDiscount: 5,
-    },
-  });
+  const { pricing, updatePricingSettings } = useSettingsStore();
+  const [settings, setSettings] = useState<PricingSettings>(pricing);
+
+  useEffect(() => {
+    setSettings(pricing);
+  }, [pricing]);
 
   const [editingService, setEditingService] = useState<ServiceType | null>(null);
 
   const updateGeneralSetting = (key: keyof Omit<PricingSettings, 'servicePricing' | 'discounts'>, value: number) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
+    updatePricingSettings({ [key]: value } as Partial<PricingSettings>);
     onSettingsChange(newSettings);
   };
 
@@ -72,6 +58,7 @@ export function ServicePricingSettings({ onSettingsChange }: ServicePricingSetti
       },
     };
     setSettings(newSettings);
+    updatePricingSettings({ servicePricing: newSettings.servicePricing });
     onSettingsChange(newSettings);
   };
 
@@ -84,6 +71,7 @@ export function ServicePricingSettings({ onSettingsChange }: ServicePricingSetti
       },
     };
     setSettings(newSettings);
+    updatePricingSettings({ discounts: newSettings.discounts });
     onSettingsChange(newSettings);
   };
 
@@ -131,6 +119,7 @@ export function ServicePricingSettings({ onSettingsChange }: ServicePricingSetti
               },
             };
             setSettings(defaultSettings);
+            updatePricingSettings(defaultSettings);
             onSettingsChange(defaultSettings);
           },
         },

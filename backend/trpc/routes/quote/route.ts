@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { publicProcedure, createTRPCRouter } from '../../create-context';
+import { publicProcedure, router } from '../../trpc';
 
-export const quoteRouter = createTRPCRouter({
+export const quoteRouter = router({
   create: publicProcedure
     .input(z.object({
       serviceRequestId: z.string(),

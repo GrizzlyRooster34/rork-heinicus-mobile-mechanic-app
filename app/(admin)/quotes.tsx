@@ -48,7 +48,8 @@ export default function AdminQuotesScreen() {
               serviceRequestId: requestId,
               description: `Professional ${getServiceTitle(request.type)} service`,
               laborCost: Number(totalCost) * 0.7,
-              partsCost: Number(totalCost) * 0.3,
+              partsCost: Number(totalCost) * 0.2,
+              travelCost: Number(totalCost) * 0.1,
               totalCost: Number(totalCost),
               estimatedDuration: 2,
               validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days

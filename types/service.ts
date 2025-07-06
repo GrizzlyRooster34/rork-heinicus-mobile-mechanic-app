@@ -84,6 +84,7 @@ export type QuoteStatus =
   | 'pending'
   | 'accepted'
   | 'rejected'
+  | 'declined'
   | 'expired'
   | 'deposit_paid'
   | 'paid';
@@ -139,6 +140,8 @@ export interface ServiceRequest {
   cancelledBy?: string;
   cancellationReason?: string;
   mechanicId?: string;
+  assignedMechanicId?: string;
+  customerId?: string;
   claimedAt?: Date;
   scheduledAt?: Date;
   startedAt?: Date;
@@ -167,6 +170,7 @@ export interface Quote {
   laborCost: number;
   partsCost: number;
   travelCost: number;
+  travelFee?: number;
   totalCost: number;
   estimatedDuration: number; // in hours
   validUntil: Date;
@@ -176,6 +180,7 @@ export interface Quote {
   acceptedAt?: Date;
   paidAt?: Date;
   notes?: string;
+  description?: string;
   breakdown?: {
     description: string;
     cost: number;
@@ -331,4 +336,31 @@ export interface PaymentMethod {
     expYear: number;
   };
   isDefault: boolean;
+}
+
+export interface MaintenanceInterval {
+  id: string;
+  vehicleType: VehicleType;
+  serviceType: ServiceType;
+  intervalType: 'mileage' | 'time' | 'both';
+  mileageInterval?: number;
+  intervalMiles?: number;
+  timeInterval?: number; // in months
+  intervalDays?: number;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+export interface ChatMessage {
+  id: string;
+  serviceRequestId: string;
+  senderId: string;
+  senderName: string;
+  senderType: 'customer' | 'mechanic' | 'admin';
+  message: string;
+  timestamp: Date;
+  isRead: boolean;
+  attachments?: string[];
 }

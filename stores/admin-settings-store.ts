@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { withErrorHandling, withAsyncErrorHandling, logStoreAction } from './store-utils';
 
 interface SystemSettings {
   showQuickAccess: boolean;
@@ -122,13 +123,14 @@ export const useAdminSettingsStore = create<AdminSettingsStore>()(
       security: defaultSecuritySettings,
       dataBackup: defaultDataBackupSettings,
 
-      updateSystemSettings: (settings) => {
+      updateSystemSettings: withErrorHandling('UPDATE_SYSTEM_SETTINGS', (settings) => {
+        logStoreAction('AdminSettingsStore', 'update_system_settings', settings);
         set((state) => ({
           system: { ...state.system, ...settings }
         }));
         
         console.log('System settings updated:', settings);
-      },
+      }),
 
       updateNotificationSettings: (settings) => {
         set((state) => ({

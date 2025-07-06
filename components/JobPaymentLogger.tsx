@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Button } from '@/components/Button';
-import { PaymentMethodSelector } from '@/components/PaymentMethodSelector';
+import PaymentMethodSelector from '@/components/PaymentMethodSelector';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
 import * as Icons from 'lucide-react-native';

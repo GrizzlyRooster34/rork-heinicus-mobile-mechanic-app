@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, AuthState } from '@/types/auth';
 import { trpcClient } from '@/lib/trpc';
 import { devMode, isDevCredentials, getDevUser } from '@/utils/dev';
+import { withAsyncErrorHandling, withErrorHandling, logStoreAction } from './store-utils';
 
 interface AuthStore extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;

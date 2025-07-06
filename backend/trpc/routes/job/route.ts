@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { publicProcedure, createTRPCRouter } from '../../create-context';
+import { publicProcedure, router } from '../../trpc';
 
 // Mock job storage - in production this would be a database
 const jobStorage = new Map();
 
-export const jobRouter = createTRPCRouter({
+export const jobRouter = router({
   create: publicProcedure
     .input(z.object({
       customerId: z.string(),

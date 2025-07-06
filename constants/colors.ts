@@ -30,6 +30,9 @@ export const Colors = {
   black: '#000000',
   transparent: 'transparent',
   
+  // Role-specific colors
+  mechanic: '#FF6B35',
+  
   // Development colors
   development: '#FFB347',
 };
