@@ -1,0 +1,167 @@
+name: Build Ultra Minimal APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Create ultra minimal Expo app
+      run: |
+        # Create the most minimal possible Expo app
+        mkdir ultra-minimal
+        cd ultra-minimal
+        
+        # Ultra minimal package.json
+        cat > package.json << 'EOF'
+        {
+          "name": "heinicus-minimal",
+          "version": "1.0.0",
+          "main": "node_modules/expo/AppEntry.js",
+          "scripts": {
+            "start": "expo start"
+          },
+          "dependencies": {
+            "expo": "~49.0.0",
+            "react": "18.2.0",
+            "react-native": "0.72.6"
+          }
+        }
+        EOF
+        
+        # Ultra minimal app.json
+        cat > app.json << 'EOF'
+        {
+          "expo": {
+            "name": "Heinicus Test",
+            "slug": "heinicus-test",
+            "version": "1.0.0",
+            "platforms": ["ios", "android"],
+            "orientation": "portrait",
+            "splash": {
+              "backgroundColor": "#1a1a1a"
+            },
+            "android": {
+              "package": "com.heinicus.test"
+            }
+          }
+        }
+        EOF
+        
+        # Ultra minimal App.js
+        cat > App.js << 'EOF'
+        import React from 'react';
+        import { View, Text, StyleSheet } from 'react-native';
+        
+        export default function App() {
+          return (
+            <View style={styles.container}>
+              <Text style={styles.title}>🔧 Heinicus Mechanic</Text>
+              <Text style={styles.subtitle}>Test Build</Text>
+              <Text style={styles.text}>
+                If you can see this message, the app is working correctly!
+              </Text>
+              <Text style={styles.text}>
+                This is a minimal test to verify the build system.
+              </Text>
+            </View>
+          );
+        }
+        
+        const styles = StyleSheet.create({
+          container: {
+            flex: 1,
+            backgroundColor: '#1a1a1a',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          },
+          title: {
+            fontSize: 24,
+            fontWeight: 'bold',
+            color: '#00BFFF',
+            marginBottom: 10,
+          },
+          subtitle: {
+            fontSize: 18,
+            color: '#ffffff',
+            marginBottom: 20,
+          },
+          text: {
+            fontSize: 16,
+            color: '#e0e0e0',
+            textAlign: 'center',
+            marginBottom: 10,
+            lineHeight: 22,
+          },
+        });
+        EOF
+        
+    - name: Install dependencies
+      run: |
+        cd ultra-minimal
+        npm install --legacy-peer-deps
+        
+    - name: Install Expo CLI
+      run: npm install -g @expo/cli@latest
+        
+    - name: Prebuild minimal app
+      run: |
+        cd ultra-minimal
+        export EXPO_NO_DOTENV=1
+        npx expo prebuild --platform android --clean
+        
+    - name: Build APK
+      run: |
+        cd ultra-minimal/android
+        chmod +x ./gradlew
+        ./gradlew assembleDebug --no-daemon --stacktrace
+        
+    - name: Copy APK
+      run: |
+        cd ultra-minimal
+        if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+          cp android/app/build/outputs/apk/debug/app-debug.apk ../heinicus-ultra-minimal.apk
+          echo "✅ Ultra minimal APK built!"
+        else
+          echo "❌ Build failed"
+          find android -name "*.apk" || echo "No APK found"
+          exit 1
+        fi
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: heinicus-ultra-minimal
+        path: heinicus-ultra-minimal.apk
+        
+    - name: Build Summary
+      run: |
+        echo "## ✅ Ultra Minimal APK Built!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "This is the most basic possible React Native app." >> $GITHUB_STEP_SUMMARY
+        echo "If this crashes, the issue is with the Android environment, not the code." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 Test Steps:" >> $GITHUB_STEP_SUMMARY
+        echo "1. Download heinicus-ultra-minimal.apk" >> $GITHUB_STEP_SUMMARY
+        echo "2. Install: \`adb install heinicus-ultra-minimal.apk\`" >> $GITHUB_STEP_SUMMARY
+        echo "3. If this works, we can add features back gradually" >> $GITHUB_STEP_SUMMARY
