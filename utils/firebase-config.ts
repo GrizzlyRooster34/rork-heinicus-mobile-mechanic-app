@@ -29,6 +29,15 @@ export const firebaseConfig = {
   storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
   messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || '',
+};
+
+export const NOTIFICATION_CONFIG = {
+  FCM_SERVER_KEY: process.env.EXPO_PUBLIC_FCM_SERVER_KEY || '',
+  APNS_KEY_ID: process.env.EXPO_PUBLIC_APNS_KEY_ID || '',
+  APNS_TEAM_ID: process.env.EXPO_PUBLIC_APNS_TEAM_ID || '',
+  APNS_PRIVATE_KEY: process.env.EXPO_PUBLIC_APNS_PRIVATE_KEY || '',
+  EXPO_PUSH_TOKEN: process.env.EXPO_PUBLIC_EXPO_PUSH_TOKEN || '',
 };
 
 export function logProductionEvent(eventName: string, data?: any): void {

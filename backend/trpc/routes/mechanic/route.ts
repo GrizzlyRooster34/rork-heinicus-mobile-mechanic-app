@@ -1,36 +1,46 @@
 import { z } from 'zod';
 import { publicProcedure, router } from '../../trpc';
 import type { Context } from '../../create-context';
+import { prisma } from '../../../../lib/prisma';
+import * as jwt from 'jsonwebtoken';
 
 // Use publicProcedure for now since protectedProcedure is the same
 const protectedProcedure = publicProcedure;
 
-// Mock storage for verification submissions (in production, this would be a database)
-const verificationSubmissions: Array<{
-  id: string;
-  userId: string;
-  fullName: string;
-  photoUri: string;
-  idUri: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submittedAt: Date;
-  reviewedAt?: Date;
-  reviewedBy?: string;
-  reviewNotes?: string;
-}> = [];
-
-// Mock user data (in production, this would come from authentication)
-const mockUsers: Record<string, { id: string; role: 'mechanic' | 'admin' | 'customer' }> = {
-  'mechanic-cody': { id: 'mechanic-cody', role: 'mechanic' },
-  'admin-1': { id: 'admin-1', role: 'admin' },
-  'customer-1': { id: 'customer-1', role: 'customer' },
-};
-
-// Helper function to get user from request (mock implementation)
-function getUserFromRequest(req: Request): { id: string; role: 'mechanic' | 'admin' | 'customer' } {
-  // In production, this would extract user from JWT token or session
-  const userId = req.headers.get('x-user-id') || 'mechanic-cody';
-  return mockUsers[userId] || mockUsers['mechanic-cody'];
+// Helper function to get user from request
+async function getUserFromRequest(req: Request): Promise<{ id: string; role: 'mechanic' | 'admin' | 'customer' } | null> {
+  try {
+    // Extract token from Authorization header
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+    
+    const token = authHeader.substring(7);
+    
+    // Verify JWT token
+    const decoded = jwt.verify(
+      token,
+      process.env.NEXTAUTH_SECRET || 'default-secret'
+    ) as { userId: string; email: string; role: string };
+    
+    // Find user in database
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId }
+    });
+    
+    if (!user || !user.isActive) {
+      return null;
+    }
+    
+    return {
+      id: user.id,
+      role: user.role.toLowerCase() as 'mechanic' | 'admin' | 'customer'
+    };
+  } catch (error) {
+    console.error('Error getting user from request:', error);
+    return null;
+  }
 }
 
 export const mechanicRouter = router({
@@ -42,40 +52,52 @@ export const mechanicRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const user = getUserFromRequest(ctx.req);
+        const user = await getUserFromRequest(ctx.req);
+        
+        if (!user) {
+          throw new Error('Authentication required');
+        }
         
         // Check if user is a mechanic
         if (user.role !== 'mechanic') {
           throw new Error('Only mechanics can submit verification');
         }
 
+        // Get mechanic profile
+        const mechanicProfile = await prisma.mechanicProfile.findUnique({
+          where: { userId: user.id }
+        });
+
+        if (!mechanicProfile) {
+          throw new Error('Mechanic profile not found');
+        }
+
         // Check if already submitted
-        const existingSubmission = verificationSubmissions.find(
-          sub => sub.userId === user.id && sub.status === 'pending'
-        );
+        const existingSubmission = await prisma.mechanicVerification.findFirst({
+          where: {
+            mechanicId: mechanicProfile.id,
+            status: 'PENDING'
+          }
+        });
         
         if (existingSubmission) {
           throw new Error('Verification already submitted and pending review');
         }
 
         // Create new verification submission
-        const verificationId = `verification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
-        const newSubmission = {
-          id: verificationId,
-          userId: user.id,
-          fullName: input.fullName,
-          photoUri: input.photoUri,
-          idUri: input.idUri,
-          status: 'pending' as const,
-          submittedAt: new Date(),
-        };
-
-        verificationSubmissions.push(newSubmission);
+        const newSubmission = await prisma.mechanicVerification.create({
+          data: {
+            mechanicId: mechanicProfile.id,
+            fullName: input.fullName,
+            photoUri: input.photoUri,
+            idUri: input.idUri,
+            status: 'PENDING'
+          }
+        });
 
         // Log the submission for production monitoring
         console.log('Mechanic verification submitted:', {
-          verificationId,
+          verificationId: newSubmission.id,
           userId: user.id,
           mechanicName: input.fullName,
           timestamp: new Date().toISOString(),
@@ -83,7 +105,7 @@ export const mechanicRouter = router({
 
         return {
           success: true,
-          verificationId,
+          verificationId: newSubmission.id,
           message: 'Verification submitted successfully',
           submission: {
             id: newSubmission.id,
@@ -100,33 +122,33 @@ export const mechanicRouter = router({
   getVerificationStatus: protectedProcedure
     .query(async ({ ctx }) => {
       try {
-        const user = getUserFromRequest(ctx.req);
+        const user = await getUserFromRequest(ctx.req);
         
-        if (user.role !== 'mechanic') {
+        if (!user || user.role !== 'mechanic') {
           return { verified: false, status: null };
         }
 
-        // For development, return a mock pending status for Cody
-        if (user.id === 'mechanic-cody') {
-          return {
-            verified: false,
-            status: 'pending' as const,
-            submittedAt: new Date().toISOString(),
-            reviewNotes: 'Verification documents under review'
-          };
+        // Get mechanic profile
+        const mechanicProfile = await prisma.mechanicProfile.findUnique({
+          where: { userId: user.id }
+        });
+
+        if (!mechanicProfile) {
+          return { verified: false, status: null };
         }
 
         // Find the latest verification submission for this user
-        const latestSubmission = verificationSubmissions
-          .filter(sub => sub.userId === user.id)
-          .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime())[0];
+        const latestSubmission = await prisma.mechanicVerification.findFirst({
+          where: { mechanicId: mechanicProfile.id },
+          orderBy: { submittedAt: 'desc' }
+        });
 
         if (!latestSubmission) {
           return { verified: false, status: null };
         }
 
         return {
-          verified: latestSubmission.status === 'approved',
+          verified: latestSubmission.status === 'APPROVED',
           status: latestSubmission.status,
           submittedAt: latestSubmission.submittedAt.toISOString(),
           reviewedAt: latestSubmission.reviewedAt?.toISOString(),
@@ -147,23 +169,44 @@ export const mechanicRouter = router({
   getAllVerifications: protectedProcedure
     .query(async ({ ctx }) => {
       try {
-        const user = getUserFromRequest(ctx.req);
+        const user = await getUserFromRequest(ctx.req);
         
-        if (user.role !== 'admin') {
+        if (!user || user.role !== 'admin') {
           throw new Error('Only admins can view all verifications');
         }
 
-        return verificationSubmissions
-          .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime())
-          .map(sub => ({
-            id: sub.id,
-            userId: sub.userId,
-            fullName: sub.fullName,
-            status: sub.status,
-            submittedAt: sub.submittedAt,
-            reviewedAt: sub.reviewedAt,
-            reviewedBy: sub.reviewedBy,
-          }));
+        const verifications = await prisma.mechanicVerification.findMany({
+          include: {
+            mechanic: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { submittedAt: 'desc' }
+        });
+
+        return verifications.map(verification => ({
+          id: verification.id,
+          userId: verification.mechanic.user.id,
+          fullName: verification.fullName,
+          status: verification.status,
+          submittedAt: verification.submittedAt,
+          reviewedAt: verification.reviewedAt,
+          reviewedBy: verification.reviewedBy,
+          mechanicInfo: {
+            firstName: verification.mechanic.user.firstName,
+            lastName: verification.mechanic.user.lastName,
+            email: verification.mechanic.user.email,
+          }
+        }));
       } catch (error) {
         console.error('Error in getAllVerifications:', error);
         throw error;
@@ -178,28 +221,30 @@ export const mechanicRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const user = getUserFromRequest(ctx.req);
+        const user = await getUserFromRequest(ctx.req);
         
-        if (user.role !== 'admin') {
+        if (!user || user.role !== 'admin') {
           throw new Error('Only admins can review verifications');
         }
 
-        const submissionIndex = verificationSubmissions.findIndex(
-          sub => sub.id === input.verificationId
-        );
+        const verification = await prisma.mechanicVerification.findUnique({
+          where: { id: input.verificationId }
+        });
 
-        if (submissionIndex === -1) {
+        if (!verification) {
           throw new Error('Verification submission not found');
         }
 
         // Update the submission
-        verificationSubmissions[submissionIndex] = {
-          ...verificationSubmissions[submissionIndex],
-          status: input.status,
-          reviewedAt: new Date(),
-          reviewedBy: user.id,
-          reviewNotes: input.reviewNotes,
-        };
+        await prisma.mechanicVerification.update({
+          where: { id: input.verificationId },
+          data: {
+            status: input.status as 'APPROVED' | 'REJECTED',
+            reviewedAt: new Date(),
+            reviewedBy: user.id,
+            reviewNotes: input.reviewNotes,
+          }
+        });
 
         // Log the review for production monitoring
         console.log('Mechanic verification reviewed:', {
@@ -225,21 +270,46 @@ export const mechanicRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       try {
-        const user = getUserFromRequest(ctx.req);
+        const user = await getUserFromRequest(ctx.req);
         
-        if (user.role !== 'admin') {
+        if (!user || user.role !== 'admin') {
           throw new Error('Only admins can view verification details');
         }
 
-        const submission = verificationSubmissions.find(
-          sub => sub.id === input.verificationId
-        );
+        const verification = await prisma.mechanicVerification.findUnique({
+          where: { id: input.verificationId },
+          include: {
+            mechanic: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                  }
+                }
+              }
+            }
+          }
+        });
 
-        if (!submission) {
+        if (!verification) {
           throw new Error('Verification submission not found');
         }
 
-        return submission;
+        return {
+          id: verification.id,
+          fullName: verification.fullName,
+          photoUri: verification.photoUri,
+          idUri: verification.idUri,
+          status: verification.status,
+          submittedAt: verification.submittedAt,
+          reviewedAt: verification.reviewedAt,
+          reviewedBy: verification.reviewedBy,
+          reviewNotes: verification.reviewNotes,
+          mechanic: verification.mechanic.user,
+        };
       } catch (error) {
         console.error('Error in getVerificationDetails:', error);
         throw error;

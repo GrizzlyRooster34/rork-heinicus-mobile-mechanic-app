@@ -1,5 +1,8 @@
 import { z } from 'zod';
 import { publicProcedure, router } from '../../trpc';
+import { prisma } from '../../../../lib/prisma';
+import * as bcrypt from 'bcryptjs';
+import * as jwt from 'jsonwebtoken';
 
 export const authRouter = router({
   signup: publicProcedure
@@ -12,52 +15,84 @@ export const authRouter = router({
       role: z.enum(['customer', 'mechanic']).optional().default('customer'),
     }))
     .mutation(async ({ input }) => {
-      // In a real app, this would hash the password and save to database
-      console.log('Signup attempt:', { 
-        email: input.email, 
-        firstName: input.firstName,
-        role: input.role,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Check if user already exists (mock check)
-      const existingUsers = [
-        'matthew.heinen.2014@gmail.com',
-        'cody@heinicus.com',
-        'customer@example.com'
-      ];
-      
-      if (existingUsers.includes(input.email)) {
+      try {
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({
+          where: { email: input.email }
+        });
+        
+        if (existingUser) {
+          return {
+            success: false,
+            error: 'An account with this email already exists'
+          };
+        }
+        
+        // Hash password
+        const hashedPassword = await bcrypt.hash(input.password, 12);
+        
+        // Create user with profile
+        const newUser = await prisma.user.create({
+          data: {
+            email: input.email,
+            password: hashedPassword,
+            firstName: input.firstName,
+            lastName: input.lastName,
+            phone: input.phone,
+            role: input.role?.toUpperCase() as 'CUSTOMER' | 'MECHANIC' || 'CUSTOMER',
+            // Create appropriate profile based on role
+            ...(input.role === 'customer' && {
+              customerProfile: {
+                create: {}
+              }
+            }),
+            ...(input.role === 'mechanic' && {
+              mechanicProfile: {
+                create: {}
+              }
+            })
+          },
+          include: {
+            customerProfile: true,
+            mechanicProfile: true
+          }
+        });
+        
+        // Generate JWT token
+        const token = jwt.sign(
+          { userId: newUser.id, email: newUser.email, role: newUser.role },
+          process.env.NEXTAUTH_SECRET || 'default-secret',
+          { expiresIn: '7d' }
+        );
+        
+        console.log('Signup successful:', { 
+          userId: newUser.id, 
+          email: newUser.email,
+          role: newUser.role,
+          timestamp: new Date().toISOString()
+        });
+        
+        return {
+          success: true,
+          user: {
+            id: newUser.id,
+            email: newUser.email,
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            role: newUser.role.toLowerCase(),
+            phone: newUser.phone,
+            createdAt: newUser.createdAt,
+            isActive: newUser.isActive,
+          },
+          token
+        };
+      } catch (error) {
+        console.error('Signup error:', error);
         return {
           success: false,
-          error: 'An account with this email already exists'
+          error: 'Failed to create account'
         };
       }
-      
-      // Mock successful signup
-      const newUser = {
-        id: `user-${Date.now()}`,
-        email: input.email,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        role: input.role as 'customer' | 'mechanic',
-        phone: input.phone,
-        createdAt: new Date(),
-        isActive: true,
-      };
-      
-      console.log('Signup successful:', { 
-        userId: newUser.id, 
-        email: newUser.email,
-        role: newUser.role,
-        timestamp: new Date().toISOString()
-      });
-      
-      return {
-        success: true,
-        user: newUser,
-        token: 'mock-jwt-token'
-      };
     }),
 
   signin: publicProcedure
@@ -66,66 +101,77 @@ export const authRouter = router({
       password: z.string(),
     }))
     .mutation(async ({ input }) => {
-      // In a real app, this would verify password hash
-      console.log('Signin attempt:', { 
-        email: input.email,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Mock authentication logic
-      if (input.email === 'matthew.heinen.2014@gmail.com' && input.password === 'RoosTer669072!@') {
+      try {
+        // Find user by email
+        const user = await prisma.user.findUnique({
+          where: { email: input.email },
+          include: {
+            customerProfile: true,
+            mechanicProfile: true,
+            adminProfile: true
+          }
+        });
+        
+        if (!user) {
+          return {
+            success: false,
+            error: 'Invalid credentials'
+          };
+        }
+        
+        // Verify password
+        const isValidPassword = await bcrypt.compare(input.password, user.password);
+        
+        if (!isValidPassword) {
+          return {
+            success: false,
+            error: 'Invalid credentials'
+          };
+        }
+        
+        // Check if user is active
+        if (!user.isActive) {
+          return {
+            success: false,
+            error: 'Account is inactive'
+          };
+        }
+        
+        // Generate JWT token
+        const token = jwt.sign(
+          { userId: user.id, email: user.email, role: user.role },
+          process.env.NEXTAUTH_SECRET || 'default-secret',
+          { expiresIn: '7d' }
+        );
+        
+        console.log('Signin successful:', { 
+          userId: user.id, 
+          email: user.email,
+          role: user.role,
+          timestamp: new Date().toISOString()
+        });
+        
         return {
           success: true,
           user: {
-            id: 'admin-cody',
-            email: input.email,
-            firstName: 'Cody',
-            lastName: 'Owner',
-            role: 'admin' as const,
-            createdAt: new Date(),
-            isActive: true,
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role.toLowerCase(),
+            phone: user.phone,
+            createdAt: user.createdAt,
+            isActive: user.isActive,
           },
-          token: 'mock-jwt-token'
+          token
         };
-      }
-      
-      if (input.email === 'cody@heinicus.com' && input.password === 'RoosTer669072!@') {
+      } catch (error) {
+        console.error('Signin error:', error);
         return {
-          success: true,
-          user: {
-            id: 'mechanic-cody',
-            email: input.email,
-            firstName: 'Cody',
-            lastName: 'Mechanic',
-            role: 'mechanic' as const,
-            createdAt: new Date(),
-            isActive: true,
-          },
-          token: 'mock-jwt-token'
+          success: false,
+          error: 'Failed to sign in'
         };
       }
-      
-      // Mock customer login
-      if (input.email === 'customer@example.com') {
-        return {
-          success: true,
-          user: {
-            id: 'customer-demo',
-            email: input.email,
-            firstName: 'Demo',
-            lastName: 'Customer',
-            role: 'customer' as const,
-            createdAt: new Date(),
-            isActive: true,
-          },
-          token: 'mock-jwt-token'
-        };
-      }
-      
-      return {
-        success: false,
-        error: 'Invalid credentials'
-      };
     }),
 
   verifyToken: publicProcedure
@@ -133,27 +179,47 @@ export const authRouter = router({
       token: z.string(),
     }))
     .query(async ({ input }) => {
-      // In a real app, this would verify JWT token
-      console.log('Token verification:', { 
-        token: input.token,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Mock token verification
-      if (input.token === 'mock-jwt-token') {
+      try {
+        // Verify JWT token
+        const decoded = jwt.verify(
+          input.token,
+          process.env.NEXTAUTH_SECRET || 'default-secret'
+        ) as { userId: string; email: string; role: string };
+        
+        // Find user in database
+        const user = await prisma.user.findUnique({
+          where: { id: decoded.userId },
+          include: {
+            customerProfile: true,
+            mechanicProfile: true,
+            adminProfile: true
+          }
+        });
+        
+        if (!user || !user.isActive) {
+          return {
+            valid: false,
+            error: 'User not found or inactive'
+          };
+        }
+        
         return {
           valid: true,
           user: {
-            id: 'user-1',
-            email: 'user@example.com',
-            role: 'customer' as const,
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role.toLowerCase(),
+            phone: user.phone,
           }
         };
+      } catch (error) {
+        console.error('Token verification error:', error);
+        return {
+          valid: false,
+          error: 'Invalid token'
+        };
       }
-      
-      return {
-        valid: false,
-        error: 'Invalid token'
-      };
     }),
 });

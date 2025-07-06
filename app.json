@@ -33,8 +33,24 @@
         {
           "origin": "https://mobilemechanic.app/"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#000000",
+          "sounds": ["./assets/sounds/notification.wav"],
+          "mode": "production"
+        }
       ]
     ],
+    "notification": {
+      "icon": "./assets/images/notification-icon.png",
+      "color": "#000000",
+      "androidMode": "default",
+      "androidCollapsedTitle": "Mobile Mechanic",
+      "iosDisplayInForeground": true
+    },
     "experiments": {
       "typedRoutes": true
     }

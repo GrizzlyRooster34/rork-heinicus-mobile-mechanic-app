@@ -1,4 +1,5 @@
 import { User } from './auth';
+import { Review, Rating, MechanicRatingProfile } from './rating';
 
 export type VehicleType = 'car' | 'motorcycle' | 'scooter';
 
@@ -162,6 +163,12 @@ export interface ServiceRequest {
   partsApproved?: boolean; // New field for parts approval toggle
   partsEstimate?: number; // Estimated parts cost
   partsActual?: number; // Actual parts cost
+  // Rating and review fields
+  rating?: Rating;
+  review?: Review;
+  isRatingEligible?: boolean; // Whether this job is eligible for rating
+  ratingReminderSent?: boolean;
+  ratingDeadline?: Date; // When rating period expires
 }
 
 export interface Quote {
@@ -351,6 +358,28 @@ export interface MaintenanceInterval {
   priority: 'low' | 'medium' | 'high';
   createdAt: Date;
   updatedAt?: Date;
+}
+
+export interface Mechanic {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  specialties: ServiceType[];
+  serviceAreas: string[];
+  isVerified: boolean;
+  isActive: boolean;
+  ratingProfile?: MechanicRatingProfile;
+  joinedAt: Date;
+  lastActiveAt?: Date;
+  completedJobs: number;
+  responseRate: number;
+  bio?: string;
+  profilePhoto?: string;
+  certifications?: string[];
+  yearsExperience?: number;
 }
 
 export interface ChatMessage {

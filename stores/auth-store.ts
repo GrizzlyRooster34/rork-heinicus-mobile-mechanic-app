@@ -7,6 +7,7 @@ import { devMode, isDevCredentials, getDevUser } from '@/utils/dev';
 import { withAsyncErrorHandling, withErrorHandling, logStoreAction } from './store-utils';
 
 interface AuthStore extends AuthState {
+  token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, firstName: string, lastName: string, phone?: string, role?: 'customer' | 'mechanic') => Promise<boolean>;
   logout: () => void;
@@ -55,6 +56,7 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       user: null,
+      token: null,
       isLoading: false,
       isAuthenticated: false,
 
@@ -85,7 +87,8 @@ export const useAuthStore = create<AuthStore>()(
             
             // Auto-login after successful signup
             set({ 
-              user: completeUser, 
+              user: completeUser,
+              token: result.token || null,
               isAuthenticated: true, 
               isLoading: false 
             });
@@ -160,7 +163,8 @@ export const useAuthStore = create<AuthStore>()(
               const completeUser: User = result.user;
               
               set({ 
-                user: completeUser, 
+                user: completeUser,
+                token: result.token || null,
                 isAuthenticated: true, 
                 isLoading: false 
               });
@@ -214,7 +218,8 @@ export const useAuthStore = create<AuthStore>()(
         });
         
         set({ 
-          user: null, 
+          user: null,
+          token: null,
           isAuthenticated: false 
         });
       },
