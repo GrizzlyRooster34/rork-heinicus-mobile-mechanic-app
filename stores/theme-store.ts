@@ -3,37 +3,37 @@ import { create } from 'zustand';
 // Always use dark theme - no persistence needed
 export type Theme = 'dark';
 
-const DarkColors = {
-  // Primary brand colors
-  primary: '#0A84FF',
-  primaryDark: '#0056CC',
-  secondary: '#5E5CE6',
+const BrandColors = {
+  // Primary brand colors - matching Heinicus Designs logo
+  primary: '#00BFFF',        // Bright cyan from logo
+  primaryDark: '#0099CC',    // Darker cyan for pressed states
+  secondary: '#00A3E0',      // Secondary blue
   
   // Role-specific colors
-  mechanic: '#FF6B35',
-  customer: '#0A84FF',
-  admin: '#BF5AF2',
+  mechanic: '#00BFFF',       // Use brand color for mechanic
+  customer: '#00BFFF',       // Use brand color for customer
+  admin: '#00D4FF',          // Lighter cyan for admin
   
   // Background colors
-  background: '#000000',
-  surface: '#1C1C1E',
-  card: '#2C2C2E',
+  background: '#000000',     // Pure black like logo background
+  surface: '#1A1A1A',       // Very dark gray for cards
+  card: '#2A2A2A',          // Slightly lighter for elevated cards
   
   // Border and divider colors
-  border: '#38383A',
+  border: '#333333',
   
   // Text colors
   text: '#FFFFFF',
-  textSecondary: '#EBEBF5',
-  textMuted: '#8E8E93',
+  textSecondary: '#E0E0E0',
+  textMuted: '#999999',
   
   // Status colors
-  success: '#30D158',
-  successBackground: '#1E3A1E',
-  warning: '#FF9F0A',
-  error: '#FF453A',
-  errorBackground: '#3A1E1E',
-  info: '#64D2FF',
+  success: '#00FF88',
+  successBackground: '#003322',
+  warning: '#FFB800',
+  error: '#FF4444',
+  errorBackground: '#330000',
+  info: '#00BFFF',          // Use brand color for info
   
   // Utility colors
   white: '#FFFFFF',
@@ -41,15 +41,15 @@ const DarkColors = {
   transparent: 'transparent',
   
   // Development colors
-  development: '#FF9F0A',
+  development: '#FFB800',
 };
 
 interface ThemeState {
   theme: Theme;
-  colors: typeof DarkColors;
+  colors: typeof BrandColors;
 }
 
 export const useThemeStore = create<ThemeState>(() => ({
   theme: 'dark',
-  colors: DarkColors,
+  colors: BrandColors,
 }));

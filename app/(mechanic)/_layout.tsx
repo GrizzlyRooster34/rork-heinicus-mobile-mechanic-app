@@ -27,7 +27,7 @@ export default function MechanicTabLayout() {
   return (
     <Tabs
         screenOptions={{
-          tabBarActiveTintColor: colors.mechanic,
+          tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
           tabBarStyle: {
             backgroundColor: colors.surface,

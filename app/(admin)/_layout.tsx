@@ -8,7 +8,7 @@ export default function AdminLayout() {
   return (
     <Tabs
         screenOptions={{
-          tabBarActiveTintColor: colors.admin,
+          tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
           tabBarStyle: {
             backgroundColor: colors.surface,
