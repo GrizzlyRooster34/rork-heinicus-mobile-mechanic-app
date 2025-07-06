@@ -1,0 +1,84 @@
+name: Build Android APK (Simple)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Install dependencies with npm
+      run: |
+        npm install --legacy-peer-deps
+        
+    - name: Install Expo CLI
+      run: npm install -g @expo/cli@latest
+        
+    - name: Prebuild Android (Simple)
+      run: |
+        export EXPO_NO_DOTENV=1
+        export EXPO_NO_TYPESCRIPT_SETUP=1
+        export EXPO_USE_FAST_RESOLVER=1
+        npx expo prebuild --platform android --clean --no-install --skip-dependency-update
+        
+    - name: Build APK
+      run: |
+        cd android
+        chmod +x ./gradlew
+        echo "Building APK..."
+        ./gradlew assembleRelease --no-daemon --warning-mode=all
+        
+    - name: Verify and upload APK
+      run: |
+        APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+        if [ -f "$APK_PATH" ]; then
+          cp "$APK_PATH" ./heinicus-mechanic-simple.apk
+          APK_SIZE=$(du -h heinicus-mechanic-simple.apk | cut -f1)
+          echo "✅ APK built successfully!"
+          echo "📦 APK size: $APK_SIZE"
+          echo "APK_SIZE=$APK_SIZE" >> $GITHUB_ENV
+        else
+          echo "❌ APK not found at $APK_PATH"
+          ls -la android/app/build/outputs/apk/ || echo "No APK output directory"
+          exit 1
+        fi
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: heinicus-mechanic-simple-apk
+        path: heinicus-mechanic-simple.apk
+        retention-days: 30
+        
+    - name: Build Summary
+      run: |
+        echo "## 🎉 Simple APK Build Completed!" >> $GITHUB_STEP_SUMMARY
+        echo "- **APK Size**: ${{ env.APK_SIZE }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Package**: app.rork.mobilemechanic" >> $GITHUB_STEP_SUMMARY
+        echo "- **Min Android**: API 21 (Android 5.0+)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Target Android**: API 34 (Android 14)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 Installation:" >> $GITHUB_STEP_SUMMARY
+        echo "1. Download APK from artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "2. Enable 'Install from unknown sources'" >> $GITHUB_STEP_SUMMARY
+        echo "3. Install: \`adb install heinicus-mechanic-simple.apk\`" >> $GITHUB_STEP_SUMMARY
