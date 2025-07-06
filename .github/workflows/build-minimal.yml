@@ -1,0 +1,67 @@
+name: Build Minimal APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Use minimal config
+      run: |
+        cp app-minimal.json app.json
+        
+    - name: Install core dependencies only
+      run: |
+        # Install only essential dependencies
+        npm install expo@~51.0.0 expo-router@~3.5.0 react@18.2.0 react-native@0.74.0 --legacy-peer-deps
+        
+    - name: Install Expo CLI
+      run: npm install -g @expo/cli@latest
+        
+    - name: Prebuild minimal
+      run: |
+        export EXPO_NO_DOTENV=1
+        export EXPO_NO_TYPESCRIPT_SETUP=1
+        npx expo prebuild --platform android --clean --no-install
+        
+    - name: Build APK
+      run: |
+        cd android
+        chmod +x ./gradlew
+        ./gradlew assembleDebug --no-daemon
+        
+    - name: Upload APK
+      run: |
+        APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+        if [ -f "$APK_PATH" ]; then
+          cp "$APK_PATH" ./heinicus-minimal.apk
+          echo "✅ Minimal APK built!"
+        else
+          echo "❌ Build failed"
+          exit 1
+        fi
+        
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: heinicus-minimal-apk
+        path: heinicus-minimal.apk
