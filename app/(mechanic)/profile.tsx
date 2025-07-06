@@ -8,6 +8,7 @@ import { NotificationSettings } from '@/components/NotificationSettings';
 import { AvailabilitySettings } from '@/components/AvailabilitySettings';
 import { ServicePricingSettings } from '@/components/ServicePricingSettings';
 import { ToolsEquipmentSettings } from '@/components/ToolsEquipmentSettings';
+import { VehicleType } from '@/types/service';
 import { ReportsAnalytics } from '@/components/ReportsAnalytics';
 import { MechanicVerificationPanel } from '@/components/MechanicVerificationPanel';
 import { trpc } from '@/lib/trpc';
@@ -18,6 +19,7 @@ export default function MechanicProfileScreen() {
   const { user, logout } = useAuthStore();
   const { serviceRequests, quotes } = useAppStore();
   const [currentScreen, setCurrentScreen] = useState<SettingsScreen>('main');
+  const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType>('car');
 
   // Get verification status
   const { data: verificationStatus, refetch: refetchVerificationStatus, error: verificationError } = trpc.mechanic.getVerificationStatus.useQuery(
@@ -165,9 +167,41 @@ export default function MechanicProfileScreen() {
         );
       case 'tools':
         return (
-          <ToolsEquipmentSettings 
-            onSettingsChange={(settings) => handleSettingsChange('tools', settings)}
-          />
+          <View>
+            {/* Vehicle Type Selector */}
+            <View style={styles.vehicleTypeSelector}>
+              <Text style={styles.sectionTitle}>Select Vehicle Type</Text>
+              <View style={styles.vehicleTypeButtons}>
+                {[
+                  { type: 'car' as VehicleType, label: 'Cars & Trucks', icon: '🚗' },
+                  { type: 'motorcycle' as VehicleType, label: 'Motorcycles', icon: '🏍️' },
+                  { type: 'scooter' as VehicleType, label: 'Scooters', icon: '🛵' },
+                ].map((vehicle) => (
+                  <TouchableOpacity
+                    key={vehicle.type}
+                    style={[
+                      styles.vehicleTypeButton,
+                      selectedVehicleType === vehicle.type && styles.vehicleTypeButtonSelected
+                    ]}
+                    onPress={() => setSelectedVehicleType(vehicle.type)}
+                  >
+                    <Text style={styles.vehicleTypeIcon}>{vehicle.icon}</Text>
+                    <Text style={[
+                      styles.vehicleTypeLabel,
+                      selectedVehicleType === vehicle.type && styles.vehicleTypeLabelSelected
+                    ]}>
+                      {vehicle.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+            
+            <ToolsEquipmentSettings 
+              vehicleType={selectedVehicleType}
+              onSettingsChange={(settings) => handleSettingsChange('tools', settings)}
+            />
+          </View>
         );
       case 'reports':
         return (
@@ -600,5 +634,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text,
     fontWeight: '500',
+  },
+  vehicleTypeSelector: {
+    marginBottom: 24,
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  vehicleTypeButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  vehicleTypeButton: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    gap: 4,
+  },
+  vehicleTypeButtonSelected: {
+    backgroundColor: Colors.primary + '20',
+    borderColor: Colors.primary,
+  },
+  vehicleTypeIcon: {
+    fontSize: 20,
+  },
+  vehicleTypeLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  vehicleTypeLabelSelected: {
+    color: Colors.primary,
   },
 });

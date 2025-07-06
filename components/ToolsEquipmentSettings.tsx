@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
 import * as Icons from 'lucide-react-native';
-import { ServiceTool, ServiceType } from '@/types/service';
+import { ServiceTool, ServiceType, VehicleType } from '@/types/service';
 import { SERVICE_TOOLS } from '@/constants/services';
 
 interface ToolsEquipmentSettingsProps {
   onSettingsChange: (settings: ToolsSettings) => void;
+  vehicleType?: VehicleType;
 }
 
 interface ToolsSettings {
@@ -16,7 +17,7 @@ interface ToolsSettings {
   toolNotes: { [toolId: string]: string };
 }
 
-export function ToolsEquipmentSettings({ onSettingsChange }: ToolsEquipmentSettingsProps) {
+export function ToolsEquipmentSettings({ onSettingsChange, vehicleType = 'car' }: ToolsEquipmentSettingsProps) {
   const [settings, setSettings] = useState<ToolsSettings>({
     availableTools: {},
     customTools: [],
@@ -24,7 +25,10 @@ export function ToolsEquipmentSettings({ onSettingsChange }: ToolsEquipmentSetti
     toolNotes: {},
   });
 
-  const [selectedCategory, setSelectedCategory] = useState<ServiceType>('oil_change');
+  const [selectedCategory, setSelectedCategory] = useState<ServiceType>(
+    vehicleType === 'motorcycle' ? 'motorcycle_oil_change' : 
+    vehicleType === 'scooter' ? 'scooter_oil_change' : 'oil_change'
+  );
   const [showAddTool, setShowAddTool] = useState(false);
   const [newTool, setNewTool] = useState<Partial<ServiceTool>>({
     name: '',
@@ -127,15 +131,32 @@ export function ToolsEquipmentSettings({ onSettingsChange }: ToolsEquipmentSetti
   };
 
   const serviceCategories = [
-    { key: 'oil_change', title: 'Oil Change', icon: 'Droplets' },
-    { key: 'brake_service', title: 'Brake Service', icon: 'Disc' },
-    { key: 'tire_service', title: 'Tire Service', icon: 'Circle' },
-    { key: 'battery_service', title: 'Battery Service', icon: 'Battery' },
-    { key: 'engine_diagnostic', title: 'Engine Diagnostic', icon: 'Search' },
-    { key: 'transmission', title: 'Transmission', icon: 'Settings' },
-    { key: 'ac_service', title: 'A/C Service', icon: 'Snowflake' },
-    { key: 'general_repair', title: 'General Repair', icon: 'Wrench' },
-    { key: 'emergency_roadside', title: 'Emergency Roadside', icon: 'Phone' },
+    // Car Services
+    { key: 'oil_change', title: 'Oil Change', icon: 'Droplets', vehicleType: 'car' },
+    { key: 'brake_service', title: 'Brake Service', icon: 'Disc', vehicleType: 'car' },
+    { key: 'tire_service', title: 'Tire Service', icon: 'Circle', vehicleType: 'car' },
+    { key: 'battery_service', title: 'Battery Service', icon: 'Battery', vehicleType: 'car' },
+    { key: 'engine_diagnostic', title: 'Engine Diagnostic', icon: 'Search', vehicleType: 'car' },
+    { key: 'transmission', title: 'Transmission', icon: 'Settings', vehicleType: 'car' },
+    { key: 'ac_service', title: 'A/C Service', icon: 'Snowflake', vehicleType: 'car' },
+    { key: 'general_repair', title: 'General Repair', icon: 'Wrench', vehicleType: 'car' },
+    { key: 'emergency_roadside', title: 'Emergency Roadside', icon: 'Phone', vehicleType: 'car' },
+    
+    // Motorcycle Services
+    { key: 'motorcycle_oil_change', title: 'Motorcycle Oil Change', icon: 'Droplets', vehicleType: 'motorcycle' },
+    { key: 'motorcycle_brake_inspection', title: 'Motorcycle Brake Inspection', icon: 'Disc', vehicleType: 'motorcycle' },
+    { key: 'motorcycle_tire_replacement', title: 'Motorcycle Tire Replacement', icon: 'Circle', vehicleType: 'motorcycle' },
+    { key: 'motorcycle_chain_service', title: 'Chain Service', icon: 'Settings', vehicleType: 'motorcycle' },
+    { key: 'motorcycle_battery_service', title: 'Motorcycle Battery Service', icon: 'Battery', vehicleType: 'motorcycle' },
+    { key: 'motorcycle_diagnostic', title: 'Motorcycle Diagnostic', icon: 'Search', vehicleType: 'motorcycle' },
+    
+    // Scooter Services
+    { key: 'scooter_oil_change', title: 'Scooter Oil Change', icon: 'Droplets', vehicleType: 'scooter' },
+    { key: 'scooter_brake_inspection', title: 'Scooter Brake Inspection', icon: 'Disc', vehicleType: 'scooter' },
+    { key: 'scooter_tire_replacement', title: 'Scooter Tire Replacement', icon: 'Circle', vehicleType: 'scooter' },
+    { key: 'scooter_carburetor_clean', title: 'Carburetor Cleaning', icon: 'Settings', vehicleType: 'scooter' },
+    { key: 'scooter_battery_service', title: 'Scooter Battery Service', icon: 'Battery', vehicleType: 'scooter' },
+    { key: 'scooter_diagnostic', title: 'Scooter Diagnostic', icon: 'Search', vehicleType: 'scooter' },
   ];
 
   const conditionColors = {
@@ -162,31 +183,33 @@ export function ToolsEquipmentSettings({ onSettingsChange }: ToolsEquipmentSetti
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Service Categories</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-          {serviceCategories.map((category) => {
-            const IconComponent = Icons[category.icon as keyof typeof Icons] as any;
-            const isSelected = selectedCategory === category.key;
-            
-            return (
-              <TouchableOpacity
-                key={category.key}
-                style={[styles.categoryButton, isSelected && styles.categoryButtonSelected]}
-                onPress={() => setSelectedCategory(category.key as ServiceType)}
-              >
-                {IconComponent && (
-                  <IconComponent 
-                    size={20} 
-                    color={isSelected ? Colors.primary : Colors.textMuted} 
-                  />
-                )}
-                <Text style={[
-                  styles.categoryButtonText,
-                  isSelected && styles.categoryButtonTextSelected
-                ]}>
-                  {category.title}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+          {serviceCategories
+            .filter(category => category.vehicleType === vehicleType)
+            .map((category) => {
+              const IconComponent = Icons[category.icon as keyof typeof Icons] as any;
+              const isSelected = selectedCategory === category.key;
+              
+              return (
+                <TouchableOpacity
+                  key={category.key}
+                  style={[styles.categoryButton, isSelected && styles.categoryButtonSelected]}
+                  onPress={() => setSelectedCategory(category.key as ServiceType)}
+                >
+                  {IconComponent && (
+                    <IconComponent 
+                      size={20} 
+                      color={isSelected ? Colors.primary : Colors.textMuted} 
+                    />
+                  )}
+                  <Text style={[
+                    styles.categoryButtonText,
+                    isSelected && styles.categoryButtonTextSelected
+                  ]}>
+                    {category.title}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
         </ScrollView>
       </View>
 
@@ -197,6 +220,11 @@ export function ToolsEquipmentSettings({ onSettingsChange }: ToolsEquipmentSetti
           <Text style={styles.overviewTitle}>
             {serviceCategories.find(c => c.key === selectedCategory)?.title} Tools
           </Text>
+          <View style={styles.vehicleTypeBadge}>
+            <Text style={styles.vehicleTypeText}>
+              {vehicleType === 'motorcycle' ? '🏍️' : vehicleType === 'scooter' ? '🛵' : '🚗'} {vehicleType.toUpperCase()}
+            </Text>
+          </View>
         </View>
         <Text style={styles.overviewText}>
           {availableCount} of {totalCount} tools available
@@ -720,5 +748,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.white,
     fontWeight: '500',
+  },
+  vehicleTypeBadge: {
+    backgroundColor: Colors.primary + '20',
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  vehicleTypeText: {
+    fontSize: 10,
+    color: Colors.primary,
+    fontWeight: '600',
   },
 });
