@@ -49,9 +49,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-deps-
           
-    - name: Install dependencies
-      run: bun install --frozen-lockfile
-      
     - name: Setup CI environment
       run: |
         chmod +x ./scripts/setup-ci.sh
@@ -65,12 +62,14 @@ jobs:
       
     - name: Build Android APK
       run: |
-        chmod +x ./scripts/build-android.sh
-        ./scripts/build-android.sh
+        cd android
+        chmod +x ./gradlew
+        ./gradlew assembleRelease --no-daemon
         
-    - name: Verify APK
+    - name: Copy and verify APK
       run: |
-        if [ -f "heinicus-mobile-mechanic.apk" ]; then
+        if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
+          cp android/app/build/outputs/apk/release/app-release.apk ./heinicus-mobile-mechanic.apk
           echo "✅ APK found and ready for upload"
           ls -lah heinicus-mobile-mechanic.apk
           APK_SIZE=$(du -h heinicus-mobile-mechanic.apk | cut -f1)
