@@ -24,11 +24,25 @@ app.get("/", (c) => {
   });
 });
 
+// Debug endpoint to check tRPC routes
+app.get("/debug/routes", (c) => {
+  return c.json({
+    message: "Available tRPC routes",
+    routes: {
+      "mechanic.submitVerification": "POST /api/trpc/mechanic.submitVerification",
+      "mechanic.getVerificationStatus": "GET /api/trpc/mechanic.getVerificationStatus",
+      "mechanic.getAllVerifications": "GET /api/trpc/mechanic.getAllVerifications",
+      "mechanic.reviewVerification": "POST /api/trpc/mechanic.reviewVerification",
+      "mechanic.getVerificationDetails": "GET /api/trpc/mechanic.getVerificationDetails"
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Mount tRPC router at /trpc
 app.use(
   "/trpc/*",
   trpcServer({
-    endpoint: "/api/trpc",
     router: appRouter,
     createContext,
     onError: ({ error, path }) => {

@@ -29,8 +29,12 @@ export function MechanicVerificationPanel({ onVerificationSubmitted }: MechanicV
       setSelfieUri(null);
       setIdUri(null);
     },
-    onError: (error: any) => {
-      Alert.alert('Submission Failed', error.message || 'Failed to submit verification. Please try again.');
+    onError: (error) => {
+      console.log('Verification submission error:', error);
+      Alert.alert(
+        'Submission Failed', 
+        error.message || 'Failed to submit verification. Please check your connection and try again.'
+      );
     },
     onSettled: () => {
       setIsSubmitting(false);

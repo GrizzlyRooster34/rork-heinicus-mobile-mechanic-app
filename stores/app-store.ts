@@ -123,31 +123,39 @@ export const useAppStore = create<AppState>()(
       
       // Actions
       setContact: (contact) => {
-        logProductionEvent('contact_updated', { contactId: contact.id });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('contact_updated', { contactId: contact.id });
+        }
         set({ contact });
       },
       
       addVehicle: (vehicle) => {
-        logProductionEvent('vehicle_added', { 
-          vehicleId: vehicle.id, 
-          make: vehicle.make, 
-          model: vehicle.model, 
-          year: vehicle.year 
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('vehicle_added', { 
+            vehicleId: vehicle.id, 
+            make: vehicle.make, 
+            model: vehicle.model, 
+            year: vehicle.year 
+          });
+        }
         set((state) => ({
           vehicles: [...state.vehicles, vehicle]
         }));
       },
       
       updateVehicle: (id, updates) => {
-        logProductionEvent('vehicle_updated', { vehicleId: id, updates: Object.keys(updates) });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('vehicle_updated', { vehicleId: id, updates: Object.keys(updates) });
+        }
         set((state) => ({
           vehicles: state.vehicles.map(v => v.id === id ? { ...v, ...updates } : v)
         }));
       },
       
       removeVehicle: (id) => {
-        logProductionEvent('vehicle_removed', { vehicleId: id });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('vehicle_removed', { vehicleId: id });
+        }
         set((state) => ({
           vehicles: state.vehicles.filter(v => v.id !== id),
           maintenanceHistory: state.maintenanceHistory.filter(r => r.vehicleId !== id),
@@ -156,23 +164,27 @@ export const useAppStore = create<AppState>()(
       },
       
       addServiceRequest: (request) => {
-        logProductionEvent('service_request_added', { 
-          requestId: request.id, 
-          serviceType: request.type, 
-          urgency: request.urgency,
-          toolsCount: request.requiredTools?.length || 0
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('service_request_added', { 
+            requestId: request.id, 
+            serviceType: request.type, 
+            urgency: request.urgency,
+            toolsCount: request.requiredTools?.length || 0
+          });
+        }
         set((state) => ({
           serviceRequests: [...state.serviceRequests, request]
         }));
       },
       
       updateServiceRequest: (id, updates) => {
-        logProductionEvent('service_request_updated', { 
-          requestId: id, 
-          updates: Object.keys(updates),
-          newStatus: updates.status
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('service_request_updated', { 
+            requestId: id, 
+            updates: Object.keys(updates),
+            newStatus: updates.status
+          });
+        }
         set((state) => ({
           serviceRequests: state.serviceRequests.map(r => r.id === id ? { ...r, ...updates } : r)
         }));
@@ -181,13 +193,15 @@ export const useAppStore = create<AppState>()(
       updateJobStatus: (jobId: string, status: ServiceStatus, mechanicId: string, notes?: string) => {
         const timestamp = new Date();
         
-        logProductionEvent('job_status_updated', { 
-          jobId, 
-          status, 
-          mechanicId, 
-          timestamp: timestamp.toISOString(),
-          hasNotes: !!notes
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('job_status_updated', { 
+            jobId, 
+            status, 
+            mechanicId, 
+            timestamp: timestamp.toISOString(),
+            hasNotes: !!notes
+          });
+        }
         
         set((state) => ({
           serviceRequests: state.serviceRequests.map(r => {
@@ -244,7 +258,9 @@ export const useAppStore = create<AppState>()(
       },
       
       cancelJob: (jobId: string, reason: string, mechanicId: string) => {
-        logProductionEvent('job_cancelled', { jobId, reason, mechanicId });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('job_cancelled', { jobId, reason, mechanicId });
+        }
         set((state) => ({
           serviceRequests: state.serviceRequests.map(r => 
             r.id === jobId ? { 
@@ -259,33 +275,39 @@ export const useAppStore = create<AppState>()(
       },
       
       addQuote: (quote) => {
-        logProductionEvent('quote_added', { 
-          quoteId: quote.id, 
-          serviceRequestId: quote.serviceRequestId, 
-          totalCost: quote.totalCost 
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('quote_added', { 
+            quoteId: quote.id, 
+            serviceRequestId: quote.serviceRequestId, 
+            totalCost: quote.totalCost 
+          });
+        }
         set((state) => ({
           quotes: [...state.quotes, quote]
         }));
       },
       
       updateQuote: (id, updates) => {
-        logProductionEvent('quote_updated', { 
-          quoteId: id, 
-          updates: Object.keys(updates),
-          newStatus: updates.status
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('quote_updated', { 
+            quoteId: id, 
+            updates: Object.keys(updates),
+            newStatus: updates.status
+          });
+        }
         set((state) => ({
           quotes: state.quotes.map(q => q.id === id ? { ...q, ...updates } : q)
         }));
       },
       
       addMaintenanceReminder: (reminder) => {
-        logProductionEvent('maintenance_reminder_added', { 
-          reminderId: reminder.id, 
-          vehicleId: reminder.vehicleId, 
-          serviceType: reminder.serviceType 
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('maintenance_reminder_added', { 
+            reminderId: reminder.id, 
+            vehicleId: reminder.vehicleId, 
+            serviceType: reminder.serviceType 
+          });
+        }
         set((state) => ({
           maintenanceReminders: [...state.maintenanceReminders, reminder]
         }));
@@ -300,12 +322,14 @@ export const useAppStore = create<AppState>()(
       })),
       
       addMaintenanceRecord: (record) => {
-        logProductionEvent('maintenance_record_added', { 
-          recordId: record.id, 
-          vehicleId: record.vehicleId, 
-          serviceType: record.serviceType,
-          cost: record.cost
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('maintenance_record_added', { 
+            recordId: record.id, 
+            vehicleId: record.vehicleId, 
+            serviceType: record.serviceType,
+            cost: record.cost
+          });
+        }
         
         set((state) => {
           // Also update the vehicle's maintenance history
@@ -333,23 +357,27 @@ export const useAppStore = create<AppState>()(
       })),
       
       addJobLog: (log) => {
-        logProductionEvent('job_log_added', { 
-          logId: log.id, 
-          jobId: log.jobId, 
-          mechanicId: log.mechanicId,
-          startTime: log.startTime.toISOString()
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('job_log_added', { 
+            logId: log.id, 
+            jobId: log.jobId, 
+            mechanicId: log.mechanicId,
+            startTime: log.startTime.toISOString()
+          });
+        }
         set((state) => ({
           jobLogs: [...state.jobLogs, log]
         }));
       },
       
       updateJobLog: (id, updates) => {
-        logProductionEvent('job_log_updated', { 
-          logId: id, 
-          updates: Object.keys(updates),
-          duration: updates.duration
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('job_log_updated', { 
+            logId: id, 
+            updates: Object.keys(updates),
+            duration: updates.duration
+          });
+        }
         set((state) => ({
           jobLogs: state.jobLogs.map(l => l.id === id ? { ...l, ...updates } : l)
         }));
@@ -360,12 +388,14 @@ export const useAppStore = create<AppState>()(
       // Tools management
       updateJobTools: (jobId: string, toolsChecked: { [toolId: string]: boolean }) => {
         const checkedCount = Object.values(toolsChecked).filter(Boolean).length;
-        logProductionEvent('job_tools_updated', { 
-          jobId, 
-          mechanicId: 'mechanic-cody',
-          checkedCount,
-          totalTools: Object.keys(toolsChecked).length
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('job_tools_updated', { 
+            jobId, 
+            mechanicId: 'mechanic-cody',
+            checkedCount,
+            totalTools: Object.keys(toolsChecked).length
+          });
+        }
         
         set((state) => ({
           serviceRequests: state.serviceRequests.map(r => 
@@ -375,11 +405,13 @@ export const useAppStore = create<AppState>()(
       },
       
       completeToolsCheck: (jobId: string, notes?: string) => {
-        logProductionEvent('tools_check_completed', { 
-          jobId, 
-          mechanicId: 'mechanic-cody',
-          hasNotes: !!notes
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('tools_check_completed', { 
+            jobId, 
+            mechanicId: 'mechanic-cody',
+            hasNotes: !!notes
+          });
+        }
         
         set((state) => ({
           serviceRequests: state.serviceRequests.map(r => 
@@ -407,12 +439,14 @@ export const useAppStore = create<AppState>()(
       
       // Parts management
       addJobParts: (jobId: string, parts: JobPart[]) => {
-        logProductionEvent('job_parts_added', { 
-          jobId, 
-          mechanicId: 'mechanic-cody',
-          partsCount: parts.length,
-          totalCost: parts.reduce((sum, part) => sum + (part.price * part.quantity), 0)
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('job_parts_added', { 
+            jobId, 
+            mechanicId: 'mechanic-cody',
+            partsCount: parts.length,
+            totalCost: parts.reduce((sum, part) => sum + (part.price * part.quantity), 0)
+          });
+        }
         
         set((state) => ({
           jobParts: {
@@ -423,12 +457,14 @@ export const useAppStore = create<AppState>()(
       },
       
       updateJobParts: (jobId: string, parts: JobPart[]) => {
-        logProductionEvent('job_parts_updated', { 
-          jobId, 
-          mechanicId: 'mechanic-cody',
-          partsCount: parts.length,
-          totalCost: parts.reduce((sum, part) => sum + (part.price * part.quantity), 0)
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('job_parts_updated', { 
+            jobId, 
+            mechanicId: 'mechanic-cody',
+            partsCount: parts.length,
+            totalCost: parts.reduce((sum, part) => sum + (part.price * part.quantity), 0)
+          });
+        }
         
         set((state) => ({
           jobParts: {
@@ -445,12 +481,14 @@ export const useAppStore = create<AppState>()(
       
       // Photo management
       addJobPhotos: (jobId: string, photos: JobPhoto[]) => {
-        logProductionEvent('job_photos_added', { 
-          jobId, 
-          mechanicId: 'mechanic-cody',
-          photoCount: photos.length,
-          photoTypes: photos.map(p => p.type)
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('job_photos_added', { 
+            jobId, 
+            mechanicId: 'mechanic-cody',
+            photoCount: photos.length,
+            photoTypes: photos.map(p => p.type)
+          });
+        }
         
         set((state) => ({
           serviceRequests: state.serviceRequests.map(r => 
@@ -469,11 +507,13 @@ export const useAppStore = create<AppState>()(
       },
       
       removeJobPhoto: (jobId: string, photoId: string) => {
-        logProductionEvent('job_photo_removed', { 
-          jobId, 
-          photoId,
-          mechanicId: 'mechanic-cody'
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('job_photo_removed', { 
+            jobId, 
+            photoId,
+            mechanicId: 'mechanic-cody'
+          });
+        }
         
         set((state) => ({
           serviceRequests: state.serviceRequests.map(r => 
@@ -527,11 +567,13 @@ export const useAppStore = create<AppState>()(
       })),
 
       completeMaintenanceReminder: (reminderId: string, serviceRecord: MaintenanceRecord) => {
-        logProductionEvent('maintenance_reminder_completed', { 
-          reminderId, 
-          serviceRecordId: serviceRecord.id,
-          vehicleId: serviceRecord.vehicleId
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('maintenance_reminder_completed', { 
+            reminderId, 
+            serviceRecordId: serviceRecord.id,
+            vehicleId: serviceRecord.vehicleId
+          });
+        }
         
         set((state) => {
           // Mark reminder as completed
@@ -613,22 +655,26 @@ export const useAppStore = create<AppState>()(
 
       // Verification management
       addMechanicVerification: (verification: MechanicVerification) => {
-        logProductionEvent('mechanic_verification_added', { 
-          verificationId: verification.id, 
-          userId: verification.userId,
-          status: verification.status
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('mechanic_verification_added', { 
+            verificationId: verification.id, 
+            userId: verification.userId,
+            status: verification.status
+          });
+        }
         set((state) => ({
           mechanicVerifications: [...state.mechanicVerifications, verification]
         }));
       },
 
       updateMechanicVerification: (id: string, updates: Partial<MechanicVerification>) => {
-        logProductionEvent('mechanic_verification_updated', { 
-          verificationId: id, 
-          updates: Object.keys(updates),
-          newStatus: updates.status
-        });
+        if (typeof logProductionEvent === 'function') {
+          logProductionEvent('mechanic_verification_updated', { 
+            verificationId: id, 
+            updates: Object.keys(updates),
+            newStatus: updates.status
+          });
+        }
         set((state) => ({
           mechanicVerifications: state.mechanicVerifications.map(v => 
             v.id === id ? { ...v, ...updates } : v
@@ -664,7 +710,7 @@ export const useAppStore = create<AppState>()(
         console.log('App Event:', logData);
         
         // Production: Send to analytics service
-        if (PRODUCTION_CONFIG.enableToolsModule) {
+        if (PRODUCTION_CONFIG && PRODUCTION_CONFIG.enableToolsModule && typeof logProductionEvent === 'function') {
           logProductionEvent(event, { ...data, timestamp });
         }
       },

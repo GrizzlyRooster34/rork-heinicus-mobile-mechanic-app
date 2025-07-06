@@ -61,14 +61,29 @@ export const trpcClient = trpc.createClient({
           const contentType = response.headers.get('content-type');
           if (contentType && contentType.includes('text/html')) {
             console.error('Received HTML response instead of JSON:', {
-              url,
+              contentType,
               status: response.status,
               statusText: response.statusText,
-              contentType
+              url
             });
             
             // Return a mock response for development to prevent crashes
             if (__DEV__) {
+              // Check if this is a verification status query
+              if (url.includes('getVerificationStatus')) {
+                return new Response(JSON.stringify({ 
+                  result: {
+                    data: {
+                      verified: false,
+                      status: null
+                    }
+                  }
+                }), {
+                  status: 200,
+                  headers: { 'Content-Type': 'application/json' }
+                });
+              }
+              
               return new Response(JSON.stringify({ 
                 error: { 
                   message: 'tRPC server not available - using dev fallback',

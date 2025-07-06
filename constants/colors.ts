@@ -6,6 +6,8 @@ export const Colors = {
   
   // Role-specific colors
   mechanic: '#FF6B35',
+  customer: '#4A90E2',
+  admin: '#9B59B6',
   
   // Background colors
   background: '#0A0A0A',
