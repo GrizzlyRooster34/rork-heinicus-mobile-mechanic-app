@@ -17,7 +17,7 @@ export default function MechanicDashboardScreen() {
   const mechanicId = 'mechanic-cody';
   const mechanicJobs = serviceRequests.filter(job => {
     // Only show jobs assigned to Cody or unassigned jobs
-    return !job.assignedMechanicId || job.assignedMechanicId === mechanicId;
+    return !job.mechanicId || job.mechanicId === mechanicId;
   });
 
   const pendingJobs = mechanicJobs.filter(r => r.status === 'pending').length;
