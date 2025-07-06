@@ -6,7 +6,7 @@ const config = getDefaultConfig(__dirname);
 
 // Add support for TypeScript, JSX, and modern JS features
 config.resolver.assetExts.push('bin');
-config.resolver.sourceExts.push('sql');
+config.resolver.sourceExts.push('sql', 'ts', 'tsx', 'js', 'jsx', 'json');
 
 // Configure transformer for better performance
 config.transformer.minifierConfig = {
@@ -21,11 +21,14 @@ config.resolver.platforms = ['ios', 'android', 'native', 'web'];
 
 // Add support for absolute imports
 config.resolver.alias = {
-  '@': './src',
+  '@': './',
 };
 
 // Enable experimental features for better performance
 config.transformer.unstable_allowRequireContext = true;
+
+// Ensure proper module resolution for React Native
+config.resolver.resolverMainFields = ['react-native', 'browser', 'main'];
 
 // Reduce file watching to avoid ENOSPC errors in Termux
 config.watchFolders = [];
