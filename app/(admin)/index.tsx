@@ -40,36 +40,15 @@ export default function AdminDashboardScreen() {
   ].sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 10);
 
   const handleAddUser = () => {
-    Alert.alert(
-      'Add User',
-      'This feature would open a form to add a new user to the system.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Go to Users', onPress: () => router.push('/(admin)/users') }
-      ]
-    );
+    router.push('/(admin)/users');
   };
 
   const handleCreateQuote = () => {
-    Alert.alert(
-      'Create Quote',
-      'This feature would open a form to create a new quote.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Go to Quotes', onPress: () => router.push('/(admin)/quotes') }
-      ]
-    );
+    router.push('/(admin)/quotes');
   };
 
   const handleSystemSettings = () => {
-    Alert.alert(
-      'System Settings',
-      'This feature would open system configuration options.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Go to Settings', onPress: () => router.push('/(admin)/settings') }
-      ]
-    );
+    router.push('/(admin)/settings');
   };
 
   if (user?.role !== 'admin') {
@@ -144,7 +123,7 @@ export default function AdminDashboardScreen() {
               activeOpacity={0.7}
             >
               <Icons.UserPlus size={24} color={colors.primary} />
-              <Text style={[styles.quickActionText, { color: colors.text }]}>Add User</Text>
+              <Text style={[styles.quickActionText, { color: colors.text }]}>Manage Users</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -153,7 +132,7 @@ export default function AdminDashboardScreen() {
               activeOpacity={0.7}
             >
               <Icons.FileText size={24} color={colors.secondary} />
-              <Text style={[styles.quickActionText, { color: colors.text }]}>Create Quote</Text>
+              <Text style={[styles.quickActionText, { color: colors.text }]}>Manage Quotes</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 

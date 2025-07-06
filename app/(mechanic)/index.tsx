@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
-import { Colors } from '@/constants/colors';
+import { useThemeStore } from '@/stores/theme-store';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { SERVICE_CATEGORIES } from '@/constants/services';
@@ -9,6 +9,7 @@ import { MaintenanceReminders } from '@/components/MaintenanceReminders';
 import * as Icons from 'lucide-react-native';
 
 export default function MechanicDashboardScreen() {
+  const { colors } = useThemeStore();
   const { serviceRequests, quotes, getTotalRevenue, getQuotesByStatus, logEvent } = useAppStore();
   const { user, logout } = useAuthStore();
 
@@ -70,73 +71,73 @@ export default function MechanicDashboardScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.welcomeText}>Welcome back, Cody!</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.welcomeText, { color: colors.text }]}>Welcome back, Cody!</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               Mobile Mechanic Dashboard - Production
             </Text>
-            <View style={styles.productionBadge}>
-              <Text style={styles.productionBadgeText}>LIVE MODE</Text>
+            <View style={[styles.productionBadge, { backgroundColor: colors.success }]}>
+              <Text style={[styles.productionBadgeText, { color: colors.white }]}>LIVE MODE</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Icons.LogOut size={20} color={Colors.textMuted} />
+            <Icons.LogOut size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
 
         {/* Stats Grid */}
         <View style={styles.statsSection}>
           <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{pendingJobs}</Text>
-              <Text style={styles.statLabel}>Pending Jobs</Text>
-              <Icons.Clock size={16} color={Colors.warning} />
+            <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.statNumber, { color: colors.text }]}>{pendingJobs}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Pending Jobs</Text>
+              <Icons.Clock size={16} color={colors.warning} />
             </View>
             
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{activeJobs}</Text>
-              <Text style={styles.statLabel}>Active Jobs</Text>
-              <Icons.Wrench size={16} color={Colors.mechanic} />
+            <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.statNumber, { color: colors.text }]}>{activeJobs}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Active Jobs</Text>
+              <Icons.Wrench size={16} color={colors.mechanic} />
             </View>
             
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{completedToday}</Text>
-              <Text style={styles.statLabel}>Completed Today</Text>
-              <Icons.CheckCircle size={16} color={Colors.success} />
+            <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.statNumber, { color: colors.text }]}>{completedToday}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Completed Today</Text>
+              <Icons.CheckCircle size={16} color={colors.success} />
             </View>
             
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>${todayRevenue}</Text>
-              <Text style={styles.statLabel}>Today's Revenue</Text>
-              <Icons.DollarSign size={16} color={Colors.primary} />
+            <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.statNumber, { color: colors.text }]}>${todayRevenue}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Today's Revenue</Text>
+              <Icons.DollarSign size={16} color={colors.primary} />
             </View>
           </View>
         </View>
 
         {/* Weekly Performance */}
         <View style={styles.performanceSection}>
-          <Text style={styles.sectionTitle}>Weekly Performance</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Weekly Performance</Text>
           <View style={styles.performanceGrid}>
-            <View style={styles.performanceCard}>
+            <View style={[styles.performanceCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.performanceHeader}>
-                <Icons.TrendingUp size={20} color={Colors.success} />
-                <Text style={styles.performanceTitle}>Revenue</Text>
+                <Icons.TrendingUp size={20} color={colors.success} />
+                <Text style={[styles.performanceTitle, { color: colors.text }]}>Revenue</Text>
               </View>
-              <Text style={styles.performanceValue}>${weeklyRevenue}</Text>
-              <Text style={styles.performanceSubtext}>Last 7 days</Text>
+              <Text style={[styles.performanceValue, { color: colors.text }]}>${weeklyRevenue}</Text>
+              <Text style={[styles.performanceSubtext, { color: colors.textMuted }]}>Last 7 days</Text>
             </View>
             
-            <View style={styles.performanceCard}>
+            <View style={[styles.performanceCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.performanceHeader}>
-                <Icons.CheckSquare size={20} color={Colors.primary} />
-                <Text style={styles.performanceTitle}>Jobs Completed</Text>
+                <Icons.CheckSquare size={20} color={colors.primary} />
+                <Text style={[styles.performanceTitle, { color: colors.text }]}>Jobs Completed</Text>
               </View>
-              <Text style={styles.performanceValue}>{weeklyJobs}</Text>
-              <Text style={styles.performanceSubtext}>Last 7 days</Text>
+              <Text style={[styles.performanceValue, { color: colors.text }]}>{weeklyJobs}</Text>
+              <Text style={[styles.performanceSubtext, { color: colors.textMuted }]}>Last 7 days</Text>
             </View>
           </View>
         </View>
@@ -146,38 +147,38 @@ export default function MechanicDashboardScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActionsSection}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
           <View style={styles.quickActionsGrid}>
             <TouchableOpacity 
-              style={styles.quickActionCard}
+              style={[styles.quickActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => handleQuickAction('jobs')}
             >
-              <Icons.Briefcase size={24} color={Colors.mechanic} />
-              <Text style={styles.quickActionText}>Manage Jobs</Text>
+              <Icons.Briefcase size={24} color={colors.mechanic} />
+              <Text style={[styles.quickActionText, { color: colors.text }]}>Manage Jobs</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.quickActionCard}
+              style={[styles.quickActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => handleQuickAction('map')}
             >
-              <Icons.Map size={24} color={Colors.mechanic} />
-              <Text style={styles.quickActionText}>View Map</Text>
+              <Icons.Map size={24} color={colors.mechanic} />
+              <Text style={[styles.quickActionText, { color: colors.text }]}>View Map</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.quickActionCard}
+              style={[styles.quickActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => handleQuickAction('customers')}
             >
-              <Icons.Users size={24} color={Colors.mechanic} />
-              <Text style={styles.quickActionText}>Customers</Text>
+              <Icons.Users size={24} color={colors.mechanic} />
+              <Text style={[styles.quickActionText, { color: colors.text }]}>Customers</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.quickActionCard}
+              style={[styles.quickActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => router.push('/profile')}
             >
-              <Icons.Settings size={24} color={Colors.mechanic} />
-              <Text style={styles.quickActionText}>Settings</Text>
+              <Icons.Settings size={24} color={colors.mechanic} />
+              <Text style={[styles.quickActionText, { color: colors.text }]}>Settings</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -185,17 +186,17 @@ export default function MechanicDashboardScreen() {
         {/* Recent Jobs */}
         <View style={styles.recentJobsSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Jobs</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Jobs</Text>
             <TouchableOpacity onPress={() => handleQuickAction('jobs')}>
-              <Text style={styles.viewAllText}>View All</Text>
+              <Text style={[styles.viewAllText, { color: colors.mechanic }]}>View All</Text>
             </TouchableOpacity>
           </View>
           
           {recentJobs.length === 0 ? (
-            <View style={styles.emptyJobs}>
-              <Icons.Briefcase size={48} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>No recent jobs</Text>
-              <Text style={styles.emptySubtext}>
+            <View style={[styles.emptyJobs, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Icons.Briefcase size={48} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No recent jobs</Text>
+              <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>
                 Jobs will appear here when customers request services
               </Text>
             </View>
@@ -204,30 +205,30 @@ export default function MechanicDashboardScreen() {
               {recentJobs.map((job) => (
                 <TouchableOpacity 
                   key={job.id} 
-                  style={styles.jobCard}
+                  style={[styles.jobCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => router.push('/jobs')}
                 >
                   <View style={styles.jobHeader}>
-                    <Text style={styles.jobTitle}>{getServiceTitle(job.type)}</Text>
-                    <View style={[styles.jobStatus, { backgroundColor: getStatusColor(job.status) + '20' }]}>
-                      <Text style={[styles.jobStatusText, { color: getStatusColor(job.status) }]}>
+                    <Text style={[styles.jobTitle, { color: colors.text }]}>{getServiceTitle(job.type)}</Text>
+                    <View style={[styles.jobStatus, { backgroundColor: getStatusColor(job.status, colors) + '20' }]}>
+                      <Text style={[styles.jobStatusText, { color: getStatusColor(job.status, colors) }]}>
                         {job.status.replace('_', ' ')}
                       </Text>
                     </View>
                   </View>
                   
-                  <Text style={styles.jobDescription} numberOfLines={2}>
+                  <Text style={[styles.jobDescription, { color: colors.textSecondary }]} numberOfLines={2}>
                     {job.description}
                   </Text>
                   
                   <View style={styles.jobMeta}>
-                    <Text style={styles.jobDate}>
+                    <Text style={[styles.jobDate, { color: colors.textMuted }]}>
                       {new Date(job.createdAt).toLocaleDateString()}
                     </Text>
                     {job.urgency === 'emergency' && (
-                      <View style={styles.urgencyBadge}>
-                        <Icons.AlertTriangle size={12} color={Colors.error} />
-                        <Text style={styles.urgencyText}>Emergency</Text>
+                      <View style={[styles.urgencyBadge, { backgroundColor: colors.error + '20' }]}>
+                        <Icons.AlertTriangle size={12} color={colors.error} />
+                        <Text style={[styles.urgencyText, { color: colors.error }]}>Emergency</Text>
                       </View>
                     )}
                   </View>
@@ -238,15 +239,15 @@ export default function MechanicDashboardScreen() {
         </View>
 
         {/* Production Info */}
-        <View style={styles.productionInfo}>
-          <Text style={styles.productionInfoTitle}>Production Environment</Text>
-          <Text style={styles.productionInfoText}>
+        <View style={[styles.productionInfo, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.productionInfoTitle, { color: colors.text }]}>Production Environment</Text>
+          <Text style={[styles.productionInfoText, { color: colors.textMuted }]}>
             Mechanic: Cody Owner (Owner Operator)
           </Text>
-          <Text style={styles.productionInfoText}>
+          <Text style={[styles.productionInfoText, { color: colors.textMuted }]}>
             Total Jobs: {mechanicJobs.length}
           </Text>
-          <Text style={styles.productionInfoText}>
+          <Text style={[styles.productionInfoText, { color: colors.textMuted }]}>
             System Status: Live
           </Text>
         </View>
@@ -255,21 +256,20 @@ export default function MechanicDashboardScreen() {
   );
 }
 
-function getStatusColor(status: string) {
+function getStatusColor(status: string, colors: any) {
   switch (status) {
-    case 'pending': return Colors.warning;
-    case 'quoted': return Colors.primary;
-    case 'accepted': return Colors.success;
-    case 'in_progress': return Colors.mechanic;
-    case 'completed': return Colors.success;
-    default: return Colors.textMuted;
+    case 'pending': return colors.warning;
+    case 'quoted': return colors.primary;
+    case 'accepted': return colors.success;
+    case 'in_progress': return colors.mechanic;
+    case 'completed': return colors.success;
+    default: return colors.textMuted;
   }
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   content: {
     padding: 20,
@@ -283,16 +283,13 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 28,
     fontWeight: '700',
-    color: Colors.text,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.textSecondary,
     marginBottom: 8,
   },
   productionBadge: {
-    backgroundColor: Colors.success,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -300,7 +297,6 @@ const styles = StyleSheet.create({
   },
   productionBadgeText: {
     fontSize: 12,
-    color: Colors.white,
     fontWeight: '600',
   },
   logoutButton: {
@@ -317,22 +313,18 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     minWidth: '48%',
-    backgroundColor: Colors.card,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   statNumber: {
     fontSize: 24,
     fontWeight: '700',
-    color: Colors.text,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -345,11 +337,9 @@ const styles = StyleSheet.create({
   },
   performanceCard: {
     flex: 1,
-    backgroundColor: Colors.card,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   performanceHeader: {
     flexDirection: 'row',
@@ -360,17 +350,14 @@ const styles = StyleSheet.create({
   performanceTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.text,
   },
   performanceValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.text,
     marginBottom: 4,
   },
   performanceSubtext: {
     fontSize: 12,
-    color: Colors.textMuted,
   },
   quickActionsSection: {
     marginBottom: 24,
@@ -378,7 +365,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: Colors.text,
     marginBottom: 16,
   },
   quickActionsGrid: {
@@ -387,9 +373,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   quickActionCard: {
-    backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -399,7 +383,6 @@ const styles = StyleSheet.create({
   },
   quickActionText: {
     fontSize: 14,
-    color: Colors.text,
     fontWeight: '500',
     marginTop: 8,
     textAlign: 'center',
@@ -415,37 +398,30 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 14,
-    color: Colors.mechanic,
     fontWeight: '500',
   },
   emptyJobs: {
     alignItems: 'center',
     padding: 32,
-    backgroundColor: Colors.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   emptyText: {
     fontSize: 16,
-    color: Colors.textSecondary,
     marginTop: 12,
     marginBottom: 4,
   },
   emptySubtext: {
     fontSize: 12,
-    color: Colors.textMuted,
     textAlign: 'center',
   },
   jobsList: {
     gap: 12,
   },
   jobCard: {
-    backgroundColor: Colors.card,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   jobHeader: {
     flexDirection: 'row',
@@ -456,7 +432,6 @@ const styles = StyleSheet.create({
   jobTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.text,
     flex: 1,
   },
   jobStatus: {
@@ -471,7 +446,6 @@ const styles = StyleSheet.create({
   },
   jobDescription: {
     fontSize: 14,
-    color: Colors.textSecondary,
     marginBottom: 12,
     lineHeight: 20,
   },
@@ -482,39 +456,32 @@ const styles = StyleSheet.create({
   },
   jobDate: {
     fontSize: 12,
-    color: Colors.textMuted,
   },
   urgencyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.error + '20',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   urgencyText: {
     fontSize: 10,
-    color: Colors.error,
     fontWeight: '600',
   },
   productionInfo: {
-    backgroundColor: Colors.card,
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.border,
     marginTop: 20,
   },
   productionInfoTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.text,
     marginBottom: 8,
   },
   productionInfoText: {
     fontSize: 12,
-    color: Colors.textMuted,
     marginBottom: 4,
   },
 });

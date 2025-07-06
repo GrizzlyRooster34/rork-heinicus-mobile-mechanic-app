@@ -1,9 +1,7 @@
 import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { useThemeStore } from '@/stores/theme-store';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import * as Icons from 'lucide-react-native';
 
 function TabBarIcon({ name, color }: { name: keyof typeof Icons; color: string }) {
@@ -21,28 +19,24 @@ export default function CustomerTabLayout() {
   }
 
   return (
-    <>
-      <View style={styles.themeToggleContainer}>
-        <ThemeToggle />
-      </View>
-      <Tabs
-        screenOptions={{
-          tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: colors.textMuted,
-          tabBarStyle: {
-            backgroundColor: colors.surface,
-            borderTopColor: colors.border,
-            borderTopWidth: 1,
-          },
-          headerStyle: {
-            backgroundColor: colors.background,
-          },
-          headerTintColor: colors.text,
-          headerTitleStyle: {
-            fontWeight: '600',
-          },
-        }}
-      >
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+        },
+        headerStyle: {
+          backgroundColor: colors.background,
+        },
+        headerTintColor: colors.text,
+        headerTitleStyle: {
+          fontWeight: '600',
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
@@ -79,16 +73,6 @@ export default function CustomerTabLayout() {
           tabBarIcon: ({ color }) => <TabBarIcon name="User" color={color} />,
         }}
       />
-      </Tabs>
-    </>
+    </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  themeToggleContainer: {
-    position: 'absolute',
-    top: 60,
-    right: 16,
-    zIndex: 1000,
-  },
-});

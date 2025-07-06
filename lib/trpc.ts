@@ -60,17 +60,17 @@ export const trpcClient = trpc.createClient({
           // Check if response is HTML (likely a 404 or error page)
           const contentType = response.headers.get('content-type');
           if (contentType && contentType.includes('text/html')) {
+            const urlString = typeof url === 'string' ? url : url.toString();
             console.error('Received HTML response instead of JSON:', {
               contentType,
               status: response.status,
               statusText: response.statusText,
-              url: typeof url === 'string' ? url : url.toString()
+              url: urlString
             });
             
             // Return a mock response for development to prevent crashes
             if (__DEV__) {
               // Check if this is a verification status query
-              const urlString = typeof url === 'string' ? url : url.toString();
               if (urlString.includes('getVerificationStatus')) {
                 return new Response(JSON.stringify({ 
                   result: {
@@ -96,7 +96,7 @@ export const trpcClient = trpc.createClient({
               });
             }
             
-            throw new Error(`Server returned HTML instead of JSON. Check if tRPC server is running at ${url}`);
+            throw new Error(`Server returned HTML instead of JSON. Check if tRPC server is running at ${urlString}`);
           }
           
           return response;

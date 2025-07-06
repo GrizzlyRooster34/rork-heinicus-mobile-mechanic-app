@@ -1,46 +1,6 @@
-export const LightColors = {
-  // Primary brand colors - blue/cyan theme
-  primary: '#007AFF',
-  primaryDark: '#0056CC',
-  secondary: '#5856D6',
-  
-  // Role-specific colors
-  mechanic: '#FF6B35',
-  customer: '#007AFF',
-  admin: '#AF52DE',
-  
-  // Background colors
-  background: '#FFFFFF',
-  surface: '#F2F2F7',
-  card: '#FFFFFF',
-  
-  // Border and divider colors
-  border: '#C6C6C8',
-  
-  // Text colors
-  text: '#000000',
-  textSecondary: '#3C3C43',
-  textMuted: '#8E8E93',
-  
-  // Status colors
-  success: '#34C759',
-  successBackground: '#E8F5E8',
-  warning: '#FF9500',
-  error: '#FF3B30',
-  errorBackground: '#FFE8E8',
-  info: '#007AFF',
-  
-  // Utility colors
-  white: '#FFFFFF',
-  black: '#000000',
-  transparent: 'transparent',
-  
-  // Development colors
-  development: '#FF9500',
-};
-
-export const DarkColors = {
-  // Primary brand colors - blue/cyan theme
+// Dark theme colors only
+export const Colors = {
+  // Primary brand colors
   primary: '#0A84FF',
   primaryDark: '#0056CC',
   secondary: '#5E5CE6',
@@ -80,5 +40,6 @@ export const DarkColors = {
   development: '#FF9F0A',
 };
 
-// Default to light theme for better visibility
-export const Colors = LightColors;
+// Legacy exports for compatibility
+export const LightColors = Colors;
+export const DarkColors = Colors;
