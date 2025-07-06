@@ -1,0 +1,93 @@
+name: Build APK (Rork Framework)
+
+on:
+  push:
+    branches: [ main, rork-model-by-claude ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 🏗 Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: 🏗 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 🏗 Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: 📦 Install dependencies
+      run: npm ci --legacy-peer-deps
+      
+    - name: 🔢 Bump version
+      run: |
+        # Update versionCode in app.json
+        node -e "
+          const fs = require('fs');
+          const appJson = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+          appJson.expo.android.versionCode = (appJson.expo.android.versionCode || 1) + 1;
+          fs.writeFileSync('app.json', JSON.stringify(appJson, null, 2));
+          console.log('Updated versionCode to:', appJson.expo.android.versionCode);
+        "
+      
+    - name: 🏗 Setup Expo CLI
+      run: npm install -g @expo/cli@latest
+        
+    - name: 📱 Generate standalone Android project
+      run: npx expo prebuild --platform android --clean
+      env:
+        EXPO_NO_DOTENV: 1
+        EXPO_NO_TYPESCRIPT_SETUP: 1
+      
+    - name: 🔨 Build standalone APK
+      run: |
+        cd android
+        chmod +x ./gradlew
+        ./gradlew assembleRelease --no-daemon
+        
+    - name: 📋 Get APK info
+      id: apk_info
+      run: |
+        APK_PATH=$(find android/app/build/outputs/apk -name "*.apk" | head -1)
+        APK_SIZE=$(stat -c%s "$APK_PATH" | numfmt --to=iec)
+        echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+        echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
+        echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        echo "build_number=$(node -p "require('./app.json').expo.android.versionCode")" >> $GITHUB_OUTPUT
+        
+    - name: 📤 Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: heinicus-mechanic-v${{ steps.apk_info.outputs.version }}-build${{ steps.apk_info.outputs.build_number }}.apk
+        path: ${{ steps.apk_info.outputs.apk_path }}
+        retention-days: 30
+        
+    - name: 📊 Build Summary
+      run: |
+        echo "## 🎉 Rork APK Build Completed!" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version**: ${{ steps.apk_info.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Number**: ${{ steps.apk_info.outputs.build_number }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **APK Size**: ${{ steps.apk_info.outputs.apk_size }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Package**: app.rork.mobilemechanic" >> $GITHUB_STEP_SUMMARY
+        echo "- **Framework**: Rork + Expo" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 OnePlus 9 Pro Installation:" >> $GITHUB_STEP_SUMMARY
+        echo "1. Download APK from Artifacts above" >> $GITHUB_STEP_SUMMARY
+        echo "2. Enable 'Install from unknown sources'" >> $GITHUB_STEP_SUMMARY
+        echo "3. Install APK and grant permissions" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🎯 App Features:" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Rork framework integration" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Dark theme by default" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ NativeWind styling" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Mechanic verification system" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Enhanced error handling" >> $GITHUB_STEP_SUMMARY

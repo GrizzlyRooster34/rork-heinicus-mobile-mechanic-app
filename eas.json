@@ -18,6 +18,13 @@
         "gradleCommand": ":app:assembleRelease"
       }
     },
+    "standalone": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      }
+    },
     "production": {
       "android": {
         "buildType": "aab"
