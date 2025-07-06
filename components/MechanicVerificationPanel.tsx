@@ -29,7 +29,7 @@ export function MechanicVerificationPanel({ onVerificationSubmitted }: MechanicV
       setSelfieUri(null);
       setIdUri(null);
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.log('Verification submission error:', error);
       Alert.alert(
         'Submission Failed', 
@@ -125,10 +125,16 @@ export function MechanicVerificationPanel({ onVerificationSubmitted }: MechanicV
     }
 
     setIsSubmitting(true);
+    
+    // For demo purposes, we'll use placeholder URLs since we can't upload actual files
+    // In production, you would upload the images to a cloud storage service first
+    const demoPhotoUri = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face';
+    const demoIdUri = 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop';
+    
     submitVerificationMutation.mutate({
       fullName: fullName.trim(),
-      photoUri: selfieUri,
-      idUri: idUri,
+      photoUri: demoPhotoUri,
+      idUri: demoIdUri,
     });
   };
 

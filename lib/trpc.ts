@@ -39,7 +39,6 @@ export const trpcClient = trpc.createClient({
   links: [
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
-      transformer: superjson,
       headers: () => {
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
@@ -64,13 +63,14 @@ export const trpcClient = trpc.createClient({
               contentType,
               status: response.status,
               statusText: response.statusText,
-              url
+              url: typeof url === 'string' ? url : url.toString()
             });
             
             // Return a mock response for development to prevent crashes
             if (__DEV__) {
               // Check if this is a verification status query
-              if (typeof url === 'string' && url.includes('getVerificationStatus')) {
+              const urlString = typeof url === 'string' ? url : url.toString();
+              if (urlString.includes('getVerificationStatus')) {
                 return new Response(JSON.stringify({ 
                   result: {
                     data: {
@@ -102,14 +102,14 @@ export const trpcClient = trpc.createClient({
         } catch (error: unknown) {
           if (error instanceof Error) {
             console.error('tRPC fetch error:', {
-              url,
+              url: typeof url === 'string' ? url : url.toString(),
               message: error.message,
               stack: error.stack,
               timestamp: new Date().toISOString()
             });
           } else {
             console.error('tRPC fetch error (unknown type):', {
-              url,
+              url: typeof url === 'string' ? url : url.toString(),
               error: String(error),
               timestamp: new Date().toISOString()
             });

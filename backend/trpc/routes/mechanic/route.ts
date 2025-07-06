@@ -41,55 +41,60 @@ export const mechanicRouter = router({
       idUri: z.string().url('Invalid ID photo URL'),
     }))
     .mutation(async ({ ctx, input }: { ctx: Context; input: { fullName: string; photoUri: string; idUri: string } }) => {
-      const user = getUserFromRequest(ctx.req);
-      
-      // Check if user is a mechanic
-      if (user.role !== 'mechanic') {
-        throw new Error('Only mechanics can submit verification');
-      }
-
-      // Check if already submitted
-      const existingSubmission = verificationSubmissions.find(
-        sub => sub.userId === user.id && sub.status === 'pending'
-      );
-      
-      if (existingSubmission) {
-        throw new Error('Verification already submitted and pending review');
-      }
-
-      // Create new verification submission
-      const verificationId = `verification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      const newSubmission = {
-        id: verificationId,
-        userId: user.id,
-        fullName: input.fullName,
-        photoUri: input.photoUri,
-        idUri: input.idUri,
-        status: 'pending' as const,
-        submittedAt: new Date(),
-      };
-
-      verificationSubmissions.push(newSubmission);
-
-      // Log the submission for production monitoring
-      console.log('Mechanic verification submitted:', {
-        verificationId,
-        userId: user.id,
-        mechanicName: input.fullName,
-        timestamp: new Date().toISOString(),
-      });
-
-      return {
-        success: true,
-        verificationId,
-        message: 'Verification submitted successfully',
-        submission: {
-          id: newSubmission.id,
-          status: newSubmission.status,
-          submittedAt: newSubmission.submittedAt,
+      try {
+        const user = getUserFromRequest(ctx.req);
+        
+        // Check if user is a mechanic
+        if (user.role !== 'mechanic') {
+          throw new Error('Only mechanics can submit verification');
         }
-      };
+
+        // Check if already submitted
+        const existingSubmission = verificationSubmissions.find(
+          sub => sub.userId === user.id && sub.status === 'pending'
+        );
+        
+        if (existingSubmission) {
+          throw new Error('Verification already submitted and pending review');
+        }
+
+        // Create new verification submission
+        const verificationId = `verification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        const newSubmission = {
+          id: verificationId,
+          userId: user.id,
+          fullName: input.fullName,
+          photoUri: input.photoUri,
+          idUri: input.idUri,
+          status: 'pending' as const,
+          submittedAt: new Date(),
+        };
+
+        verificationSubmissions.push(newSubmission);
+
+        // Log the submission for production monitoring
+        console.log('Mechanic verification submitted:', {
+          verificationId,
+          userId: user.id,
+          mechanicName: input.fullName,
+          timestamp: new Date().toISOString(),
+        });
+
+        return {
+          success: true,
+          verificationId,
+          message: 'Verification submitted successfully',
+          submission: {
+            id: newSubmission.id,
+            status: newSubmission.status,
+            submittedAt: newSubmission.submittedAt,
+          }
+        };
+      } catch (error) {
+        console.error('Error in submitVerification:', error);
+        throw error;
+      }
     }),
 
   getVerificationStatus: protectedProcedure
@@ -127,23 +132,28 @@ export const mechanicRouter = router({
   // Admin-only procedures for managing verifications
   getAllVerifications: protectedProcedure
     .query(async ({ ctx }: { ctx: Context }) => {
-      const user = getUserFromRequest(ctx.req);
-      
-      if (user.role !== 'admin') {
-        throw new Error('Only admins can view all verifications');
-      }
+      try {
+        const user = getUserFromRequest(ctx.req);
+        
+        if (user.role !== 'admin') {
+          throw new Error('Only admins can view all verifications');
+        }
 
-      return verificationSubmissions
-        .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime())
-        .map(sub => ({
-          id: sub.id,
-          userId: sub.userId,
-          fullName: sub.fullName,
-          status: sub.status,
-          submittedAt: sub.submittedAt,
-          reviewedAt: sub.reviewedAt,
-          reviewedBy: sub.reviewedBy,
-        }));
+        return verificationSubmissions
+          .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime())
+          .map(sub => ({
+            id: sub.id,
+            userId: sub.userId,
+            fullName: sub.fullName,
+            status: sub.status,
+            submittedAt: sub.submittedAt,
+            reviewedAt: sub.reviewedAt,
+            reviewedBy: sub.reviewedBy,
+          }));
+      } catch (error) {
+        console.error('Error in getAllVerifications:', error);
+        throw error;
+      }
     }),
 
   reviewVerification: protectedProcedure
@@ -153,41 +163,46 @@ export const mechanicRouter = router({
       reviewNotes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }: { ctx: Context; input: { verificationId: string; status: 'approved' | 'rejected'; reviewNotes?: string } }) => {
-      const user = getUserFromRequest(ctx.req);
-      
-      if (user.role !== 'admin') {
-        throw new Error('Only admins can review verifications');
+      try {
+        const user = getUserFromRequest(ctx.req);
+        
+        if (user.role !== 'admin') {
+          throw new Error('Only admins can review verifications');
+        }
+
+        const submissionIndex = verificationSubmissions.findIndex(
+          sub => sub.id === input.verificationId
+        );
+
+        if (submissionIndex === -1) {
+          throw new Error('Verification submission not found');
+        }
+
+        // Update the submission
+        verificationSubmissions[submissionIndex] = {
+          ...verificationSubmissions[submissionIndex],
+          status: input.status,
+          reviewedAt: new Date(),
+          reviewedBy: user.id,
+          reviewNotes: input.reviewNotes,
+        };
+
+        // Log the review for production monitoring
+        console.log('Mechanic verification reviewed:', {
+          verificationId: input.verificationId,
+          status: input.status,
+          reviewedBy: user.id,
+          timestamp: new Date().toISOString(),
+        });
+
+        return {
+          success: true,
+          message: `Verification ${input.status} successfully`,
+        };
+      } catch (error) {
+        console.error('Error in reviewVerification:', error);
+        throw error;
       }
-
-      const submissionIndex = verificationSubmissions.findIndex(
-        sub => sub.id === input.verificationId
-      );
-
-      if (submissionIndex === -1) {
-        throw new Error('Verification submission not found');
-      }
-
-      // Update the submission
-      verificationSubmissions[submissionIndex] = {
-        ...verificationSubmissions[submissionIndex],
-        status: input.status,
-        reviewedAt: new Date(),
-        reviewedBy: user.id,
-        reviewNotes: input.reviewNotes,
-      };
-
-      // Log the review for production monitoring
-      console.log('Mechanic verification reviewed:', {
-        verificationId: input.verificationId,
-        status: input.status,
-        reviewedBy: user.id,
-        timestamp: new Date().toISOString(),
-      });
-
-      return {
-        success: true,
-        message: `Verification ${input.status} successfully`,
-      };
     }),
 
   getVerificationDetails: protectedProcedure
@@ -195,20 +210,25 @@ export const mechanicRouter = router({
       verificationId: z.string(),
     }))
     .query(async ({ ctx, input }: { ctx: Context; input: { verificationId: string } }) => {
-      const user = getUserFromRequest(ctx.req);
-      
-      if (user.role !== 'admin') {
-        throw new Error('Only admins can view verification details');
+      try {
+        const user = getUserFromRequest(ctx.req);
+        
+        if (user.role !== 'admin') {
+          throw new Error('Only admins can view verification details');
+        }
+
+        const submission = verificationSubmissions.find(
+          sub => sub.id === input.verificationId
+        );
+
+        if (!submission) {
+          throw new Error('Verification submission not found');
+        }
+
+        return submission;
+      } catch (error) {
+        console.error('Error in getVerificationDetails:', error);
+        throw error;
       }
-
-      const submission = verificationSubmissions.find(
-        sub => sub.id === input.verificationId
-      );
-
-      if (!submission) {
-        throw new Error('Verification submission not found');
-      }
-
-      return submission;
     }),
 });

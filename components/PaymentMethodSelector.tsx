@@ -47,23 +47,36 @@ export default function PaymentMethodSelector({ onSelect, selectedMethod }: Paym
               onPress={() => handleSelect(method.id)}
               disabled={isDisabled}
             >
-              <IconComponent 
-                size={20} 
-                color={
-                  isDisabled 
-                    ? Colors.textMuted 
-                    : isSelected 
-                      ? Colors.white 
-                      : Colors.textSecondary
-                } 
-              />
-              <Text style={[
-                styles.methodLabel,
-                isSelected && styles.methodLabelSelected,
-                isDisabled && styles.methodLabelDisabled,
+              <View style={styles.methodContent}>
+                <IconComponent 
+                  size={20} 
+                  color={
+                    isDisabled 
+                      ? Colors.textMuted 
+                      : isSelected 
+                        ? Colors.white 
+                        : Colors.textSecondary
+                  } 
+                />
+                <Text style={[
+                  styles.methodLabel,
+                  isSelected && styles.methodLabelSelected,
+                  isDisabled && styles.methodLabelDisabled,
+                ]}>
+                  {method.label}
+                </Text>
+              </View>
+              
+              {/* Radio Button */}
+              <View style={[
+                styles.radioButton,
+                isSelected && styles.radioButtonSelected,
+                isDisabled && styles.radioButtonDisabled,
               ]}>
-                {method.label}
-              </Text>
+                {isSelected && !isDisabled && (
+                  <View style={styles.radioButtonInner} />
+                )}
+              </View>
             </TouchableOpacity>
           );
         })}
@@ -88,7 +101,7 @@ const styles = StyleSheet.create({
   methodOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
     backgroundColor: Colors.card,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -102,6 +115,12 @@ const styles = StyleSheet.create({
   methodOptionDisabled: {
     opacity: 0.5,
   },
+  methodContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
   methodLabel: {
     fontSize: 14,
     color: Colors.textSecondary,
@@ -113,5 +132,26 @@ const styles = StyleSheet.create({
   },
   methodLabelDisabled: {
     color: Colors.textMuted,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioButtonSelected: {
+    borderColor: Colors.white,
+  },
+  radioButtonDisabled: {
+    borderColor: Colors.textMuted,
+  },
+  radioButtonInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.white,
   },
 });

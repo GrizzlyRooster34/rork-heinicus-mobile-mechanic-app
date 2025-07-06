@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Alert, Platform, ScrollView } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { Button } from '@/components/Button';
 import { Quote } from '@/types/service';
@@ -166,7 +166,7 @@ export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel 
           </TouchableOpacity>
         </View>
 
-        <View style={styles.content}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
           {/* Payment Type Info */}
           {paymentType === 'deposit' && (
             <View style={styles.depositInfo}>
@@ -340,7 +340,7 @@ export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel 
               Your payment is secured with 256-bit SSL encryption
             </Text>
           </View>
-        </View>
+        </ScrollView>
 
         {/* Payment Actions */}
         <View style={styles.actions}>
@@ -384,9 +384,12 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  content: {
     padding: 20,
+    paddingBottom: 40,
   },
   depositInfo: {
     flexDirection: 'row',
@@ -463,6 +466,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 4,
   },
   breakdownLabel: {
     fontSize: 14,

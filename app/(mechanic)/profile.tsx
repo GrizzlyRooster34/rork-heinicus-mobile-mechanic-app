@@ -22,20 +22,13 @@ export default function MechanicProfileScreen() {
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType>('car');
 
   // Get verification status
-  const { data: verificationStatus, refetch: refetchVerificationStatus, error: verificationError } = trpc.mechanic.getVerificationStatus.useQuery(
+  const { data: verificationStatus, refetch: refetchVerificationStatus } = trpc.mechanic.getVerificationStatus.useQuery(
     undefined,
     {
       retry: false,
       refetchOnWindowFocus: false,
     }
   );
-
-  // Handle verification error
-  React.useEffect(() => {
-    if (verificationError) {
-      console.log('Verification status query failed:', verificationError.message);
-    }
-  }, [verificationError]);
 
   const completedJobs = serviceRequests.filter(r => r.status === 'completed').length;
   const totalRevenue = quotes
@@ -66,7 +59,7 @@ export default function MechanicProfileScreen() {
 
   const getVerificationStatusDisplay = () => {
     // If there's an error or no data, show verification required
-    if (!verificationStatus || verificationError) {
+    if (!verificationStatus) {
       return {
         icon: 'AlertCircle',
         text: 'Verification Required',

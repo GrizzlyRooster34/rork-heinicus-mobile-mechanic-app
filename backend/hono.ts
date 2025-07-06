@@ -58,7 +58,7 @@ app.all("*", (c) => {
     error: "Route not found",
     method: c.req.method,
     path: c.req.url,
-    availableRoutes: ["/", "/trpc/*"]
+    availableRoutes: ["/", "/debug/routes", "/trpc/*"]
   }, 404);
 });
 
