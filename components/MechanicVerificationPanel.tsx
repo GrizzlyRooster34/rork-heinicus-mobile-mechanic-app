@@ -29,7 +29,7 @@ export function MechanicVerificationPanel({ onVerificationSubmitted }: MechanicV
       setSelfieUri(null);
       setIdUri(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.log('Verification submission error:', error);
       Alert.alert(
         'Submission Failed', 

@@ -27,11 +27,15 @@ export default function MechanicProfileScreen() {
     {
       retry: false,
       refetchOnWindowFocus: false,
-      onError: (error) => {
-        console.log('Verification status query failed:', error.message);
-      }
     }
   );
+
+  // Handle verification error
+  React.useEffect(() => {
+    if (verificationError) {
+      console.log('Verification status query failed:', verificationError.message);
+    }
+  }, [verificationError]);
 
   const completedJobs = serviceRequests.filter(r => r.status === 'completed').length;
   const totalRevenue = quotes

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { publicProcedure, router } from '../../trpc';
+import { publicProcedure, protectedProcedure, router } from '../../trpc';
 import type { Context } from '../../create-context';
 
 // Mock storage for verification submissions (in production, this would be a database)
@@ -31,7 +31,7 @@ function getUserFromRequest(req: Request): { id: string; role: 'mechanic' | 'adm
 }
 
 export const mechanicRouter = router({
-  submitVerification: publicProcedure
+  submitVerification: protectedProcedure
     .input(z.object({
       fullName: z.string().min(2, 'Full name must be at least 2 characters'),
       photoUri: z.string().url('Invalid photo URL'),
@@ -89,7 +89,7 @@ export const mechanicRouter = router({
       };
     }),
 
-  getVerificationStatus: publicProcedure
+  getVerificationStatus: protectedProcedure
     .query(async ({ ctx }: { ctx: Context }) => {
       const user = getUserFromRequest(ctx.req);
       
@@ -116,7 +116,7 @@ export const mechanicRouter = router({
     }),
 
   // Admin-only procedures for managing verifications
-  getAllVerifications: publicProcedure
+  getAllVerifications: protectedProcedure
     .query(async ({ ctx }: { ctx: Context }) => {
       const user = getUserFromRequest(ctx.req);
       
@@ -137,7 +137,7 @@ export const mechanicRouter = router({
         }));
     }),
 
-  reviewVerification: publicProcedure
+  reviewVerification: protectedProcedure
     .input(z.object({
       verificationId: z.string(),
       status: z.enum(['approved', 'rejected']),
@@ -181,7 +181,7 @@ export const mechanicRouter = router({
       };
     }),
 
-  getVerificationDetails: publicProcedure
+  getVerificationDetails: protectedProcedure
     .input(z.object({
       verificationId: z.string(),
     }))
