@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "Mobile Mechanic Service App",
-    "slug": "mobile-mechanic-service-app",
+    "name": "Heinicus Mechanic",
+    "slug": "heinicus-mobile-mechanic-app",
     "version": "1.0.0",
+    "owner": "heinicus1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mobilemechanic",
@@ -18,16 +19,18 @@
       "bundleIdentifier": "com.mobilemechanic.app"
     },
     "android": {
+      "versionCode": 4,
+      "package": "com.heinicus.mobilemechanic",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "package": "com.mobilemechanic.app"
+      }
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "expo-dev-client",
       [
         "expo-router",
         {
@@ -39,7 +42,6 @@
         {
           "icon": "./assets/images/notification-icon.png",
           "color": "#000000",
-          "sounds": ["./assets/sounds/notification.wav"],
           "mode": "production"
         }
       ]

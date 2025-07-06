@@ -27,4 +27,27 @@ config.resolver.alias = {
 // Enable experimental features for better performance
 config.transformer.unstable_allowRequireContext = true;
 
+// Reduce file watching to avoid ENOSPC errors in Termux
+config.watchFolders = [];
+config.resolver.blockList = [
+  /node_modules\/.*\/android\/.*/,
+  /node_modules\/.*\/ios\/.*/,
+  /node_modules\/.*\/gradle\/.*/,
+  /node_modules\/.*\/kotlin\/.*/,
+  /node_modules\/.*\/java\/.*/,
+];
+
+// Disable file watching for problematic directories
+config.watcher = {
+  ...config.watcher,
+  watchman: false,
+  ignored: [
+    /node_modules\/.*\/android\/.*/,
+    /node_modules\/.*\/ios\/.*/,
+    /node_modules\/.*\/gradle\/.*/,
+    /node_modules\/.*\/kotlin\/.*/,
+    /node_modules\/.*\/java\/.*/,
+  ],
+};
+
 module.exports = config;

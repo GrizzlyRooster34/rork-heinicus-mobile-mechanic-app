@@ -1,5 +1,5 @@
 {
-  "name": "expo-app",
+  "name": "heinicus-mobile-mechanic-app",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -22,7 +22,12 @@
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "type-check": "tsc --noEmit",
     "prebuild": "expo prebuild",
-    "prebuild:clean": "expo prebuild --clean"
+    "prebuild:clean": "expo prebuild --clean",
+    "bump": "node scripts/bumpVersion.js",
+    "build:dev": "npm run bump && eas build -p android --profile development --non-interactive",
+    "build:preview": "npm run bump && eas build -p android --profile preview",
+    "build:prod": "npm run bump && eas build -p android --profile production",
+    "build:apk": "npm run build:dev"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
@@ -43,6 +48,7 @@
     "expo-blur": "~14.1.4",
     "expo-camera": "~16.1.10",
     "expo-constants": "~17.1.4",
+    "expo-dev-client": "^5.2.4",
     "expo-device": "^7.1.4",
     "expo-font": "~13.3.0",
     "expo-haptics": "~14.1.4",
