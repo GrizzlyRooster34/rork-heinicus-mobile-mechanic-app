@@ -23,7 +23,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
         
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -34,27 +33,35 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+        
     - name: Cache dependencies
       uses: actions/cache@v4
       with:
         path: |
-          ~/.npm
+          ~/.bun/install/cache
           node_modules
           android/.gradle
-        key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.gradle*') }}
+        key: ${{ runner.os }}-deps-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('**/*.gradle*') }}
         restore-keys: |
           ${{ runner.os }}-deps-
           
+    - name: Install dependencies
+      run: bun install --frozen-lockfile
+      
     - name: Setup CI environment
       run: |
         chmod +x ./scripts/setup-ci.sh
         ./scripts/setup-ci.sh
         
     - name: Install Expo CLI
-      run: npm install -g @expo/cli@latest
+      run: bun add -g @expo/cli@latest
       
     - name: Prebuild for Android
-      run: npx expo prebuild --platform android --clean
+      run: bunx expo prebuild --platform android --clean
       
     - name: Build Android APK
       run: |

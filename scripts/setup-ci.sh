@@ -34,34 +34,46 @@ if [ "$CI" = "true" ]; then
     exit 1
   fi
   
-  # Generate package-lock.json if it doesn't exist
-  if [ ! -f "package-lock.json" ]; then
-    print_status "🔧 Generating package-lock.json for CI compatibility..."
-    npm install --package-lock-only
+  # Check if we should use Bun or npm in CI
+  if command -v bun &> /dev/null; then
+    print_status "🥖 Using Bun in CI environment"
     
-    if [ -f "package-lock.json" ]; then
-      print_status "✅ package-lock.json generated successfully"
+    # Install dependencies with Bun
+    print_status "📥 Installing dependencies with Bun..."
+    bun install --frozen-lockfile
+    
+  else
+    print_status "📦 Using npm in CI environment"
+    
+    # Generate package-lock.json if it doesn't exist
+    if [ ! -f "package-lock.json" ]; then
+      print_status "🔧 Generating package-lock.json for CI compatibility..."
+      npm install --package-lock-only
+      
+      if [ -f "package-lock.json" ]; then
+        print_status "✅ package-lock.json generated successfully"
+      else
+        print_error "❌ Failed to generate package-lock.json"
+        exit 1
+      fi
     else
-      print_error "❌ Failed to generate package-lock.json"
-      exit 1
+      print_status "📦 package-lock.json already exists"
     fi
-  else
-    print_status "📦 package-lock.json already exists"
+    
+    # Verify package-lock.json integrity
+    print_status "🔍 Verifying package-lock.json integrity..."
+    if npm ls --depth=0 > /dev/null 2>&1; then
+      print_status "✅ Package integrity verified"
+    else
+      print_warning "⚠️  Package integrity issues detected, regenerating..."
+      rm -f package-lock.json
+      npm install --package-lock-only
+    fi
+    
+    # Install dependencies with npm in CI
+    print_status "📥 Installing dependencies with npm..."
+    npm ci --prefer-offline --no-audit --progress=false
   fi
-  
-  # Verify package-lock.json integrity
-  print_status "🔍 Verifying package-lock.json integrity..."
-  if npm ls --depth=0 > /dev/null 2>&1; then
-    print_status "✅ Package integrity verified"
-  else
-    print_warning "⚠️  Package integrity issues detected, regenerating..."
-    rm -f package-lock.json
-    npm install --package-lock-only
-  fi
-  
-  # Install dependencies with npm in CI
-  print_status "📥 Installing dependencies with npm..."
-  npm ci --prefer-offline --no-audit --progress=false
   
   # Verify critical dependencies
   print_status "🔍 Verifying critical dependencies..."
@@ -158,6 +170,7 @@ echo ""
 echo "📋 Environment Summary:"
 echo "  Node.js: $(node --version 2>/dev/null || echo 'Not found')"
 echo "  npm: $(npm --version 2>/dev/null || echo 'Not found')"
+echo "  Bun: $(bun --version 2>/dev/null || echo 'Not found')"
 echo "  Java: $(java -version 2>&1 | head -n1 | cut -d'"' -f2 2>/dev/null || echo 'Not found')"
 echo "  Android SDK: ${ANDROID_HOME:-'Not configured'}"
 echo "  CI Mode: ${CI:-false}"

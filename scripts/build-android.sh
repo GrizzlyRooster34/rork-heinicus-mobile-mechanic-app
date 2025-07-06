@@ -85,7 +85,11 @@ fi
 
 # Prebuild for Android
 print_status "Prebuilding for Android..."
-bunx expo prebuild --platform android --clean
+if command -v bun &> /dev/null; then
+    bunx expo prebuild --platform android --clean
+else
+    npx expo prebuild --platform android --clean
+fi
 
 # Build Android APK
 print_status "Building Android APK..."
