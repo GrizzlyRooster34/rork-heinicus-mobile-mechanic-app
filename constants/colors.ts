@@ -4,6 +4,9 @@ export const Colors = {
   primaryDark: '#0099CC',
   secondary: '#1E90FF',
   
+  // Role-specific colors
+  mechanic: '#FF6B35',
+  
   // Background colors
   background: '#0A0A0A',
   surface: '#1A1A1A',

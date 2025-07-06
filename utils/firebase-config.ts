@@ -5,6 +5,19 @@ export const ENV_CONFIG = {
   enableLogging: true,
 };
 
+export const PRODUCTION_CONFIG = {
+  enableToolsModule: true,
+  enableAnalytics: true,
+  enablePushNotifications: true,
+  enableLocationTracking: true,
+};
+
+export function logProductionEvent(event: string, data: any): void {
+  if (ENV_CONFIG.enableLogging) {
+    console.log(`[Production Event] ${event}:`, data);
+  }
+}
+
 export function validateEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);

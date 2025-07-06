@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { protectedProcedure, router } from '../../trpc';
+import type { Context } from '../../create-context';
 
 // Mock storage for verification submissions (in production, this would be a database)
 const verificationSubmissions: Array<{
@@ -22,7 +23,7 @@ export const mechanicRouter = router({
       photoUri: z.string().url('Invalid photo URL'),
       idUri: z.string().url('Invalid ID photo URL'),
     }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }: { ctx: Context; input: { fullName: string; photoUri: string; idUri: string } }) => {
       const { user } = ctx;
       
       // Check if user is a mechanic
@@ -75,7 +76,7 @@ export const mechanicRouter = router({
     }),
 
   getVerificationStatus: protectedProcedure
-    .query(async ({ ctx }) => {
+    .query(async ({ ctx }: { ctx: Context }) => {
       const { user } = ctx;
       
       if (user.role !== 'mechanic') {
@@ -102,7 +103,7 @@ export const mechanicRouter = router({
 
   // Admin-only procedures for managing verifications
   getAllVerifications: protectedProcedure
-    .query(async ({ ctx }) => {
+    .query(async ({ ctx }: { ctx: Context }) => {
       const { user } = ctx;
       
       if (user.role !== 'admin') {
@@ -128,7 +129,7 @@ export const mechanicRouter = router({
       status: z.enum(['approved', 'rejected']),
       reviewNotes: z.string().optional(),
     }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }: { ctx: Context; input: { verificationId: string; status: 'approved' | 'rejected'; reviewNotes?: string } }) => {
       const { user } = ctx;
       
       if (user.role !== 'admin') {
@@ -170,7 +171,7 @@ export const mechanicRouter = router({
     .input(z.object({
       verificationId: z.string(),
     }))
-    .query(async ({ ctx, input }) => {
+    .query(async ({ ctx, input }: { ctx: Context; input: { verificationId: string } }) => {
       const { user } = ctx;
       
       if (user.role !== 'admin') {
