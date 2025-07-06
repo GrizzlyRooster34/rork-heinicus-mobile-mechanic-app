@@ -34,8 +34,10 @@ jobs:
     - name: 🏗 Setup Expo CLI
       run: npm install -g @expo/cli@latest
         
-    - name: 📱 Generate native Android project
+    - name: 📱 Generate standalone Android project
       run: npx expo prebuild --platform android --clean
+      env:
+        EXPO_NO_DOTENV: 1
       
     - name: 🔨 Build debug APK
       run: |
