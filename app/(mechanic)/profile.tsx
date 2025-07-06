@@ -9,13 +9,18 @@ import { AvailabilitySettings } from '@/components/AvailabilitySettings';
 import { ServicePricingSettings } from '@/components/ServicePricingSettings';
 import { ToolsEquipmentSettings } from '@/components/ToolsEquipmentSettings';
 import { ReportsAnalytics } from '@/components/ReportsAnalytics';
+import { MechanicVerificationPanel } from '@/components/MechanicVerificationPanel';
+import { trpc } from '@/lib/trpc';
 
-type SettingsScreen = 'main' | 'availability' | 'notifications' | 'pricing' | 'tools' | 'reports';
+type SettingsScreen = 'main' | 'availability' | 'notifications' | 'pricing' | 'tools' | 'reports' | 'verification';
 
 export default function MechanicProfileScreen() {
   const { user, logout } = useAuthStore();
   const { serviceRequests, quotes } = useAppStore();
   const [currentScreen, setCurrentScreen] = useState<SettingsScreen>('main');
+
+  // Get verification status
+  const { data: verificationStatus, refetch: refetchVerificationStatus } = trpc.mechanic.getVerificationStatus.useQuery();
 
   const completedJobs = serviceRequests.filter(r => r.status === 'completed').length;
   const totalRevenue = quotes
@@ -37,6 +42,50 @@ export default function MechanicProfileScreen() {
   const handleSettingsChange = (settingsType: string, settings: any) => {
     console.log(`${settingsType} settings updated:`, settings);
     // Here you would typically save to your store or backend
+  };
+
+  const handleVerificationSubmitted = () => {
+    refetchVerificationStatus();
+    setCurrentScreen('main');
+  };
+
+  const getVerificationStatusDisplay = () => {
+    if (!verificationStatus) return null;
+
+    const { verified, status } = verificationStatus;
+
+    if (verified) {
+      return {
+        icon: 'CheckCircle',
+        text: 'Verified Mechanic',
+        color: Colors.success,
+        bgColor: Colors.success + '20',
+      };
+    }
+
+    switch (status) {
+      case 'pending':
+        return {
+          icon: 'Clock',
+          text: 'Verification Pending',
+          color: Colors.warning,
+          bgColor: Colors.warning + '20',
+        };
+      case 'rejected':
+        return {
+          icon: 'XCircle',
+          text: 'Verification Rejected',
+          color: Colors.error,
+          bgColor: Colors.error + '20',
+        };
+      default:
+        return {
+          icon: 'AlertCircle',
+          text: 'Verification Required',
+          color: Colors.warning,
+          bgColor: Colors.warning + '20',
+        };
+    }
   };
 
   const settingsOptions = [
@@ -109,6 +158,12 @@ export default function MechanicProfileScreen() {
             mechanicId={user?.id || 'mechanic-cody'}
           />
         );
+      case 'verification':
+        return (
+          <MechanicVerificationPanel 
+            onVerificationSubmitted={handleVerificationSubmitted}
+          />
+        );
       default:
         return renderMainProfile();
     }
@@ -140,6 +195,53 @@ export default function MechanicProfileScreen() {
           <Icons.LogOut size={20} color={Colors.error} />
         </TouchableOpacity>
       </View>
+
+      {/* Verification Status */}
+      {(() => {
+        const statusDisplay = getVerificationStatusDisplay();
+        if (!statusDisplay) return null;
+
+        const IconComponent = Icons[statusDisplay.icon as keyof typeof Icons] as any;
+        const isVerified = verificationStatus?.verified;
+        const needsVerification = !verificationStatus?.status;
+
+        return (
+          <TouchableOpacity 
+            style={[styles.verificationCard, { backgroundColor: statusDisplay.bgColor }]}
+            onPress={() => needsVerification ? setCurrentScreen('verification') : undefined}
+            disabled={isVerified}
+          >
+            <View style={styles.verificationContent}>
+              <View style={styles.verificationIcon}>
+                {IconComponent && <IconComponent size={20} color={statusDisplay.color} />}
+              </View>
+              <View style={styles.verificationText}>
+                <Text style={[styles.verificationTitle, { color: statusDisplay.color }]}>
+                  {statusDisplay.text}
+                </Text>
+                {needsVerification && (
+                  <Text style={styles.verificationSubtitle}>
+                    Tap to complete identity verification
+                  </Text>
+                )}
+                {verificationStatus?.status === 'pending' && (
+                  <Text style={styles.verificationSubtitle}>
+                    Your verification is being reviewed
+                  </Text>
+                )}
+                {verificationStatus?.status === 'rejected' && (
+                  <Text style={styles.verificationSubtitle}>
+                    Please resubmit your verification documents
+                  </Text>
+                )}
+              </View>
+              {needsVerification && (
+                <Icons.ChevronRight size={20} color={statusDisplay.color} />
+              )}
+            </View>
+          </TouchableOpacity>
+        );
+      })()}
 
       {/* Stats Cards */}
       <View style={styles.statsSection}>
@@ -231,7 +333,10 @@ export default function MechanicProfileScreen() {
             <Icons.ArrowLeft size={24} color={Colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            {settingsOptions.find(opt => opt.id === currentScreen)?.title || 'Settings'}
+            {currentScreen === 'verification' 
+              ? 'Identity Verification'
+              : settingsOptions.find(opt => opt.id === currentScreen)?.title || 'Settings'
+            }
           </Text>
           <View style={styles.headerSpacer} />
         </View>
@@ -351,6 +456,38 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     padding: 8,
+  },
+  verificationCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  verificationContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  verificationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verificationText: {
+    flex: 1,
+  },
+  verificationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  verificationSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
   },
   statsSection: {
     marginBottom: 24,

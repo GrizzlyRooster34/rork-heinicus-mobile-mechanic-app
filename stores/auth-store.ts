@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, AuthState } from '@/types/auth';
+import { MechanicVerificationStatus } from '@/types/service';
 import { trpcClient } from '@/lib/trpc';
 import { devMode, isDevCredentials, getDevUser } from '@/utils/dev';
 
@@ -12,6 +13,10 @@ interface AuthStore extends AuthState {
   setUser: (user: User) => void;
   updateUserRole: (userId: string, role: 'customer' | 'mechanic' | 'admin') => Promise<boolean>;
   getAllUsers: () => User[];
+  
+  // Verification status
+  verificationStatus: MechanicVerificationStatus | null;
+  setVerificationStatus: (status: MechanicVerificationStatus | null) => void;
 }
 
 // Production configuration - Admin and Mechanic users
@@ -56,6 +61,7 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       isLoading: false,
       isAuthenticated: false,
+      verificationStatus: null,
 
       signup: async (email: string, password: string, firstName: string, lastName: string, phone?: string, role: 'customer' | 'mechanic' = 'customer') => {
         set({ isLoading: true });
@@ -214,7 +220,8 @@ export const useAuthStore = create<AuthStore>()(
         
         set({ 
           user: null, 
-          isAuthenticated: false 
+          isAuthenticated: false,
+          verificationStatus: null,
         });
       },
 
@@ -310,6 +317,10 @@ export const useAuthStore = create<AuthStore>()(
           ...registeredCustomers
         ];
       },
+
+      setVerificationStatus: (status: MechanicVerificationStatus | null) => {
+        set({ verificationStatus: status });
+      },
     }),
     {
       name: 'heinicus-auth-storage',
@@ -317,6 +328,7 @@ export const useAuthStore = create<AuthStore>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        verificationStatus: state.verificationStatus,
       }),
     }
   )

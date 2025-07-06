@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Vehicle, Contact, ServiceRequest, Quote, MaintenanceReminder, MaintenanceRecord, JobLog, ToolCheckItem, JobPhoto, StatusTimestamp, ServiceStatus } from '@/types/service';
+import { Vehicle, Contact, ServiceRequest, Quote, MaintenanceReminder, MaintenanceRecord, JobLog, ToolCheckItem, JobPhoto, StatusTimestamp, ServiceStatus, MechanicVerification } from '@/types/service';
 import { PRODUCTION_CONFIG, logProductionEvent } from '@/utils/firebase-config';
 
 interface JobPart {
@@ -24,6 +24,9 @@ interface AppState {
   maintenanceHistory: MaintenanceRecord[];
   jobLogs: JobLog[];
   jobParts: { [jobId: string]: JobPart[] };
+  
+  // Mechanic verification
+  mechanicVerifications: MechanicVerification[];
   
   // UI state
   currentLocation: {
@@ -93,6 +96,12 @@ interface AppState {
   getTotalRevenue: (startDate?: Date, endDate?: Date) => number;
   getPaymentHistory: () => Quote[];
   
+  // Verification management
+  addMechanicVerification: (verification: MechanicVerification) => void;
+  updateMechanicVerification: (id: string, updates: Partial<MechanicVerification>) => void;
+  getMechanicVerification: (userId: string) => MechanicVerification | null;
+  getAllVerifications: () => MechanicVerification[];
+  
   // Production logging
   logEvent: (event: string, data: any) => void;
 }
@@ -109,6 +118,7 @@ export const useAppStore = create<AppState>()(
       maintenanceHistory: [],
       jobLogs: [],
       jobParts: {},
+      mechanicVerifications: [],
       currentLocation: null,
       
       // Actions
@@ -600,6 +610,44 @@ export const useAppStore = create<AppState>()(
           .filter(quote => ['paid', 'deposit_paid'].includes(quote.status) && quote.paidAt)
           .sort((a, b) => (b.paidAt?.getTime() || 0) - (a.paidAt?.getTime() || 0));
       },
+
+      // Verification management
+      addMechanicVerification: (verification: MechanicVerification) => {
+        logProductionEvent('mechanic_verification_added', { 
+          verificationId: verification.id, 
+          userId: verification.userId,
+          status: verification.status
+        });
+        set((state) => ({
+          mechanicVerifications: [...state.mechanicVerifications, verification]
+        }));
+      },
+
+      updateMechanicVerification: (id: string, updates: Partial<MechanicVerification>) => {
+        logProductionEvent('mechanic_verification_updated', { 
+          verificationId: id, 
+          updates: Object.keys(updates),
+          newStatus: updates.status
+        });
+        set((state) => ({
+          mechanicVerifications: state.mechanicVerifications.map(v => 
+            v.id === id ? { ...v, ...updates } : v
+          )
+        }));
+      },
+
+      getMechanicVerification: (userId: string) => {
+        const state = get();
+        return state.mechanicVerifications
+          .filter(v => v.userId === userId)
+          .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime())[0] || null;
+      },
+
+      getAllVerifications: () => {
+        const state = get();
+        return state.mechanicVerifications
+          .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime());
+      },
       
       // Production logging
       logEvent: (event: string, data: any) => {
@@ -633,6 +681,7 @@ export const useAppStore = create<AppState>()(
         maintenanceHistory: state.maintenanceHistory,
         jobLogs: state.jobLogs,
         jobParts: state.jobParts,
+        mechanicVerifications: state.mechanicVerifications,
       }),
     }
   )

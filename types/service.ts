@@ -88,6 +88,21 @@ export type QuoteStatus =
   | 'deposit_paid'
   | 'paid';
 
+export type MechanicVerificationStatus = 'pending' | 'approved' | 'rejected';
+
+export interface MechanicVerification {
+  id: string;
+  userId: string;
+  fullName: string;
+  photoUri: string;
+  idUri: string;
+  status: MechanicVerificationStatus;
+  submittedAt: Date;
+  reviewedAt?: Date;
+  reviewedBy?: string;
+  reviewNotes?: string;
+}
+
 export interface StatusTimestamp {
   status: ServiceStatus;
   timestamp: Date;
