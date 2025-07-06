@@ -70,7 +70,7 @@ export const trpcClient = trpc.createClient({
             // Return a mock response for development to prevent crashes
             if (__DEV__) {
               // Check if this is a verification status query
-              if (url.includes('getVerificationStatus')) {
+              if (typeof url === 'string' && url.includes('getVerificationStatus')) {
                 return new Response(JSON.stringify({ 
                   result: {
                     data: {
