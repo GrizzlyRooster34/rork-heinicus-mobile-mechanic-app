@@ -74,7 +74,7 @@ export const useAuthStore = create<AuthStore>()(
             role,
           });
           
-          if (result.success && result.user) {
+          if (result.success && 'user' in result && result.user) {
             console.log('Signup successful via TRPC:', { 
               userId: result.user.id, 
               email: result.user.email,
@@ -83,19 +83,22 @@ export const useAuthStore = create<AuthStore>()(
             });
             
             // Use the user object as returned from the backend
-            const completeUser: User = result.user;
+            const completeUser: User = {
+              ...result.user,
+              role: result.user.role as 'customer' | 'mechanic' | 'admin'
+            };
             
             // Auto-login after successful signup
             set({ 
               user: completeUser,
-              token: result.token || null,
+              token: 'token' in result ? result.token || null : null,
               isAuthenticated: true, 
               isLoading: false 
             });
             
             return true;
           } else {
-            console.log('Signup failed via TRPC:', result.error);
+            console.log('Signup failed via TRPC:', 'error' in result ? result.error : 'Unknown error');
             set({ isLoading: false });
             return false;
           }
@@ -152,7 +155,7 @@ export const useAuthStore = create<AuthStore>()(
               password,
             });
             
-            if (result.success && result.user) {
+            if (result.success && 'user' in result && result.user) {
               console.log('Login successful via TRPC:', { 
                 userId: result.user.id, 
                 role: result.user.role, 
@@ -160,18 +163,21 @@ export const useAuthStore = create<AuthStore>()(
               });
               
               // Use the user object as returned from the backend
-              const completeUser: User = result.user;
+              const completeUser: User = {
+                ...result.user,
+                role: result.user.role as 'customer' | 'mechanic' | 'admin'
+              };
               
               set({ 
                 user: completeUser,
-                token: result.token || null,
+                token: 'token' in result ? result.token || null : null,
                 isAuthenticated: true, 
                 isLoading: false 
               });
               
               return true;
             } else {
-              console.log('Login failed via TRPC:', result.error);
+              console.log('Login failed via TRPC:', 'error' in result ? result.error : 'Unknown error');
             }
           } catch (trpcError) {
             console.warn('TRPC login failed, trying dev fallback:', trpcError);

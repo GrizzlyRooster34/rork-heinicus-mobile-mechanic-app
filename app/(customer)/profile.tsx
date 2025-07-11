@@ -16,7 +16,9 @@ export default function CustomerProfileScreen() {
   const [lastName, setLastName] = useState(contact?.lastName || user?.lastName || '');
   const [phone, setPhone] = useState(contact?.phone || user?.phone || '');
   const [email, setEmail] = useState(contact?.email || user?.email || '');
-  const [address, setAddress] = useState(contact?.address || '');
+  const [address, setAddress] = useState(
+    typeof contact?.address === 'string' ? contact.address : ''
+  );
   
   // Vehicle form state
   const [showVehicleForm, setShowVehicleForm] = useState(false);
@@ -38,7 +40,12 @@ export default function CustomerProfileScreen() {
       lastName: lastName.trim(),
       phone: phone.trim(),
       email: email.trim(),
-      address: address.trim() || undefined,
+      address: address.trim() ? {
+        street: address.trim(),
+        city: '',
+        state: '',
+        zipCode: ''
+      } : undefined,
     };
 
     setContact(contactData);
@@ -62,8 +69,9 @@ export default function CustomerProfileScreen() {
       make: vehicleMake.trim(),
       model: vehicleModel.trim(),
       year,
+      vehicleType: 'car',
       color: vehicleColor.trim() || undefined,
-      mileage: vehicleMileage.trim() ? parseInt(vehicleMileage) : undefined,
+      mileage: vehicleMileage.trim() ? parseInt(vehicleMileage) : 0,
     };
 
     addVehicle(vehicle);

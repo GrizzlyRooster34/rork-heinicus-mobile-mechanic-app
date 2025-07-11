@@ -346,17 +346,18 @@ export interface PaymentMethod {
 }
 
 export interface MaintenanceInterval {
-  id: string;
-  vehicleType: VehicleType;
+  id?: string;
+  vehicleType?: VehicleType;
   serviceType: ServiceType;
-  intervalType: 'mileage' | 'time' | 'both';
+  intervalType?: 'mileage' | 'time' | 'both';
   mileageInterval?: number;
   intervalMiles?: number;
   timeInterval?: number; // in months
   intervalDays?: number;
   description: string;
   priority: 'low' | 'medium' | 'high';
-  createdAt: Date;
+  category?: 'routine' | 'safety' | 'preventive';
+  createdAt?: Date;
   updatedAt?: Date;
 }
 

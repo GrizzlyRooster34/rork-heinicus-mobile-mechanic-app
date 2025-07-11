@@ -141,7 +141,8 @@ io.on('connection', (socket) => {
   }) => {
     try {
       if (user.role !== 'MECHANIC') {
-        return socket.emit('error', { message: 'Only mechanics can update location' });
+        socket.emit('error', { message: 'Only mechanics can update location' });
+        return;
       }
 
       // Update job with mechanic location
@@ -319,7 +320,7 @@ async function sendOfflineNotification(
     if (!job) return;
 
     const recipients = [job.customerId, job.mechanicId].filter(
-      id => id && id !== senderId
+      (id): id is string => id !== null && id !== undefined && id !== senderId
     );
 
     // Check who's online
@@ -328,15 +329,17 @@ async function sendOfflineNotification(
 
     // Send notifications to offline users
     for (const userId of offlineUsers) {
-      await prisma.notification.create({
-        data: {
-          userId: userId,
-          type: type,
-          title: getNotificationTitle(type),
-          message: data.message,
-          data: data
-        }
-      });
+      if (userId) {
+        await prisma.notification.create({
+          data: {
+            userId: userId,
+            type: type,
+            title: getNotificationTitle(type),
+            message: data.message,
+            data: data
+          }
+        });
+      }
     }
 
     // TODO: Send push notifications to offline users

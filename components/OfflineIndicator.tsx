@@ -29,6 +29,9 @@ export function OfflineIndicator() {
       //   setIsOnline(state.isConnected);
       // });
       // return unsubscribe;
+      
+      // Return empty function for now
+      return () => {};
     }
   }, []);
 

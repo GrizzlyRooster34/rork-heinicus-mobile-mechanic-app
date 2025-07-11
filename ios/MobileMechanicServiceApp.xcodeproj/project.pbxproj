@@ -257,13 +257,13 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.mobilemechanic.app";
-				PRODUCT_NAME = "MobileMechanicServiceApp";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.heinicus1.heinicusmobilemechanicapp";
+				PRODUCT_NAME = "heinicusmobilemechanicapp";
 				SWIFT_OBJC_BRIDGING_HEADER = "MobileMechanicServiceApp/MobileMechanicServiceApp-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1";
 				CODE_SIGN_ENTITLEMENTS = MobileMechanicServiceApp/MobileMechanicServiceApp.entitlements;
 			};
 			name = Debug;
@@ -286,12 +286,12 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.mobilemechanic.app";
-				PRODUCT_NAME = "MobileMechanicServiceApp";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.heinicus1.heinicusmobilemechanicapp";
+				PRODUCT_NAME = "heinicusmobilemechanicapp";
 				SWIFT_OBJC_BRIDGING_HEADER = "MobileMechanicServiceApp/MobileMechanicServiceApp-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1";
 				CODE_SIGN_ENTITLEMENTS = MobileMechanicServiceApp/MobileMechanicServiceApp.entitlements;
 			};
 			name = Release;

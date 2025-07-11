@@ -30,6 +30,10 @@ export default function JobPaymentLogger({
 }: JobPaymentLoggerProps) {
   const { user } = useAuthStore();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('cash');
+  
+  const handleMethodSelect = (method: string) => {
+    setSelectedMethod(method as PaymentMethod);
+  };
   const [isLogging, setIsLogging] = useState(false);
   const [isLogged, setIsLogged] = useState(false);
 
@@ -128,8 +132,7 @@ export default function JobPaymentLogger({
 
       <PaymentMethodSelector
         selectedMethod={selectedMethod}
-        onMethodChange={setSelectedMethod}
-        amount={amount}
+        onSelect={handleMethodSelect}
       />
 
       <View style={styles.actions}>

@@ -42,13 +42,6 @@ config.resolver.blockList = [
 config.watcher = {
   ...config.watcher,
   watchman: false,
-  ignored: [
-    /node_modules\/.*\/android\/.*/,
-    /node_modules\/.*\/ios\/.*/,
-    /node_modules\/.*\/gradle\/.*/,
-    /node_modules\/.*\/kotlin\/.*/,
-    /node_modules\/.*\/java\/.*/,
-  ],
 };
 
 module.exports = config;

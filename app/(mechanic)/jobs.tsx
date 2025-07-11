@@ -344,7 +344,6 @@ export default function MechanicJobsScreen() {
         </View>
         <WorkTimer
           jobId={selectedRequestForTimer}
-          jobTitle={job ? getServiceTitle(job.type) : 'Service'}
           onWorkComplete={handleWorkComplete}
         />
       </View>

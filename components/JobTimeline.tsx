@@ -50,7 +50,7 @@ export function JobTimeline({ timeline, currentStatus, estimatedDuration, actual
       case 'paused': return 'Work Paused';
       case 'completed': return 'Job Completed';
       case 'cancelled': return 'Job Cancelled';
-      default: return status.replace('_', ' ');
+      default: return typeof status === 'string' ? status.replace('_', ' ') : String(status);
     }
   };
 

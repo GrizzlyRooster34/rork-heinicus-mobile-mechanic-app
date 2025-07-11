@@ -20,6 +20,10 @@ expo-env.d.ts
 # Metro
 .metro-health-check*
 
+# Generated native directories (using prebuild)
+/android
+/ios
+
 # debug
 npm-debug.*
 yarn-debug.*
