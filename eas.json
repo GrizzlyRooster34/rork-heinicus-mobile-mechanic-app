@@ -5,18 +5,19 @@
   },
   "build": {
     "development": {
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
-    },
-    "standalone": {
+      "developmentClient": true,
       "distribution": "internal",
       "android": {
         "buildType": "apk"
       }
     },
     "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "standalone": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"

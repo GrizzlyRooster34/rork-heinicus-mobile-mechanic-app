@@ -24,7 +24,7 @@
     "prebuild": "expo prebuild",
     "prebuild:clean": "expo prebuild --clean",
     "bump": "node scripts/bumpVersion.js",
-    "build:dev": "npm run bump && eas build -p android --profile standalone --non-interactive",
+    "build:dev": "npm run bump && eas build -p android --profile development --non-interactive",
     "build:preview": "npm run bump && eas build -p android --profile preview",
     "build:prod": "npm run bump && eas build -p android --profile production",
     "build:apk": "npm run build:dev"
