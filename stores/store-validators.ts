@@ -97,10 +97,9 @@ export function sanitizeContact(contact: Partial<Contact>): Partial<Contact> {
     ...contact,
     firstName: contact.firstName?.trim(),
     lastName: contact.lastName?.trim(),
-    email: contact.email?.toLowerCase().trim(),
+    email: contact.email?.toLowerCase()?.trim(),
     phone: contact.phone?.trim(),
-    address: typeof contact.address === 'string' ? contact.address.trim() : 
-            (contact.address && typeof contact.address === 'object' ? contact.address : undefined),
+    address: contact.address,
   };
 }
 

@@ -6,17 +6,13 @@ import * as Icons from 'lucide-react-native';
 import { ServiceType } from '@/types/service';
 import { SERVICE_PRICING } from '@/constants/pricing';
 
-interface ServicePricingSettingsProps {
-  onSettingsChange: (settings: PricingSettings) => void;
-}
-
 interface PricingSettings {
   laborRate: number;
   emergencyRate: number;
   travelFee: number;
   minimumCharge: number;
   servicePricing: {
-    [key in ServiceType]: {
+    [serviceType: string]: {
       basePrice: number;
       laborRate: number;
       estimatedHours: number;
@@ -27,6 +23,10 @@ interface PricingSettings {
     militaryDiscount: number;
     repeatCustomerDiscount: number;
   };
+}
+
+interface ServicePricingSettingsProps {
+  onSettingsChange: (settings: PricingSettings) => void;
 }
 
 export function ServicePricingSettings({ onSettingsChange }: ServicePricingSettingsProps) {

@@ -26,10 +26,10 @@ export function StripePayment({ quote, onSuccess, onCancel }: StripePaymentProps
       const paymentIntent = await createPaymentIntent(quote);
       
       // 2. Confirm payment with Stripe
-      const result = await confirmPayment(paymentIntent.client_secret, paymentMethod);
+      const result = await confirmPayment(paymentIntent.client_secret || '', paymentMethod);
       
       if (result.success) {
-        onSuccess(result.paymentIntentId);
+        onSuccess(result.paymentIntentId || '');
       } else {
         Alert.alert('Payment Failed', result.error || 'Please try again.');
       }

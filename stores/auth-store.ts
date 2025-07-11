@@ -85,7 +85,8 @@ export const useAuthStore = create<AuthStore>()(
             // Use the user object as returned from the backend
             const completeUser: User = {
               ...result.user,
-              role: result.user.role as 'customer' | 'mechanic' | 'admin'
+              role: result.user.role as 'customer' | 'mechanic' | 'admin',
+              createdAt: new Date(result.user.createdAt)
             };
             
             // Auto-login after successful signup
@@ -165,7 +166,8 @@ export const useAuthStore = create<AuthStore>()(
               // Use the user object as returned from the backend
               const completeUser: User = {
                 ...result.user,
-                role: result.user.role as 'customer' | 'mechanic' | 'admin'
+                role: result.user.role as 'customer' | 'mechanic' | 'admin',
+                createdAt: new Date(result.user.createdAt)
               };
               
               set({ 

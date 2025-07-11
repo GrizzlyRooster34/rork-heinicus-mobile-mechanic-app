@@ -122,6 +122,7 @@ export interface ServiceRequest {
   status: ServiceStatus;
   createdAt: Date;
   updatedAt?: Date;
+  paidAt?: Date; // New field for payment timestamp
   photos?: string[];
   jobPhotos?: JobPhoto[];
   location?: {
@@ -186,13 +187,17 @@ export interface Quote {
   updatedAt?: Date;
   acceptedAt?: Date;
   paidAt?: Date;
+  depositPaidAt?: Date; // New field for deposit payment
+  depositAmount?: number; // Deposit amount
+  remainingBalance?: number; // Remaining balance after deposit
+  finalAmount?: number; // Final amount paid
   notes?: string;
   description?: string;
   breakdown?: {
     description: string;
     cost: number;
   }[];
-  paymentMethod?: 'card' | 'cash' | 'check';
+  paymentMethod?: 'card' | 'cash' | 'check' | 'apple_pay' | 'google_pay';
   stripePaymentIntentId?: string;
   vehicleType?: VehicleType;
   partsApproved?: boolean; // New field for parts approval

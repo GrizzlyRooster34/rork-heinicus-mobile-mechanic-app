@@ -4,7 +4,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: 'customer' | 'mechanic' | 'admin';
-  phone?: string;
+  phone?: string | null; // Allow null for backend compatibility
   createdAt: Date;
   isActive?: boolean; // Make optional to avoid backend compatibility issues
 }

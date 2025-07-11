@@ -618,7 +618,7 @@ export const useAppStore = create<AppState>()(
         console.log('App Event:', logData);
         
         // Production: Send to analytics service
-        if (PRODUCTION_CONFIG.enableToolsModule) {
+        if (PRODUCTION_CONFIG.enableLogging) {
           logProductionEvent(event, { ...data, timestamp });
         }
       },

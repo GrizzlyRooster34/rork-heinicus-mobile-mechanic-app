@@ -12,6 +12,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -28,8 +30,8 @@ export function usePushNotifications() {
   const [notification, setNotification] = useState<Notifications.Notification | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<Notifications.Subscription | null>(null);
+  const responseListener = useRef<Notifications.Subscription | null>(null);
 
   const registerDeviceTokenMutation = trpc.notifications.registerDeviceToken.useMutation();
 

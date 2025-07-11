@@ -86,7 +86,9 @@ export function StoreIntegrationTest() {
         id: 'test-vehicle',
         make: 'Toyota',
         model: 'Camry',
-        year: 2020
+        year: 2020,
+        vehicleType: 'car' as const,
+        mileage: 50000
       };
 
       const originalVehicleCount = appStore.vehicles.length;

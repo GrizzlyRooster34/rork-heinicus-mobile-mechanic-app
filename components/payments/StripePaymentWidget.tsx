@@ -70,7 +70,7 @@ export function StripePaymentWidget({
   const confirmPaymentMutation = trpc.payments.confirmPaymentIntent.useMutation();
 
   useEffect(() => {
-    if (paymentMethodsData?.paymentMethods.length > 0) {
+    if (paymentMethodsData?.paymentMethods && paymentMethodsData.paymentMethods.length > 0) {
       const defaultMethod = paymentMethodsData.paymentMethods.find(pm => pm.isDefault) 
         || paymentMethodsData.paymentMethods[0];
       setSelectedPaymentMethod(defaultMethod);

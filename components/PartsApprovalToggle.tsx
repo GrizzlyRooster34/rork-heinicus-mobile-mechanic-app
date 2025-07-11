@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Switch, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { Button } from '@/components/Button';
 import { trpc } from '@/lib/trpc';
-import { getPartEstimate, calculatePartsTotal } from '@/utils/parts/getPartEstimate';
+import { getPartEstimate, calculatePartsFromStringList, PartsCalculationResult } from '@/utils/parts/getPartEstimate';
 import * as Icons from 'lucide-react-native';
 
 interface PartsApprovalToggleProps {
@@ -33,7 +33,7 @@ export function PartsApprovalToggle({
   });
 
   // Calculate parts estimates
-  const partsCalculation = calculatePartsTotal(partsNeeded);
+  const partsCalculation: PartsCalculationResult = calculatePartsFromStringList(partsNeeded);
   const hasPartsEstimates = partsCalculation.foundCount > 0;
 
   const handleToggleApproval = async (value: boolean) => {
@@ -113,7 +113,7 @@ export function PartsApprovalToggle({
 
           {showDetails && (
             <View style={styles.partsDetails}>
-              {partsCalculation.breakdown.map((part, index) => (
+              {partsCalculation.breakdown.map((part: any, index: number) => (
                 <View key={index} style={styles.partItem}>
                   <View style={styles.partInfo}>
                     <Text style={styles.partName}>{part.name}</Text>

@@ -139,11 +139,14 @@ export function MaintenanceReminders() {
       id: `${vehicleId}-${serviceType}-${Date.now()}`,
       vehicleId,
       serviceType: serviceType as any,
+      description: `Scheduled ${serviceType} maintenance`,
       dueDate: new Date(),
       dueMileage: undefined,
       isOverdue: false,
       reminderSent: true,
       priority: 'low' as const,
+      completed: false,
+      createdAt: new Date(),
     };
     
     addMaintenanceReminder(reminder);
