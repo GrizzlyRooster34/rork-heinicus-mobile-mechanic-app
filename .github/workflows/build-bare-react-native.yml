@@ -1,0 +1,90 @@
+name: Build Bare React Native APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Create bare React Native project
+      run: |
+        # Create a new bare React Native project
+        npx react-native@latest init HenicusMechanic --skip-install
+        cd HenicusMechanic
+        
+        # Copy our source files
+        cp -r ../app ./
+        cp -r ../components ./
+        cp -r ../constants ./
+        cp -r ../lib ./
+        cp -r ../stores ./
+        cp -r ../types ./
+        cp -r ../utils ./
+        cp -r ../assets ./
+        
+        # Create a simple package.json for bare RN
+        cat > package.json << 'EOF'
+        {
+          "name": "HenicusMechanic",
+          "version": "1.0.0",
+          "scripts": {
+            "android": "react-native run-android",
+            "start": "react-native start"
+          },
+          "dependencies": {
+            "react": "18.2.0",
+            "react-native": "0.74.0"
+          }
+        }
+        EOF
+        
+        # Install dependencies
+        npm install
+        
+    - name: Build APK directly with Gradle
+      run: |
+        cd HenicusMechanic/android
+        
+        # Update gradle wrapper permissions
+        chmod +x ./gradlew
+        
+        # Build debug APK
+        ./gradlew assembleDebug --no-daemon
+        
+    - name: Copy and upload APK
+      run: |
+        cd HenicusMechanic
+        APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+        if [ -f "$APK_PATH" ]; then
+          cp "$APK_PATH" ../heinicus-bare-rn.apk
+          echo "✅ Bare React Native APK built!"
+        else
+          echo "❌ Bare RN build failed"
+          ls -la android/app/build/outputs/ || echo "No outputs"
+          exit 1
+        fi
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: heinicus-bare-rn-apk
+        path: heinicus-bare-rn.apk

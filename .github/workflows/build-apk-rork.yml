@@ -1,0 +1,116 @@
+name: Build APK with Rork
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    env:
+      NODE_VERSION: '18'
+      JAVA_VERSION: '17'
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: ${{ env.JAVA_VERSION }}
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+        
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.bun/install/cache
+          node_modules
+          android/.gradle
+        key: ${{ runner.os }}-deps-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('**/*.gradle*') }}
+        restore-keys: |
+          ${{ runner.os }}-deps-
+          
+    - name: Setup CI environment
+      run: |
+        chmod +x ./scripts/setup-ci.sh
+        ./scripts/setup-ci.sh
+        
+    - name: Install Expo CLI
+      run: bun add -g @expo/cli@latest
+      
+    - name: Prebuild for Android
+      run: |
+        export EXPO_NO_DOTENV=1
+        export EXPO_NO_TYPESCRIPT_SETUP=1
+        bunx expo prebuild --platform android --clean --no-install
+      
+    - name: Build Android APK
+      run: |
+        cd android
+        chmod +x ./gradlew
+        ./gradlew assembleRelease --no-daemon
+        
+    - name: Copy and verify APK
+      run: |
+        if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
+          cp android/app/build/outputs/apk/release/app-release.apk ./heinicus-mobile-mechanic.apk
+          echo "✅ APK found and ready for upload"
+          ls -lah heinicus-mobile-mechanic.apk
+          APK_SIZE=$(du -h heinicus-mobile-mechanic.apk | cut -f1)
+          echo "APK_SIZE=$APK_SIZE" >> $GITHUB_ENV
+        else
+          echo "❌ APK not found!"
+          exit 1
+        fi
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: heinicus-mobile-mechanic-apk-${{ github.run_number }}
+        path: heinicus-mobile-mechanic.apk
+        retention-days: 30
+        compression-level: 6
+        
+    - name: Upload build artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts-${{ github.run_number }}
+        path: |
+          android/app/build/outputs/
+          android/app/build/reports/
+        retention-days: 7
+        if-no-files-found: ignore
+        
+    - name: Create release summary
+      run: |
+        echo "## 🚀 Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "**APK Size:** ${{ env.APK_SIZE }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Build Number:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Target Android:** 11+ (API 30+)" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 Installation" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "# Download APK from artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "adb install heinicus-mobile-mechanic.apk" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

@@ -1,1 +1,6 @@
-{"owner": "heinicus1"}
+{
+  "owner": "heinicus1",
+  "android": {
+    "package": "com.heinicus1.heinicusmobilemechanicapp"
+  }
+}

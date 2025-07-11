@@ -27,7 +27,15 @@
     "build:dev": "npm run bump && eas build -p android --profile development --non-interactive",
     "build:preview": "npm run bump && eas build -p android --profile preview",
     "build:prod": "npm run bump && eas build -p android --profile production",
-    "build:apk": "npm run build:dev"
+    "build:apk": "npm run build:dev",
+    "build:standalone": "npm run bump && eas build -p android --profile standalone --non-interactive",
+    "build:local": "npm run bump && eas build -p android --profile development --local --non-interactive",
+    "test:ai": "jest --testPathPattern=ai",
+    "postinstall": "npx prisma generate"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",

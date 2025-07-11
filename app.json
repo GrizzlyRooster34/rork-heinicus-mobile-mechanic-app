@@ -8,7 +8,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "mobilemechanic",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
@@ -19,7 +19,7 @@
       "bundleIdentifier": "com.mobilemechanic.app"
     },
     "android": {
-      "versionCode": 4,
+      "versionCode": 5,
       "package": "com.heinicus.mobilemechanic",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -32,8 +32,17 @@
         "ACCESS_COARSE_LOCATION",
         "VIBRATE",
         "INTERNET",
-        "ACCESS_NETWORK_STATE"
-      ]
+        "ACCESS_NETWORK_STATE",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "CALL_PHONE",
+        "SEND_SMS",
+        "RECEIVE_SMS",
+        "READ_SMS"
+      ],
+      "compileSdkVersion": 34,
+      "targetSdkVersion": 34,
+      "minSdkVersion": 21
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -63,6 +72,11 @@
     },
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "heinicus-mobile-mechanic"
+      }
     }
   }
 }

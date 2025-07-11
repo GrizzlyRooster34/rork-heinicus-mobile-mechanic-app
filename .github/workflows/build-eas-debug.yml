@@ -1,0 +1,116 @@
+name: Debug EAS Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug-eas:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm install --legacy-peer-deps
+        
+    - name: Setup EAS CLI
+      run: npm install -g eas-cli@latest
+        
+    - name: Check EAS configuration
+      run: |
+        echo "📋 Checking EAS configuration..."
+        
+        # Check if eas.json exists and is valid
+        if [ -f "eas.json" ]; then
+          echo "✅ eas.json found"
+          cat eas.json
+        else
+          echo "❌ eas.json not found"
+        fi
+        
+        echo ""
+        echo "📱 Checking app.json..."
+        if [ -f "app.json" ]; then
+          echo "✅ app.json found"
+          # Show relevant parts
+          node -e "
+            const app = require('./app.json');
+            console.log('Name:', app.expo.name);
+            console.log('Slug:', app.expo.slug);
+            console.log('Package:', app.expo.android?.package);
+          "
+        else
+          echo "❌ app.json not found"
+        fi
+        
+    - name: Test EAS login status
+      run: |
+        echo "🔑 Checking EAS authentication..."
+        
+        # Check if we can access EAS without login (for public projects)
+        eas whoami || echo "Not authenticated (expected for GitHub Actions)"
+        
+        echo ""
+        echo "📦 Checking project configuration..."
+        eas project:info || echo "Could not get project info (may need authentication)"
+        
+    - name: Try EAS build with verbose output
+      run: |
+        echo "🚀 Attempting EAS build with full debug output..."
+        
+        # Try to submit build with maximum verbosity
+        set -x
+        eas build --platform android --profile development --non-interactive --clear-cache 2>&1 || {
+          echo "❌ EAS build failed"
+          echo "This could be due to:"
+          echo "1. Authentication required"
+          echo "2. Project not configured in EAS"
+          echo "3. Invalid configuration"
+          echo "4. Network issues"
+          exit 1
+        }
+        
+    - name: Alternative - Show manual EAS setup instructions
+      if: failure()
+      run: |
+        echo "## 🔧 Manual EAS Setup Required" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "The automated EAS build failed. Here's how to set it up manually:" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 1. Install EAS CLI locally:" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "npm install -g eas-cli" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 2. Login to EAS:" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "eas login" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 3. Configure project:" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "eas build:configure" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 4. Build APK:" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "eas build --platform android --profile development" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        
+    - name: Success summary
+      if: success()
+      run: |
+        echo "## ✅ EAS Build Submitted Successfully!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Your build has been submitted to EAS Cloud." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 Next Steps:" >> $GITHUB_STEP_SUMMARY
+        echo "1. Check your email for build notifications" >> $GITHUB_STEP_SUMMARY
+        echo "2. Visit https://expo.dev/accounts/[your-username]/projects/heinicus-mobile-mechanic/builds" >> $GITHUB_STEP_SUMMARY
+        echo "3. Download the APK when build completes" >> $GITHUB_STEP_SUMMARY
