@@ -7,16 +7,20 @@ import { Platform } from "react-native";
 export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
+  // Check for disabled API (standalone mode)
+  if (process.env.EXPO_PUBLIC_API_URL === 'disabled' || 
+      process.env.EXPO_PUBLIC_BASE_URL === 'disabled') {
+    return null; // Offline mode
+  }
+
   // Check for Rork environment first
   if (typeof window !== 'undefined' && window.location) {
     const currentUrl = window.location.origin;
-    console.log('Using current origin for API:', currentUrl);
     return currentUrl;
   }
 
   // Production API URL
   if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
-    console.log('Using production API URL:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
     return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   }
 
@@ -24,21 +28,43 @@ const getBaseUrl = () => {
   if (__DEV__) {
     const devUrl = Platform.select({
       web: 'http://localhost:3000',
-      default: 'http://localhost:3000',
+      default: 'http://10.0.2.2:3000', // Android emulator
     });
-    console.log('Using development API URL:', devUrl);
     return devUrl;
   }
 
-  // Final fallback
-  console.warn('No base URL configured, using localhost');
-  return 'http://localhost:3000';
+  // No server available - use offline mode
+  return null;
 };
 
-export const trpcClient = trpc.createClient({
-  links: [
-    httpLink({
-      url: `${getBaseUrl()}/api/trpc`,
+// Create offline-capable tRPC client
+const createTRPCClient = () => {
+  const baseUrl = getBaseUrl();
+  
+  if (!baseUrl) {
+    // Offline mode - return a mock client that doesn't make network requests
+    return trpc.createClient({
+      links: [
+        httpLink({
+          url: 'http://offline-mode',
+          fetch: () => {
+            // Return mock responses for offline mode
+            return Promise.resolve(new Response(JSON.stringify({
+              result: { data: null }
+            }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }));
+          }
+        })
+      ]
+    });
+  }
+
+  return trpc.createClient({
+    links: [
+      httpLink({
+        url: `${baseUrl}/api/trpc`,
       // transformer: superjson, // Remove transformer for now to avoid tRPC error
       headers: () => {
         const headers: Record<string, string> = {
@@ -116,6 +142,10 @@ export const trpcClient = trpc.createClient({
           throw error;
         }
       },
-    }),
-  ],
-});
+        }),
+      ],
+    });
+  };
+};
+
+export const trpcClient = createTRPCClient();

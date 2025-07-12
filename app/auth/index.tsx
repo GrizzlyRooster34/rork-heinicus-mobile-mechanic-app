@@ -17,6 +17,9 @@ export default function AuthScreen() {
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState<'customer' | 'mechanic'>('customer');
   const [isLoginMode, setIsLoginMode] = useState(true);
+  const [isOfflineMode, setIsOfflineMode] = useState(
+    process.env.EXPO_PUBLIC_API_URL === 'disabled'
+  );
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -37,6 +40,19 @@ export default function AuthScreen() {
       }
     }
   }, [isAuthenticated, user]);
+
+  const handleOfflineMode = () => {
+    Alert.alert(
+      'Demo Mode',
+      'Choose your role to explore the app in demo mode (no server required)',
+      [
+        { text: 'Customer', onPress: () => router.replace('/(customer)') },
+        { text: 'Mechanic', onPress: () => router.replace('/(mechanic)') },
+        { text: 'Admin', onPress: () => router.replace('/(admin)') },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
 
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
@@ -251,6 +267,15 @@ export default function AuthScreen() {
           style={styles.authButton}
         />
 
+        {isOfflineMode && (
+          <Button
+            title="🚀 Demo Mode (No Login Required)"
+            onPress={handleOfflineMode}
+            variant="outline"
+            style={styles.offlineButton}
+          />
+        )}
+
         <TouchableOpacity
           style={styles.switchModeButton}
           onPress={switchMode}
@@ -445,6 +470,10 @@ const styles = StyleSheet.create({
   authButton: {
     marginTop: 8,
     marginBottom: 16,
+  },
+  offlineButton: {
+    marginBottom: 16,
+    borderColor: Colors.success,
   },
   switchModeButton: {
     alignItems: 'center',
