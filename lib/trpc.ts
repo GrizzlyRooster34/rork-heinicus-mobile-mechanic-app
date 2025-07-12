@@ -146,6 +146,5 @@ const createTRPCClient = () => {
       ],
     });
   };
-};
 
 export const trpcClient = createTRPCClient();
