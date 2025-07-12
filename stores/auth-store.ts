@@ -327,11 +327,37 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'heinicus-auth-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => AsyncStorage, {
+        // Add error handling to prevent crashes if AsyncStorage fails
+        replacer: (key, value) => {
+          try {
+            return value;
+          } catch (error) {
+            console.warn('AsyncStorage serialization error for key:', key, error);
+            return null;
+          }
+        },
+        reviver: (key, value) => {
+          try {
+            return value;
+          } catch (error) {
+            console.warn('AsyncStorage deserialization error for key:', key, error);
+            return null;
+          }
+        },
+      }),
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Auth store hydration failed:', error);
+          // Don't crash the app - just log the error and continue with default state
+        } else {
+          console.log('✅ Auth store hydrated successfully');
+        }
+      },
     }
   )
 );

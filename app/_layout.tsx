@@ -6,6 +6,7 @@ import { Colors } from '@/constants/colors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc, trpcClient } from '@/lib/trpc';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { StoreProvider } from '@/stores/StoreProvider';
 
 export const unstable_settings = {
   initialRouteName: 'auth',
@@ -73,11 +74,13 @@ function AppContent() {
 export default function RootLayout() {
   return (
     <ErrorBoundary>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          <AppContent />
-        </QueryClientProvider>
-      </trpc.Provider>
+      <StoreProvider>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <AppContent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      </StoreProvider>
     </ErrorBoundary>
   );
 }

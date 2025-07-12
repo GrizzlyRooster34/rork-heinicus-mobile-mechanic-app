@@ -19,30 +19,52 @@ export function StoreProvider({ children }: StoreProviderProps) {
   useEffect(() => {
     const initializeStores = async () => {
       try {
-        // Wait for stores to hydrate from persistence
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Wait for stores to hydrate from persistence with proper async handling
+        let retries = 0;
+        const maxRetries = 50; // 5 seconds max wait time
         
-        // Check if stores are properly hydrated
-        const authState = useAuthStore.getState();
-        const appState = useAppStore.getState();
-        const settingsState = useSettingsStore.getState();
-        const adminSettingsState = useAdminSettingsStore.getState();
-        
-        // Validate critical store data
-        if (typeof authState === 'object' && 
-            typeof appState === 'object' && 
-            typeof settingsState === 'object' && 
-            typeof adminSettingsState === 'object') {
+        while (retries < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 100));
           
-          console.log('✅ Stores hydrated successfully');
-          setIsHydrated(true);
-        } else {
-          throw new Error('Store hydration failed - invalid state');
+          try {
+            // Check if stores are properly hydrated without blocking
+            const stores = await Promise.all([
+              Promise.resolve(useAuthStore.getState()),
+              Promise.resolve(useAppStore.getState()),
+              Promise.resolve(useSettingsStore.getState()),
+              Promise.resolve(useAdminSettingsStore.getState()),
+            ]);
+            
+            // Validate that stores are objects and not undefined
+            const [authState, appState, settingsState, adminSettingsState] = stores;
+            
+            if (authState && typeof authState === 'object' && 
+                appState && typeof appState === 'object' && 
+                settingsState && typeof settingsState === 'object' && 
+                adminSettingsState && typeof adminSettingsState === 'object') {
+              
+              console.log('✅ Stores hydrated successfully after', retries * 100, 'ms');
+              setIsHydrated(true);
+              return;
+            }
+          } catch (storeError) {
+            console.warn('Store access attempt failed:', storeError);
+          }
+          
+          retries++;
         }
+        
+        // If we get here, stores didn't hydrate properly within timeout
+        console.warn('⚠️ Store hydration timeout - proceeding anyway');
+        setIsHydrated(true); // Allow app to continue even if stores aren't fully ready
+        
       } catch (error) {
         console.error('❌ Store initialization error:', error);
         StoreErrorHandler.logError('STORE_INITIALIZATION', error as Error);
-        setError('Failed to initialize application stores');
+        
+        // Don't block app startup for store errors - provide fallback
+        console.warn('🔄 Continuing with fallback store initialization');
+        setIsHydrated(true);
       }
     };
 

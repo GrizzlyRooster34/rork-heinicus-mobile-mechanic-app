@@ -80,8 +80,19 @@ const createTRPCClient = () => {
         return headers;
       },
       fetch: async (url, options) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          console.warn('tRPC request timeout after 10 seconds:', url);
+          controller.abort();
+        }, 10000); // 10 second timeout
+        
         try {
-          const response = await fetch(url, options);
+          const response = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+          });
+          
+          clearTimeout(timeoutId);
           
           // Check if response is HTML (likely a 404 or error page)
           const contentType = response.headers.get('content-type');
@@ -111,12 +122,15 @@ const createTRPCClient = () => {
           
           return response;
         } catch (error: unknown) {
+          clearTimeout(timeoutId);
+          
           if (error instanceof Error) {
             console.error('tRPC fetch error:', {
               url,
               message: error.message,
               stack: error.stack,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              isTimeout: error.name === 'AbortError'
             });
           } else {
             console.error('tRPC fetch error (unknown type):', {
@@ -126,11 +140,13 @@ const createTRPCClient = () => {
             });
           }
           
-          // In development, return a fallback response instead of crashing
-          if (__DEV__) {
+          // In development or timeout, return a fallback response instead of crashing
+          if (__DEV__ || (error instanceof Error && error.name === 'AbortError')) {
             return new Response(JSON.stringify({ 
               error: { 
-                message: 'Network error - using dev fallback',
+                message: error instanceof Error && error.name === 'AbortError' ? 
+                  'Request timeout - using fallback' : 
+                  'Network error - using dev fallback',
                 code: 'INTERNAL_SERVER_ERROR' 
               } 
             }), {
@@ -147,4 +163,21 @@ const createTRPCClient = () => {
     });
   };
 
-export const trpcClient = createTRPCClient();
+// Lazy initialization to prevent blocking during module load
+let _trpcClient: ReturnType<typeof trpc.createClient> | null = null;
+
+export const getTrpcClient = (): ReturnType<typeof trpc.createClient> => {
+  if (!_trpcClient) {
+    console.log('🔄 Initializing tRPC client...');
+    _trpcClient = createTRPCClient();
+  }
+  return _trpcClient;
+};
+
+// Create a getter object to enable lazy initialization while maintaining API compatibility
+export const trpcClient = new Proxy({} as ReturnType<typeof trpc.createClient>, {
+  get(target, prop) {
+    const client = getTrpcClient();
+    return (client as any)[prop];
+  }
+});
