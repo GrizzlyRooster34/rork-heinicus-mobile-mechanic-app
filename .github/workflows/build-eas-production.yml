@@ -25,17 +25,25 @@ jobs:
       run: npm install -g eas-cli@latest
         
     - name: Build APK with EAS Cloud
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       run: |
-        # Try to build with EAS cloud service
-        # This should work for public repositories without authentication
-        echo "Starting EAS build..."
+        echo "🚀 Starting EAS build..."
+        
+        if [ -z "$EXPO_TOKEN" ]; then
+          echo "❌ EXPO_TOKEN not found in secrets"
+          echo "Please add your EAS access token to GitHub repository secrets"
+          echo "1. Go to: https://github.com/${{ github.repository }}/settings/secrets/actions"
+          echo "2. Add new secret: EXPO_TOKEN = your_eas_access_token"
+          echo "3. Get token by running: eas login && eas build:configure"
+          exit 1
+        fi
+        
+        echo "✅ Authentication token found"
+        echo "📱 Submitting build to EAS cloud..."
         
         # Submit build to EAS cloud
-        eas build --platform android --profile standalone --non-interactive --no-wait || {
-          echo "EAS build submission failed or requires authentication"
-          echo "This may be normal for the free tier or private repos"
-          exit 0
-        }
+        eas build --platform android --profile standalone --non-interactive
         
     - name: Build Summary
       run: |
