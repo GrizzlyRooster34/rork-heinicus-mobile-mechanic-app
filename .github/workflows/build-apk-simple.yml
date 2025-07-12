@@ -2,7 +2,7 @@ name: Build APK (Simple)
 
 on:
   push:
-    branches: [ Claude-finished, main, rork-model-by-claude ]
+    branches: [ Claude-finished, main, rork-model-by-claude, integrated-production ]
   workflow_dispatch:
 
 jobs:

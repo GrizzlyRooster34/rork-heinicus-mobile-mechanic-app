@@ -2,7 +2,7 @@ name: Build with EAS Cloud (Production)
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, integrated-production ]
   workflow_dispatch:
 
 jobs:

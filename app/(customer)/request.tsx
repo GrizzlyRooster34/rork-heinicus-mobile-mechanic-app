@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, Alert, Modal } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Colors } from '@/constants/colors';
@@ -13,6 +13,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { ServiceRequest, ServiceType, DiagnosticResult, Vehicle, VehicleType } from '@/types/service';
 import { generateSmartQuote } from '@/utils/quote-generator';
 import { ENV_CONFIG, logProductionEvent } from '@/utils/firebase-config';
+import { logger } from '@/utils/logger';
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
 import * as Icons from 'lucide-react-native';
@@ -32,6 +33,7 @@ export default function CustomerRequestScreen() {
   );
   const [selectedParts, setSelectedParts] = useState<string[]>([]);
   const [showVinScanner, setShowVinScanner] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [vinNumber, setVinNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiDiagnosis, setAiDiagnosis] = useState<DiagnosticResult | undefined>(
@@ -41,9 +43,42 @@ export default function CustomerRequestScreen() {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType>('car');
 
+  const getCurrentLocation = useCallback(async () => {
+    if (Platform.OS === 'web') {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setCurrentLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+          },
+          (error) => logger.warn('Location error', 'CustomerRequest', error)
+        );
+      }
+    } else {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setLocationError('Permission to access location was denied');
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({});
+        setCurrentLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+      } catch (error) {
+        logger.error('Failed to get current location', 'CustomerRequest', error);
+        setLocationError('Failed to get location');
+      }
+    }
+  }, []);
+
   useEffect(() => {
     getCurrentLocation();
-  }, []);
+  }, [getCurrentLocation]);
 
   useEffect(() => {
     // Set selected vehicle from params or default to first vehicle
@@ -57,7 +92,7 @@ export default function CustomerRequestScreen() {
       setSelectedVehicle(vehicles[0]);
       setSelectedVehicleType(vehicles[0].vehicleType);
     }
-  }, [vehicles, params.vehicleId]);
+  }, [vehicles, params.vehicleId, selectedVehicle]);
 
   useEffect(() => {
     // Auto-generate quote if requested
@@ -69,46 +104,8 @@ export default function CustomerRequestScreen() {
     }
   }, [params.autoQuote, selectedService, description, selectedVehicle]);
 
-  const getCurrentLocation = async () => {
-    if (Platform.OS === 'web') {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setCurrentLocation({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            });
-          },
-          (error) => console.log('Location error:', error)
-        );
-      }
-      return;
-    }
 
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required to provide service at your location.');
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({});
-      const address = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
-
-      setCurrentLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        address: address[0] ? `${address[0].street}, ${address[0].city}` : undefined,
-      });
-    } catch (error) {
-      console.log('Location error:', error);
-    }
-  };
-
-  const handleVinScanned = (vinData: any) => {
+  const handleVinScanned = (vinData: { vin: string; vehicleType: VehicleType; make?: string; model?: string; year?: number; trim?: string; engine?: string }) => {
     setVinNumber(vinData.vin);
     setSelectedVehicleType(vinData.vehicleType);
     setShowVinScanner(false);
@@ -138,9 +135,9 @@ Would you like to add this vehicle to your profile?`,
             onPress: () => {
               const newVehicle: Vehicle = {
                 id: Date.now().toString(),
-                make: vinData.make,
-                model: vinData.model,
-                year: vinData.year,
+                make: vinData.make || 'Unknown',
+                model: vinData.model || 'Unknown',
+                year: vinData.year || new Date().getFullYear(),
                 vehicleType: vinData.vehicleType,
                 vin: vinData.vin,
                 trim: vinData.trim,

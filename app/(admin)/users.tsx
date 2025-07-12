@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
 import { User } from '@/types/auth';

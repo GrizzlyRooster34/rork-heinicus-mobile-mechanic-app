@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAppStore } from '@/stores/app-store';
@@ -10,10 +10,10 @@ import { PaymentModal } from '@/components/PaymentModal';
 import * as Icons from 'lucide-react-native';
 
 export default function CustomerQuotesScreen() {
-  const { serviceRequests, quotes, updateServiceRequest, updateQuote, addQuote } = useAppStore();
+  const { serviceRequests, quotes, updateServiceRequest, updateQuote } = useAppStore();
   const { user } = useAuthStore();
-  const [selectedRequestForChat, setSelectedRequestForChat] = React.useState<string | null>(null);
-  const [selectedQuoteForPayment, setSelectedQuoteForPayment] = React.useState<Quote | null>(null);
+  const [selectedRequestForChat, setSelectedRequestForChat] = useState<string | null>(null);
+  const [selectedQuoteForPayment, setSelectedQuoteForPayment] = useState<Quote | null>(null);
 
   const getServiceTitle = (type: string) => {
     return SERVICE_CATEGORIES.find(s => s.id === type)?.title || type;

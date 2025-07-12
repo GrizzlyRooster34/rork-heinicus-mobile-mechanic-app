@@ -1,9 +1,9 @@
 {
   "owner": "heinicus1",
   "android": {
-    "package": "com.heinicus1.heinicusmobilemechanicapp"
+    "package": "com.heinicus.mobilemechanic"
   },
   "ios": {
-    "bundleIdentifier": "com.heinicus1.heinicusmobilemechanicapp"
+    "bundleIdentifier": "com.heinicus.mobilemechanic"
   }
 }

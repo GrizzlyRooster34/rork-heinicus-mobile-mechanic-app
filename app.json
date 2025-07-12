@@ -16,7 +16,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mobilemechanic.app"
+      "bundleIdentifier": "com.heinicus.mobilemechanic"
     },
     "android": {
       "versionCode": 5,

@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/stores/settings-store';
 import * as Icons from 'lucide-react-native';
 import { NotificationSettings } from '@/components/NotificationSettings';
 import { AvailabilitySettings } from '@/components/AvailabilitySettings';
+import { logger } from '@/utils/logger';
 import { ServicePricingSettings } from '@/components/ServicePricingSettings';
 import { ToolsEquipmentSettings } from '@/components/ToolsEquipmentSettings';
 import { ReportsAnalytics } from '@/components/ReportsAnalytics';
@@ -37,7 +38,7 @@ export default function MechanicProfileScreen() {
   };
 
   const handleSettingsChange = (settingsType: string, settings: any) => {
-    console.log(`${settingsType} settings updated:`, settings);
+    logger.info(`${settingsType} settings updated`, 'MechanicProfile', settings);
     
     // Update appropriate store based on settings type
     switch (settingsType) {
@@ -54,7 +55,7 @@ export default function MechanicProfileScreen() {
         updateToolsSettings(settings);
         break;
       default:
-        console.warn('Unknown settings type:', settingsType);
+        logger.warn('Unknown settings type', 'MechanicProfile', { settingsType });
     }
   };
 

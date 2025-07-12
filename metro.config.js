@@ -21,7 +21,7 @@ config.resolver.platforms = ['ios', 'android', 'native', 'web'];
 
 // Add support for absolute imports
 config.resolver.alias = {
-  '@': './src',
+  '@': '.',
 };
 
 // Enable experimental features for better performance

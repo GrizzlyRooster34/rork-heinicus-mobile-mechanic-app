@@ -11,16 +11,8 @@ module.exports = function (api) {
       ],
     ],
     plugins: [
-      // Required for NativeWind
       'nativewind/babel',
-      
-      // React Native Reanimated plugin (should be last)
-      [
-        'react-native-reanimated/plugin',
-        {
-          relativeSourceLocation: true,
-        },
-      ],
+      'react-native-reanimated/plugin',
     ],
   };
 };

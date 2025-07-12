@@ -28,6 +28,7 @@
     "strict": true,
     "strictNullChecks": true,
     "target": "es2018",
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"

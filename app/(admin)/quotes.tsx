@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
 import { useAppStore } from '@/stores/app-store';
@@ -135,7 +135,7 @@ export default function AdminQuotesScreen() {
           <TouchableOpacity
             key={tab.key}
             style={[styles.tab, selectedTab === tab.key && styles.activeTab]}
-            onPress={() => setSelectedTab(tab.key as any)}
+            onPress={() => setSelectedTab(tab.key as 'pending' | 'accepted' | 'all')}
           >
             <Text style={[styles.tabText, selectedTab === tab.key && styles.activeTabText]}>
               {tab.label} ({tab.count})
