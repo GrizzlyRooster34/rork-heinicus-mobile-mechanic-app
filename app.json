@@ -19,7 +19,7 @@
       "bundleIdentifier": "com.heinicus.mobilemechanic"
     },
     "android": {
-      "versionCode": 6,
+      "versionCode": 7,
       "package": "com.heinicus.mobilemechanic",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -75,13 +75,13 @@
     },
     "extra": {
       "eas": {
-        "projectId": "heinicus-mobile-mechanic"
+        "projectId": "43815cbd-f56d-401c-8893-5c609bc71a27"
       },
       "buildInfo": {
-        "buildNumber": 6,
-        "buildDate": "2025-07-13T02:22:29.795Z",
+        "buildNumber": 7,
+        "buildDate": "2025-07-13T02:46:20.219Z",
         "gitBranch": "integrated-production",
-        "gitCommit": "679ff7a",
+        "gitCommit": "f11ae39",
         "buildType": "build",
         "environment": "development"
       }

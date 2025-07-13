@@ -5,5 +5,10 @@
   },
   "ios": {
     "bundleIdentifier": "com.heinicus.mobilemechanic"
+  },
+  "extra": {
+    "eas": {
+      "projectId": "43815cbd-f56d-401c-8893-5c609bc71a27"
+    }
   }
 }
