@@ -1,0 +1,244 @@
+name: Build APK (Production Ready)
+
+on:
+  push:
+    branches: [ main, integrated-production ]
+  pull_request:
+    branches: [ main, integrated-production ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type'
+        required: true
+        default: 'standalone'
+        type: choice
+        options:
+          - standalone
+          - preview
+          - development
+      version_bump:
+        description: 'Version Bump Type'
+        required: true
+        default: 'build'
+        type: choice
+        options:
+          - build
+          - patch
+          - minor
+          - major
+
+env:
+  NODE_VERSION: '18'
+  JAVA_VERSION: '17'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - name: 🏗 Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 🏗 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 🏗 Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: ${{ env.JAVA_VERSION }}
+
+    - name: 📦 Install dependencies
+      run: |
+        npm ci --legacy-peer-deps
+        npm ls || true
+
+    - name: 🔍 Validate configuration
+      run: |
+        echo "📱 Validating app configuration..."
+        if [ ! -f "app.json" ]; then
+          echo "❌ app.json not found"
+          exit 1
+        fi
+        
+        if [ ! -f "eas.json" ]; then
+          echo "❌ eas.json not found"
+          exit 1
+        fi
+        
+        echo "✅ Configuration files found"
+        
+        # Validate package.json
+        node -e "
+          const pkg = require('./package.json');
+          console.log('📦 Package:', pkg.name, 'v' + pkg.version);
+          console.log('🏷 License:', pkg.license || 'None');
+        "
+
+    - name: 🔢 Bump version
+      run: |
+        BUILD_TYPE="${{ github.event.inputs.build_type || 'standalone' }}"
+        VERSION_BUMP="${{ github.event.inputs.version_bump || 'build' }}"
+        
+        echo "🔢 Bumping version (type: $VERSION_BUMP)"
+        npm run bump:$VERSION_BUMP
+        
+        # Display build info
+        if [ -f "build-info.json" ]; then
+          echo "📋 Build Information:"
+          cat build-info.json | jq '.'
+        fi
+
+    - name: 🏗 Setup EAS CLI
+      run: |
+        npm install -g eas-cli@latest
+        eas --version
+
+    - name: 🔐 Authenticate with EAS
+      run: |
+        if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+          echo "❌ EXPO_TOKEN not found in secrets"
+          echo ""
+          echo "🔧 Setup Instructions:"
+          echo "1. Go to: https://github.com/${{ github.repository }}/settings/secrets/actions"
+          echo "2. Add new secret: EXPO_TOKEN"
+          echo "3. Get token: https://expo.dev/accounts/[account]/settings/access-tokens"
+          echo ""
+          exit 1
+        fi
+        echo "✅ EAS authentication configured"
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    - name: 🚀 Build APK
+      run: |
+        BUILD_TYPE="${{ github.event.inputs.build_type || 'standalone' }}"
+        
+        echo "🚀 Starting EAS build..."
+        echo "📱 Build type: $BUILD_TYPE"
+        echo "🎯 Platform: Android"
+        echo "📦 Output: APK"
+        
+        # Submit build with timeout handling
+        timeout 1800 eas build \
+          --platform android \
+          --profile $BUILD_TYPE \
+          --non-interactive \
+          --clear-cache \
+          --json > build-result.json || {
+          echo "❌ Build failed or timed out"
+          echo "📋 Checking build result..."
+          if [ -f "build-result.json" ]; then
+            cat build-result.json
+          fi
+          exit 1
+        }
+        
+        echo "✅ Build submitted successfully"
+        
+        # Parse build result
+        if [ -f "build-result.json" ]; then
+          BUILD_ID=$(cat build-result.json | jq -r '.[0].id // empty')
+          BUILD_URL=$(cat build-result.json | jq -r '.[0].logsUrl // empty')
+          
+          if [ ! -z "$BUILD_ID" ]; then
+            echo "🔗 Build ID: $BUILD_ID"
+            echo "📊 Logs: $BUILD_URL"
+            echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+            echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
+          fi
+        fi
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    - name: 📊 Build Summary
+      run: |
+        echo "## 🚀 APK Build Completed" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Build information
+        if [ -f "build-info.json" ]; then
+          VERSION=$(cat build-info.json | jq -r '.version')
+          VERSION_CODE=$(cat build-info.json | jq -r '.versionCode')
+          PACKAGE=$(cat build-info.json | jq -r '.package')
+          BUILD_DATE=$(cat build-info.json | jq -r '.buildDate')
+          
+          echo "### 📱 Build Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Number:** $VERSION_CODE" >> $GITHUB_STEP_SUMMARY
+          echo "- **Package:** $PACKAGE" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Date:** $BUILD_DATE" >> $GITHUB_STEP_SUMMARY
+          echo "- **Profile:** ${{ github.event.inputs.build_type || 'standalone' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Installation instructions
+        echo "### 📲 Installation" >> $GITHUB_STEP_SUMMARY
+        echo "1. Download APK from EAS build dashboard" >> $GITHUB_STEP_SUMMARY
+        echo "2. Transfer to OnePlus 9 Pro" >> $GITHUB_STEP_SUMMARY
+        echo "3. Install: \`adb install app.apk\`" >> $GITHUB_STEP_SUMMARY
+        echo "4. Or enable 'Unknown Sources' and install directly" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Build result
+        if [ -f "build-result.json" ]; then
+          BUILD_ID=$(cat build-result.json | jq -r '.[0].id // "N/A"')
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- **EAS Build ID:** $BUILD_ID" >> $GITHUB_STEP_SUMMARY
+          echo "- **EAS Dashboard:** https://expo.dev/accounts/heinicus1/projects/heinicus-mobile-mechanic-app/builds" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: 📤 Upload build artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: build-artifacts
+        path: |
+          build-info.json
+          build-result.json
+          eas-build-*.log
+        retention-days: 30
+
+    - name: 💬 Comment on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let buildInfo = {};
+          try {
+            buildInfo = JSON.parse(fs.readFileSync('build-info.json', 'utf8'));
+          } catch (e) {
+            console.log('No build info available');
+          }
+          
+          const comment = `## 🚀 APK Build Status
+          
+          ✅ **Build Successful**
+          
+          **Build Details:**
+          - Version: ${buildInfo.version || 'Unknown'}
+          - Build Number: ${buildInfo.versionCode || 'Unknown'}
+          - Package: ${buildInfo.package || 'Unknown'}
+          - Profile: ${{ github.event.inputs.build_type || 'standalone' }}
+          
+          **Next Steps:**
+          1. Check the [EAS Dashboard](https://expo.dev/accounts/heinicus1/projects/heinicus-mobile-mechanic-app/builds) for download
+          2. Test on OnePlus 9 Pro
+          3. Verify all functionality works as expected
+          
+          Build triggered by: ${context.actor}`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

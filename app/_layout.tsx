@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc, trpcClient } from '@/lib/trpc';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { StoreProvider } from '@/stores/StoreProvider';
+import { mobileDB } from '@/lib/mobile-database';
 
 export const unstable_settings = {
   initialRouteName: 'auth',
@@ -30,6 +31,9 @@ function AppContent() {
   useEffect(() => {
     async function prepare() {
       try {
+        // Initialize mobile database with Day 1 data
+        await mobileDB.initializeIfNeeded();
+        
         // Simple preparation without fonts to avoid infinite loops
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (e) {

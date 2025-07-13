@@ -19,7 +19,7 @@
       "bundleIdentifier": "com.heinicus.mobilemechanic"
     },
     "android": {
-      "versionCode": 5,
+      "versionCode": 6,
       "package": "com.heinicus.mobilemechanic",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -76,6 +76,14 @@
     "extra": {
       "eas": {
         "projectId": "heinicus-mobile-mechanic"
+      },
+      "buildInfo": {
+        "buildNumber": 6,
+        "buildDate": "2025-07-13T02:22:29.795Z",
+        "gitBranch": "integrated-production",
+        "gitCommit": "679ff7a",
+        "buildType": "build",
+        "environment": "development"
       }
     }
   }

@@ -16,11 +16,11 @@ import { ENV_CONFIG, logProductionEvent } from '@/utils/firebase-config';
 import { logger } from '@/utils/logger';
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
-import * as Icons from 'lucide-react-native';
+import { Car, Truck, Bike, MapPin, Camera, Bot, Shield, Brain, CheckCircle } from 'lucide-react-native';
 
 export default function CustomerRequestScreen() {
   const params = useLocalSearchParams();
-  const { addServiceRequest, addQuote, vehicles, currentLocation, setCurrentLocation, updateServiceRequest, addVehicle, logEvent } = useAppStore();
+  const { addServiceRequest, addQuote, vehicles, currentLocation, setCurrentLocation, updateServiceRequest, addVehicle } = useAppStore();
   const { user } = useAuthStore();
   
   const [selectedService, setSelectedService] = useState<ServiceType | null>(
@@ -33,7 +33,7 @@ export default function CustomerRequestScreen() {
   );
   const [selectedParts, setSelectedParts] = useState<string[]>([]);
   const [showVinScanner, setShowVinScanner] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const [, setLocationError] = useState<string | null>(null);
   const [vinNumber, setVinNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiDiagnosis, setAiDiagnosis] = useState<DiagnosticResult | undefined>(
@@ -74,7 +74,7 @@ export default function CustomerRequestScreen() {
         setLocationError('Failed to get location');
       }
     }
-  }, []);
+  }, [setCurrentLocation]);
 
   useEffect(() => {
     getCurrentLocation();
@@ -102,7 +102,7 @@ export default function CustomerRequestScreen() {
         handleSubmit();
       }, 500);
     }
-  }, [params.autoQuote, selectedService, description, selectedVehicle]);
+  }, [params.autoQuote, selectedService, description, selectedVehicle, handleSubmit]);
 
 
   const handleVinScanned = (vinData: { vin: string; vehicleType: VehicleType; make?: string; model?: string; year?: number; trim?: string; engine?: string }) => {
@@ -323,7 +323,7 @@ Would you like to add this vehicle to your profile?`,
       setSelectedParts([]);
       setVinNumber('');
       setAiDiagnosis(undefined);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to submit request. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -379,7 +379,7 @@ Would you like to add this vehicle to your profile?`,
         {/* Production Environment Indicator */}
         {ENV_CONFIG?.isProduction && (
           <View style={styles.productionBanner}>
-            <Icons.Shield size={16} color={Colors.success} />
+            <Shield size={16} color={Colors.success} />
             <Text style={styles.productionText}>Production Environment - Live Service</Text>
           </View>
         )}
@@ -390,7 +390,15 @@ Would you like to add this vehicle to your profile?`,
           {vehicles.length > 0 ? (
             <View style={styles.vehicleSelector}>
               {vehicles.map((vehicle) => {
-                const IconComponent = Icons[getVehicleTypeIcon(vehicle.vehicleType) as keyof typeof Icons] as any;
+                const getVehicleIcon = (type: VehicleType) => {
+                  switch (type) {
+                    case 'car': return Car;
+                    case 'truck': return Truck;
+                    case 'motorcycle': return Bike;
+                    default: return Car;
+                  }
+                };
+                const IconComponent = getVehicleIcon(vehicle.vehicleType);
                 
                 return (
                   <View
@@ -483,7 +491,7 @@ Would you like to add this vehicle to your profile?`,
           {aiDiagnosis && !showAIAssistant && (
             <View style={styles.diagnosisPreview}>
               <View style={styles.diagnosisHeader}>
-                <Icons.Brain size={16} color={Colors.primary} />
+                <Brain size={16} color={Colors.primary} />
                 <Text style={styles.diagnosisTitle}>AI Diagnosis Complete</Text>
                 <Button
                   title="View Details"
@@ -562,7 +570,7 @@ Would you like to add this vehicle to your profile?`,
               <View style={styles.toolsList}>
                 {toolLoadoutSuggestions.slice(0, 6).map((toolName, index) => (
                   <View key={index} style={styles.toolItem}>
-                    <Icons.CheckCircle size={14} color={Colors.success} />
+                    <CheckCircle size={14} color={Colors.success} />
                     <Text style={styles.toolName}>{toolName}</Text>
                   </View>
                 ))}
@@ -604,7 +612,7 @@ Would you like to add this vehicle to your profile?`,
           <View style={styles.vinSection}>
             {vinNumber || selectedVehicle?.vin ? (
               <View style={styles.vinDisplay}>
-                <Icons.CheckCircle size={20} color={Colors.success} />
+                <CheckCircle size={20} color={Colors.success} />
                 <Text style={styles.vinText}>
                   VIN: {vinNumber || selectedVehicle?.vin}
                 </Text>
@@ -665,7 +673,7 @@ Would you like to add this vehicle to your profile?`,
                 title={`${option.label}
 ${option.desc}`}
                 variant={urgency === option.key ? 'primary' : 'outline'}
-                onPress={() => setUrgency(option.key as any)}
+                onPress={() => setUrgency(option.key as 'low' | 'medium' | 'high' | 'emergency')}
                 style={styles.urgencyButton}
                 textStyle={styles.urgencyButtonText}
               />

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { StatusTimestamp, ServiceStatus } from '@/types/service';
-import * as Icons from 'lucide-react-native';
+import { Clock, FileText, CheckCircle, Calendar, Wrench, Pause, CheckCircle2, X, Circle } from 'lucide-react-native';
 
 interface JobTimelineProps {
   timeline: StatusTimestamp[];
@@ -14,15 +14,15 @@ interface JobTimelineProps {
 export function JobTimeline({ timeline, currentStatus, estimatedDuration, actualDuration }: JobTimelineProps) {
   const getStatusIcon = (status: ServiceStatus) => {
     switch (status) {
-      case 'pending': return 'Clock';
-      case 'quoted': return 'FileText';
-      case 'accepted': return 'CheckCircle';
-      case 'scheduled': return 'Calendar';
-      case 'in_progress': return 'Wrench';
-      case 'paused': return 'Pause';
-      case 'completed': return 'CheckCircle2';
-      case 'cancelled': return 'X';
-      default: return 'Circle';
+      case 'pending': return Clock;
+      case 'quoted': return FileText;
+      case 'accepted': return CheckCircle;
+      case 'scheduled': return Calendar;
+      case 'in_progress': return Wrench;
+      case 'paused': return Pause;
+      case 'completed': return CheckCircle2;
+      case 'cancelled': return X;
+      default: return Circle;
     }
   };
 
@@ -105,13 +105,13 @@ export function JobTimeline({ timeline, currentStatus, estimatedDuration, actual
       <ScrollView style={styles.timelineContainer} showsVerticalScrollIndicator={false}>
         {timeline.length === 0 ? (
           <View style={styles.emptyTimeline}>
-            <Icons.Clock size={32} color={Colors.textMuted} />
+            <Clock size={32} color={Colors.textMuted} />
             <Text style={styles.emptyText}>No timeline events yet</Text>
           </View>
         ) : (
           <View style={styles.timeline}>
             {timeline.map((event, index) => {
-              const IconComponent = Icons[getStatusIcon(event.status) as keyof typeof Icons] as any;
+              const IconComponent = getStatusIcon(event.status);
               const isLast = index === timeline.length - 1;
               const isCurrent = event.status === currentStatus;
               

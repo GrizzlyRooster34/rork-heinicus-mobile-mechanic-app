@@ -2,11 +2,21 @@ import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
-import * as Icons from 'lucide-react-native';
+import { LayoutDashboard, Briefcase, Map, Users, Settings } from 'lucide-react-native';
+import { logger } from '@/utils/logger';
 
-function TabBarIcon({ name, color }: { name: keyof typeof Icons; color: string }) {
-  const IconComponent = Icons[name] as any;
-  return IconComponent ? <IconComponent size={24} color={color} /> : null;
+type IconName = 'LayoutDashboard' | 'Briefcase' | 'Map' | 'Users' | 'Settings';
+
+function TabBarIcon({ name, color }: { name: IconName; color: string }) {
+  const iconMap = {
+    LayoutDashboard,
+    Briefcase,
+    Map,
+    Users,
+    Settings,
+  };
+  const IconComponent = iconMap[name];
+  return <IconComponent size={24} color={color} />;
 }
 
 export default function MechanicTabLayout() {
@@ -14,7 +24,7 @@ export default function MechanicTabLayout() {
 
   // Production security: Only allow Cody as mechanic
   if (!isAuthenticated || !user || user.role !== 'mechanic' || user.id !== 'mechanic-cody') {
-    console.warn('Unauthorized mechanic access attempt:', { 
+    logger.warn('Unauthorized mechanic access attempt', { 
       isAuthenticated, 
       userId: user?.id, 
       role: user?.role,
