@@ -191,6 +191,9 @@ export interface Quote {
   depositAmount?: number; // Deposit amount
   remainingBalance?: number; // Remaining balance after deposit
   finalAmount?: number; // Final amount paid
+  paymentMethod?: string; // Payment method used
+  paymentIntentId?: string; // Stripe payment intent ID
+  stripeCustomerId?: string; // Stripe customer ID
   notes?: string;
   description?: string;
   breakdown?: {

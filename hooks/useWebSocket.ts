@@ -31,13 +31,13 @@ interface Quote {
   estimatedDuration: number;
   validUntil: Date;
   notes?: string;
-  parts: Array<{
+  parts: {
     partName: string;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
     description?: string;
-  }>;
+  }[];
 }
 
 interface LocationUpdate {
@@ -186,12 +186,12 @@ export function useWebSocket(config: WebSocketConfig = {}) {
     laborCost: number,
     partsCost: number,
     estimatedDuration: number,
-    parts: Array<{
+    parts: {
       partName: string;
       quantity: number;
       unitPrice: number;
       description?: string;
-    }>,
+    }[],
     notes?: string
   ) => {
     if (socket && connected) {

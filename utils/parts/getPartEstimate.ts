@@ -206,14 +206,14 @@ export interface PartsCalculationResult {
   total: number;
   foundCount: number;
   notFoundCount: number;
-  breakdown: Array<{
+  breakdown: {
     name: string;
     category: string;
     price: number;
     availability: 'in-stock' | 'special-order' | 'unknown';
     brand?: string;
     estimatedDelivery?: string;
-  }>;
+  }[];
 }
 
 export async function calculatePartsFromList(partNames: string[]): Promise<PartsCalculationResult> {

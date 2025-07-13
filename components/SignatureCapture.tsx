@@ -18,7 +18,7 @@ const { width: screenWidth } = Dimensions.get('window');
 export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCancel }: SignatureCaptureProps) {
   const [hasSignature, setHasSignature] = useState(false);
   const [customerName, setCustomerName] = useState('');
-  const [signaturePaths, setSignaturePaths] = useState<Array<{ x: number; y: number }[]>>([]);
+  const [signaturePaths, setSignaturePaths] = useState<{ x: number; y: number }[][]>([]);
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
   
   const canvasRef = useRef<View>(null);

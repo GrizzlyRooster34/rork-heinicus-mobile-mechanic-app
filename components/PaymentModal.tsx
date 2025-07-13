@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Alert, Platform } from 'react-native';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import { Colors } from '@/constants/colors';
 import { Button } from '@/components/Button';
+import { LoadingButton, LoadingOverlay } from '@/components/LoadingState';
 import { Quote } from '@/types/service';
 import { useAppStore } from '@/stores/app-store';
+import { useStripePayment } from '@/hooks/useStripePayment';
+import { STRIPE_PUBLISHABLE_KEY } from '@/lib/stripe-config';
+import { PaymentErrorBoundary } from '@/components/error-boundaries';
 import * as Icons from 'lucide-react-native';
 
 interface PaymentModalProps {
@@ -13,10 +18,20 @@ interface PaymentModalProps {
   onCancel: () => void;
 }
 
-export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel }: PaymentModalProps) {
+function PaymentModalContent({ quote, paymentType = 'full', onSuccess, onCancel }: PaymentModalProps) {
   const { updateQuote, updateServiceRequest, getJobParts } = useAppStore();
-  const [isProcessing, setIsProcessing] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'card' | 'apple_pay' | 'google_pay'>('card');
+
+  const stripePayment = useStripePayment({
+    quote,
+    paymentType,
+    onSuccess: (result) => {
+      handlePaymentSuccess(result);
+    },
+    onError: (error) => {
+      Alert.alert('Payment Failed', error, [{ text: 'OK' }]);
+    },
+  });
 
   const depositAmount = Math.round(quote.totalCost * 0.3); // 30% deposit
   const remainingAmount = quote.totalCost - depositAmount;
@@ -30,94 +45,80 @@ export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel 
       ? depositAmount 
       : quote.totalCost;
 
-  const handlePayment = async () => {
-    setIsProcessing(true);
+  const handlePaymentSuccess = (result: any) => {
+    const now = new Date();
     
+    if (paymentType === 'deposit') {
+      updateQuote(quote.id, {
+        status: 'deposit_paid',
+        depositPaidAt: now,
+        depositAmount: stripePayment.paymentAmount,
+        remainingBalance: remainingAmount,
+        paymentIntentId: result.paymentIntent?.id,
+      });
+      
+      updateServiceRequest(quote.serviceRequestId, {
+        status: 'accepted'
+      });
+      
+      Alert.alert(
+        'Deposit Payment Successful',
+        `Deposit of $${stripePayment.paymentAmount} has been processed. Remaining balance: $${remainingAmount}`,
+        [{ text: 'OK', onPress: onSuccess }]
+      );
+    } else if (paymentType === 'completion') {
+      updateQuote(quote.id, {
+        status: 'paid',
+        paidAt: now,
+        paymentMethod: selectedPaymentMethod,
+        finalAmount: stripePayment.paymentAmount,
+        partsCost: partsCost,
+        paymentIntentId: result.paymentIntent?.id,
+      });
+      
+      updateServiceRequest(quote.serviceRequestId, {
+        status: 'completed',
+        paidAt: now
+      });
+      
+      Alert.alert(
+        'Payment Successful',
+        `Final payment of $${stripePayment.paymentAmount} has been processed successfully.${partsCost > 0 ? ` (Includes $${partsCost} in parts)` : ''}`,
+        [{ text: 'OK', onPress: onSuccess }]
+      );
+    } else {
+      updateQuote(quote.id, {
+        status: 'paid',
+        paidAt: now,
+        paymentMethod: selectedPaymentMethod,
+        paymentIntentId: result.paymentIntent?.id,
+      });
+      
+      updateServiceRequest(quote.serviceRequestId, {
+        status: 'completed',
+        paidAt: now
+      });
+      
+      Alert.alert(
+        'Payment Successful',
+        `Payment of $${stripePayment.paymentAmount} has been processed successfully.`,
+        [{ text: 'OK', onPress: onSuccess }]
+      );
+    }
+  };
+
+  const handlePayment = async () => {
     try {
-      // Simulate Stripe payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // In a real app, this would integrate with Stripe
-      // const stripe = await getStripe();
-      // const { error } = await stripe.redirectToCheckout({
-      //   sessionId: quote.stripePaymentUrl
-      // });
-      
-      // Simulate payment success (90% success rate for demo)
-      const success = Math.random() > 0.1;
-      
-      if (success) {
-        // Update quote status
-        const now = new Date();
-        
-        if (paymentType === 'deposit') {
-          updateQuote(quote.id, {
-            status: 'deposit_paid',
-            depositPaidAt: now,
-            depositAmount: completionAmount,
-            remainingBalance: remainingAmount,
-          });
-          
-          // Update service request status
-          updateServiceRequest(quote.serviceRequestId, {
-            status: 'accepted'
-          });
-          
-          Alert.alert(
-            'Deposit Payment Successful',
-            `Deposit of $${completionAmount} has been processed. Remaining balance: $${remainingAmount}`,
-            [{ text: 'OK', onPress: onSuccess }]
-          );
-        } else if (paymentType === 'completion') {
-          updateQuote(quote.id, {
-            status: 'paid',
-            paidAt: now,
-            paymentMethod: selectedPaymentMethod,
-            finalAmount: completionAmount,
-            partsCost: partsCost,
-          });
-          
-          // Update service request status
-          updateServiceRequest(quote.serviceRequestId, {
-            status: 'completed',
-            paidAt: now
-          });
-          
-          Alert.alert(
-            'Payment Successful',
-            `Final payment of $${completionAmount} has been processed successfully.${partsCost > 0 ? ` (Includes $${partsCost} in parts)` : ''}`,
-            [{ text: 'OK', onPress: onSuccess }]
-          );
-        } else {
-          updateQuote(quote.id, {
-            status: 'paid',
-            paidAt: now,
-            paymentMethod: selectedPaymentMethod,
-          });
-          
-          // Update service request status
-          updateServiceRequest(quote.serviceRequestId, {
-            status: 'completed',
-            paidAt: now
-          });
-          
-          Alert.alert(
-            'Payment Successful',
-            `Payment of $${completionAmount} has been processed successfully.`,
-            [{ text: 'OK', onPress: onSuccess }]
-          );
-        }
-      } else {
-        throw new Error('Payment failed');
+      if (selectedPaymentMethod === 'card') {
+        await stripePayment.processCardPayment();
+      } else if (selectedPaymentMethod === 'apple_pay') {
+        await stripePayment.processApplePayPayment();
+      } else if (selectedPaymentMethod === 'google_pay') {
+        await stripePayment.processGooglePayPayment();
       }
     } catch (error) {
-      Alert.alert(
-        'Payment Failed', 
-        'There was an issue processing your payment. Please try again or contact support.',
-        [{ text: 'OK' }]
-      );
-    } finally {
-      setIsProcessing(false);
+      // Error handling is managed in the hook
+      console.error('Payment error:', error);
     }
   };
 
@@ -128,8 +129,7 @@ export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel 
     }
     
     setSelectedPaymentMethod('apple_pay');
-    // In a real app, integrate with Apple Pay
-    Alert.alert('Apple Pay', 'Apple Pay integration would be implemented here.');
+    await handlePayment();
   };
 
   const handleGooglePay = async () => {
@@ -139,8 +139,7 @@ export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel 
     }
     
     setSelectedPaymentMethod('google_pay');
-    // In a real app, integrate with Google Pay
-    Alert.alert('Google Pay', 'Google Pay integration would be implemented here.');
+    await handlePayment();
   };
 
   const getPaymentTitle = () => {
@@ -349,17 +348,60 @@ export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel 
             variant="outline"
             onPress={onCancel}
             style={styles.cancelButton}
-            disabled={isProcessing}
+            disabled={stripePayment.isProcessing}
           />
-          <Button
-            title={isProcessing ? 'Processing...' : `Pay $${completionAmount}`}
+          <LoadingButton
+            title={`Pay $${stripePayment.paymentAmount}`}
+            loadingTitle="Processing Payment..."
+            isLoading={stripePayment.isProcessing}
             onPress={handlePayment}
             style={styles.payButton}
-            disabled={isProcessing}
+            variant="primary"
+            size="medium"
           />
         </View>
+        
+        {/* Loading Overlay for critical payment operations */}
+        <LoadingOverlay 
+          visible={stripePayment.isProcessing} 
+          message="Processing your payment securely..."
+          transparent={false}
+        />
       </View>
     </Modal>
+  );
+}
+
+export function PaymentModal(props: PaymentModalProps) {
+  if (!STRIPE_PUBLISHABLE_KEY) {
+    return (
+      <Modal visible={true} animationType="slide" onRequestClose={props.onCancel}>
+        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={styles.title}>Payment Not Available</Text>
+          <Text style={styles.depositDescription}>
+            Stripe is not configured. Please check your environment variables.
+          </Text>
+          <Button title="Close" onPress={props.onCancel} />
+        </View>
+      </Modal>
+    );
+  }
+
+  return (
+    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
+      <PaymentErrorBoundary
+        onPaymentError={(error) => {
+          console.error('Payment processing error:', error);
+        }}
+        onRetryPayment={() => {
+          // Could implement retry logic here
+          console.log('Retrying payment...');
+        }}
+        onCancelPayment={props.onCancel}
+      >
+        <PaymentModalContent {...props} />
+      </PaymentErrorBoundary>
+    </StripeProvider>
   );
 }
 

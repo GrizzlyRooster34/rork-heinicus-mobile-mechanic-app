@@ -1,12 +1,12 @@
 {
-  "version": "1.0.0",
-  "versionCode": 7,
+  "version": "1.1.0",
+  "versionCode": 9,
   "package": "com.heinicus.mobilemechanic",
-  "buildDate": "2025-07-13T02:46:20.291Z",
+  "buildDate": "2025-07-13T18:08:36.116Z",
   "gitInfo": {
     "branch": "integrated-production",
-    "commit": "f11ae39",
-    "timestamp": "20250713_024620"
+    "commit": "06dc8e7",
+    "timestamp": "20250713_180836"
   },
   "bumpType": "build"
 }

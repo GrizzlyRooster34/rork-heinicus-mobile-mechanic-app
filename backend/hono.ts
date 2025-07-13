@@ -3,6 +3,7 @@ import { trpcServer } from "@hono/trpc-server";
 import { cors } from "hono/cors";
 import { appRouter } from "./trpc/app-router";
 import { createContext } from "./trpc/create-context";
+import { payment } from "./routes/payment";
 
 // app will be mounted at /api
 const app = new Hono();
@@ -24,6 +25,9 @@ app.get("/", (c) => {
   });
 });
 
+// Mount payment routes at /payment
+app.route("/payment", payment);
+
 // Mount tRPC router at /trpc
 app.use(
   "/trpc/*",
@@ -44,7 +48,7 @@ app.all("*", (c) => {
     error: "Route not found",
     method: c.req.method,
     path: c.req.url,
-    availableRoutes: ["/", "/trpc/*"]
+    availableRoutes: ["/", "/payment/*", "/trpc/*"]
   }, 404);
 });
 

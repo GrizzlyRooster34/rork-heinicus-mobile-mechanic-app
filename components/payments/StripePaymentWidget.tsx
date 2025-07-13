@@ -34,13 +34,13 @@ interface Quote {
   estimatedDuration: number;
   validUntil: Date;
   notes?: string;
-  parts: Array<{
+  parts: {
     partName: string;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
     description?: string;
-  }>;
+  }[];
 }
 
 interface StripePaymentWidgetProps {

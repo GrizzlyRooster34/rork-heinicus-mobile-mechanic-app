@@ -11,7 +11,7 @@ export function MaintenanceReminders() {
   const { vehicles, addMaintenanceReminder, maintenanceReminders } = useAppStore();
 
   const getMaintenanceReminders = () => {
-    const reminders: Array<{
+    const reminders: {
       vehicleId: string;
       vehicleName: string;
       serviceType: string;
@@ -22,7 +22,7 @@ export function MaintenanceReminders() {
       priority: 'low' | 'medium' | 'high';
       dueMileage?: number;
       reason: string;
-    }> = [];
+    }[] = [];
 
     vehicles.forEach(vehicle => {
       const intervals = getMaintenanceIntervals();

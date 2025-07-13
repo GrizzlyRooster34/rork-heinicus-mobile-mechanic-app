@@ -71,7 +71,7 @@ export const INITIAL_USERS: InitialUser[] = [
   {
     id: 'admin-cody',
     email: 'matthew.heinen.2014@gmail.com',
-    password: 'admin123!', // Should be hashed in production
+    password: process.env.EXPO_PUBLIC_ADMIN_PASSWORD || 'CHANGE_ME', // Should be hashed in production
     firstName: 'Cody',
     lastName: 'Owner',
     phone: '(555) 987-6543',
@@ -84,7 +84,7 @@ export const INITIAL_USERS: InitialUser[] = [
   {
     id: 'mechanic-cody',
     email: 'cody@heinicus.com',
-    password: 'mechanic123!', // Should be hashed in production
+    password: process.env.EXPO_PUBLIC_MECHANIC_PASSWORD || 'CHANGE_ME', // Should be hashed in production
     firstName: 'Cody',
     lastName: 'Mechanic',
     phone: '(555) 987-6543',
@@ -97,7 +97,7 @@ export const INITIAL_USERS: InitialUser[] = [
   {
     id: 'customer-demo',
     email: 'customer@example.com',
-    password: 'customer123!', // Should be hashed in production
+    password: process.env.EXPO_PUBLIC_CUSTOMER_PASSWORD || 'CHANGE_ME', // Should be hashed in production
     firstName: 'Demo',
     lastName: 'Customer',
     phone: '(555) 123-4567',
@@ -110,7 +110,7 @@ export const INITIAL_USERS: InitialUser[] = [
   {
     id: 'customer-john',
     email: 'john.doe@email.com',
-    password: 'customer123!',
+    password: process.env.EXPO_PUBLIC_CUSTOMER_PASSWORD || 'CHANGE_ME',
     firstName: 'John',
     lastName: 'Doe',
     phone: '(555) 234-5678',

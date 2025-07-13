@@ -225,12 +225,12 @@ io.on('connection', (socket) => {
     partsCost: number;
     estimatedDuration: number;
     notes?: string;
-    parts: Array<{
+    parts: {
       partName: string;
       quantity: number;
       unitPrice: number;
       description?: string;
-    }>;
+    }[];
   }) => {
     try {
       const totalCost = data.laborCost + data.partsCost;
