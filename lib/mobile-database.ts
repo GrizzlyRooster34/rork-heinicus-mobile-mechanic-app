@@ -37,17 +37,24 @@ export class MobileDatabase {
    * Initialize the mobile database with Day 1 data
    */
   async initializeIfNeeded(): Promise<void> {
-    try {
-      const isInitialized = await AsyncStorage.getItem(STORAGE_KEYS.DB_INITIALIZED);
-      const currentVersion = await AsyncStorage.getItem(STORAGE_KEYS.DB_VERSION);
-      
-      if (!isInitialized || currentVersion !== DB_VERSION) {
-        console.log('🔄 Initializing mobile database...');
+    return new Promise(async (resolve, reject) => {
+      // 5 second timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        console.warn('Database initialization timed out');
+        resolve();
+      }, 5000);
+
+      try {
+        const isInitialized = await AsyncStorage.getItem(STORAGE_KEYS.DB_INITIALIZED);
+        const currentVersion = await AsyncStorage.getItem(STORAGE_KEYS.DB_VERSION);
         
-        const initialData = await initializeDatabase();
-        
-        // Store initial data in AsyncStorage
-        await Promise.all([
+        if (!isInitialized || currentVersion !== DB_VERSION) {
+          console.log('🔄 Initializing mobile database...');
+          
+          const initialData = await initializeDatabase();
+          
+          // Store initial data in AsyncStorage
+          await Promise.all([
           AsyncStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(initialData.users)),
           AsyncStorage.setItem(STORAGE_KEYS.CUSTOMER_PROFILES, JSON.stringify(initialData.customerProfiles)),
           AsyncStorage.setItem(STORAGE_KEYS.MECHANIC_PROFILES, JSON.stringify(initialData.mechanicProfiles)),
@@ -63,10 +70,15 @@ export class MobileDatabase {
       } else {
         console.log('✅ Mobile database already initialized');
       }
+      
+      clearTimeout(timeout);
+      resolve();
     } catch (error) {
       console.error('❌ Failed to initialize mobile database:', error);
-      throw error;
+      clearTimeout(timeout);
+      resolve(); // Don't block app startup on database errors
     }
+    });
   }
 
   /**

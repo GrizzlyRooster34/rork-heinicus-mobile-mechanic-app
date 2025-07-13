@@ -31,14 +31,16 @@ function AppContent() {
   useEffect(() => {
     async function prepare() {
       try {
-        // Initialize mobile database with Day 1 data
-        await mobileDB.initializeIfNeeded();
+        // Initialize app immediately without blocking
+        setIsReady(true);
+        SplashScreen.hideAsync();
         
-        // Simple preparation without fonts to avoid infinite loops
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Initialize database in background (non-blocking)
+        mobileDB.initializeIfNeeded().catch(e => 
+          console.warn('Background database init failed:', e)
+        );
       } catch (e) {
         console.warn('App preparation failed:', e);
-      } finally {
         setIsReady(true);
         SplashScreen.hideAsync();
       }
