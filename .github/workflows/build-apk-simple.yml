@@ -1,8 +1,6 @@
 name: Build APK (Fixed with Bundle)
 
 on:
-  push:
-    branches: [ Claude-finished, main, rork-model-by-claude, integrated-production ]
   workflow_dispatch:
 
 jobs:
