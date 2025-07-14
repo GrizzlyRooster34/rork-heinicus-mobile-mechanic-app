@@ -36,6 +36,7 @@ config.resolver.blockList = [
   /node_modules\/.*\/gradle\/.*/,
   /node_modules\/.*\/kotlin\/.*/,
   /node_modules\/.*\/java\/.*/,
+  /backend\/.*/, // Exclude backend from mobile bundle
 ];
 
 // Disable file watching for problematic directories
