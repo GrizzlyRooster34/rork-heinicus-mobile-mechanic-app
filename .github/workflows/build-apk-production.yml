@@ -116,66 +116,48 @@ jobs:
       env:
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-    - name: 🚀 Build APK with EAS (with JS Bundle)
+    - name: 🏗 Setup Android SDK
       run: |
-        BUILD_TYPE="${{ github.event.inputs.build_type || 'standalone' }}"
+        echo "🏗 Setting up Android SDK..."
+        echo "ANDROID_HOME=/opt/android-sdk" >> $GITHUB_ENV
+        echo "ANDROID_SDK_ROOT=/opt/android-sdk" >> $GITHUB_ENV
+        echo "/opt/android-sdk/platform-tools" >> $GITHUB_PATH
+        echo "/opt/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+    
+    - name: 📦 Export JS bundle
+      run: |
+        echo "📦 Exporting JavaScript bundle..."
+        mkdir -p android/app/src/main/assets
+        npx expo export --dev --output-dir export
+        cp export/android-index.bundle android/app/src/main/assets/index.android.bundle
+        cp -r export/assets android/app/src/main/res/
+        echo "✅ JS bundle exported successfully"
+    
+    - name: 🏗 Generate native Android project
+      run: |
+        echo "🏗 Generating native Android project..."
+        npx expo prebuild --platform android --clean
+        echo "✅ Native project generated"
+    
+    - name: 🚀 Build APK with Gradle
+      run: |
+        echo "🚀 Building APK with Gradle..."
+        cd android
+        ./gradlew clean
+        ./gradlew assembleRelease
+        echo "✅ APK build completed"
         
-        echo "🚀 Starting EAS build with JS bundle..."
-        echo "📱 Build type: $BUILD_TYPE"
-        echo "🎯 Platform: Android"
-        echo "📦 Output: APK with embedded JS bundle"
-        
-        # Verify EAS configuration
-        echo "🔍 Verifying EAS configuration..."
-        npx eas build:configure --platform android --non-interactive || true
-        
-        echo "📋 EAS build profiles:"
-        cat eas.json | jq '.build'
-        
-        # Submit EAS build (this includes JS bundle automatically)
-        echo "🏗️ Submitting EAS build..."
-        timeout 1800 npx eas build \
-          --platform android \
-          --profile $BUILD_TYPE \
-          --non-interactive \
-          --clear-cache \
-          --wait \
-          --json > build-result.json || {
-          echo "❌ Build failed or timed out"
-          echo "📋 Checking build result..."
-          if [ -f "build-result.json" ]; then
-            echo "Build result content:"
-            cat build-result.json
-          fi
-          
-          echo "📊 Checking EAS build status..."
-          npx eas build:list --platform android --limit 1 --json || true
+        # Find the generated APK
+        APK_PATH=$(find . -name "*.apk" -type f | head -1)
+        if [ -n "$APK_PATH" ]; then
+          echo "📱 APK found: $APK_PATH"
+          # Copy to root for easier access
+          cp "$APK_PATH" ../app-release.apk
+          echo "✅ APK copied to root directory"
+        else
+          echo "❌ No APK found"
           exit 1
-        }
-        
-        echo "✅ EAS build completed successfully"
-        
-        # Parse build result
-        if [ -f "build-result.json" ]; then
-          BUILD_ID=$(cat build-result.json | jq -r '.[0].id // empty')
-          BUILD_URL=$(cat build-result.json | jq -r '.[0].logsUrl // empty')
-          DOWNLOAD_URL=$(cat build-result.json | jq -r '.[0].artifacts.buildUrl // empty')
-          
-          if [ ! -z "$BUILD_ID" ]; then
-            echo "🔗 Build ID: $BUILD_ID"
-            echo "📊 Logs: $BUILD_URL"
-            echo "⬇️ Download: $DOWNLOAD_URL"
-            echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
-            echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
-            echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
-          fi
-          
-          # Display full build result for debugging
-          echo "📋 Full build result:"
-          cat build-result.json | jq '.'
         fi
-      env:
-        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
     - name: 📊 Build Summary
       run: |

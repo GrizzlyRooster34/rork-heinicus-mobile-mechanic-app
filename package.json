@@ -81,6 +81,7 @@
     "expo-status-bar": "~2.2.3",
     "expo-symbols": "~0.4.4",
     "expo-system-ui": "~5.0.6",
+    "expo-updates": "^0.28.17",
     "expo-web-browser": "~14.2.0",
     "firebase-admin": "^12.7.0",
     "hono": "^4.7.11",
