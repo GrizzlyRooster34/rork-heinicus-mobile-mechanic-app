@@ -116,43 +116,63 @@ jobs:
       env:
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-    - name: 🚀 Build APK
+    - name: 🚀 Build APK with EAS (with JS Bundle)
       run: |
         BUILD_TYPE="${{ github.event.inputs.build_type || 'standalone' }}"
         
-        echo "🚀 Starting EAS build..."
+        echo "🚀 Starting EAS build with JS bundle..."
         echo "📱 Build type: $BUILD_TYPE"
         echo "🎯 Platform: Android"
-        echo "📦 Output: APK"
+        echo "📦 Output: APK with embedded JS bundle"
         
-        # Submit build with timeout handling
-        timeout 1800 eas build \
+        # Verify EAS configuration
+        echo "🔍 Verifying EAS configuration..."
+        npx eas build:configure --platform android --non-interactive || true
+        
+        echo "📋 EAS build profiles:"
+        cat eas.json | jq '.build'
+        
+        # Submit EAS build (this includes JS bundle automatically)
+        echo "🏗️ Submitting EAS build..."
+        timeout 1800 npx eas build \
           --platform android \
           --profile $BUILD_TYPE \
           --non-interactive \
           --clear-cache \
+          --wait \
           --json > build-result.json || {
           echo "❌ Build failed or timed out"
           echo "📋 Checking build result..."
           if [ -f "build-result.json" ]; then
+            echo "Build result content:"
             cat build-result.json
           fi
+          
+          echo "📊 Checking EAS build status..."
+          npx eas build:list --platform android --limit 1 --json || true
           exit 1
         }
         
-        echo "✅ Build submitted successfully"
+        echo "✅ EAS build completed successfully"
         
         # Parse build result
         if [ -f "build-result.json" ]; then
           BUILD_ID=$(cat build-result.json | jq -r '.[0].id // empty')
           BUILD_URL=$(cat build-result.json | jq -r '.[0].logsUrl // empty')
+          DOWNLOAD_URL=$(cat build-result.json | jq -r '.[0].artifacts.buildUrl // empty')
           
           if [ ! -z "$BUILD_ID" ]; then
             echo "🔗 Build ID: $BUILD_ID"
             echo "📊 Logs: $BUILD_URL"
+            echo "⬇️ Download: $DOWNLOAD_URL"
             echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
             echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
+            echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
           fi
+          
+          # Display full build result for debugging
+          echo "📋 Full build result:"
+          cat build-result.json | jq '.'
         fi
       env:
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

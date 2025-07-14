@@ -24,11 +24,11 @@ jobs:
     - name: Setup EAS CLI
       run: npm install -g eas-cli@latest
         
-    - name: Build APK with EAS Cloud
+    - name: Build APK with EAS Cloud (JS Bundle Included)
       env:
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       run: |
-        echo "🚀 Starting EAS build..."
+        echo "🚀 Starting EAS build with embedded JS bundle..."
         
         if [ -z "$EXPO_TOKEN" ]; then
           echo "❌ EXPO_TOKEN not found in secrets"
@@ -40,10 +40,19 @@ jobs:
         fi
         
         echo "✅ Authentication token found"
-        echo "📱 Submitting build to EAS cloud..."
+        echo "📱 Submitting build to EAS cloud with JS bundle..."
         
-        # Submit build to EAS cloud
-        eas build --platform android --profile standalone --non-interactive
+        # Configure EAS if needed
+        npx eas build:configure --platform android --non-interactive || true
+        
+        # Submit build to EAS cloud (automatically includes JS bundle)
+        npx eas build --platform android --profile standalone --non-interactive --wait --json > build-result.json
+        
+        echo "✅ Build completed"
+        if [ -f "build-result.json" ]; then
+          echo "📋 Build details:"
+          cat build-result.json | jq '.'
+        fi
         
     - name: Build Summary
       run: |
