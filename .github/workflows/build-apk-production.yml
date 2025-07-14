@@ -1,10 +1,6 @@
 name: Build APK (Production Ready)
 
 on:
-  push:
-    branches: [ main, integrated-production, production-ready-to-build ]
-  pull_request:
-    branches: [ main, integrated-production, production-ready-to-build ]
   workflow_dispatch:
     inputs:
       build_type:
