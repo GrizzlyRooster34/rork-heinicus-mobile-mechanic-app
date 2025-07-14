@@ -1,4 +1,4 @@
-name: Build APK (Simple)
+name: Build APK (Fixed with Bundle)
 
 on:
   push:
@@ -8,44 +8,52 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: 🏗 Checkout repository
       uses: actions/checkout@v4
-      
+
     - name: 🏗 Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
-        
+
     - name: 🏗 Setup Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
-        
+
     - name: 📦 Install dependencies
       run: npm ci --legacy-peer-deps
-      
+
     - name: 🔢 Bump version
       run: npm run bump
-      
+
     - name: 🏗 Setup Expo CLI
       run: npm install -g @expo/cli@latest
-        
-    - name: 📱 Generate standalone Android project
+
+    - name: 📱 Generate native Android project
       run: npx expo prebuild --platform android --clean
       env:
         EXPO_NO_DOTENV: 1
         EXPO_NO_TYPESCRIPT_SETUP: 1
-      
-    - name: 🔨 Build debug APK
+
+    # ✅ NEW: Export JS bundle manually
+    - name: 📦 Export JS bundle
+      run: |
+        mkdir -p android/app/src/main/assets
+        npx expo export --dev --output-dir export
+        cp export/android-index.bundle android/app/src/main/assets/index.android.bundle
+        cp -r export/assets android/app/src/main/res/
+
+    - name: 🔨 Build APK (Debug)
       run: |
         cd android
         chmod +x ./gradlew
         ./gradlew assembleDebug --no-daemon
-        
+
     - name: 📋 Get APK info
       id: apk_info
       run: |
@@ -55,14 +63,14 @@ jobs:
         echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
         echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
         echo "build_number=$(node -p "require('./app.json').expo.android.versionCode")" >> $GITHUB_OUTPUT
-        
+
     - name: 📤 Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: heinicus-mechanic-v${{ steps.apk_info.outputs.version }}-build${{ steps.apk_info.outputs.build_number }}.apk
         path: ${{ steps.apk_info.outputs.apk_path }}
         retention-days: 30
-        
+
     - name: 📊 Build Summary
       run: |
         echo "## 🎉 APK Build Completed!" >> $GITHUB_STEP_SUMMARY
