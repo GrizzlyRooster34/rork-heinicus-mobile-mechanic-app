@@ -201,12 +201,20 @@ export class MobileDatabase {
       const vehiclesJson = await AsyncStorage.getItem(STORAGE_KEYS.VEHICLES);
       const vehicles = vehiclesJson ? JSON.parse(vehiclesJson) : [];
       
-      const updatedVehicles = vehicles.map((v: any) => 
-        v.id === vehicleId ? { ...v, ...updates, updatedAt: new Date().toISOString() } : v
-      );
+      let vehicleFound = false;
+      const updatedVehicles = vehicles.map((v: any) => {
+        if (v.id === vehicleId) {
+          vehicleFound = true;
+          return { ...v, ...updates, updatedAt: new Date().toISOString() };
+        }
+        return v;
+      });
       
-      await AsyncStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(updatedVehicles));
-      return true;
+      if (vehicleFound) {
+        await AsyncStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(updatedVehicles));
+      }
+
+      return vehicleFound;
     } catch (error) {
       console.error('Error updating vehicle:', error);
       return false;

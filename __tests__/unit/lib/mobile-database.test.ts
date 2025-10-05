@@ -77,7 +77,7 @@ describe('MobileDatabase', () => {
 
       expect(consoleSpy).toHaveBeenCalledWith('Database initialization timed out');
       consoleSpy.mockRestore();
-    });
+    }, 7000);
 
     test('should handle initialization errors gracefully', async () => {
       mockAsyncStorage.getItem.mockRejectedValue(new Error('Storage error'));
@@ -156,6 +156,16 @@ describe('MobileDatabase', () => {
         '@heinicus/users',
         expect.any(String)
       );
+    });
+
+    test('should return false when updating non-existent vehicle', async () => {
+      mockAsyncStorage.setItem.mockResolvedValue(undefined);
+
+      const updates = { mileage: 50000 };
+      const success = await mobileDB.updateVehicle('non-existent-vehicle', updates);
+
+      expect(success).toBe(false);
+      expect(mockAsyncStorage.setItem).not.toHaveBeenCalled();
     });
 
     test('should prevent duplicate user creation', async () => {

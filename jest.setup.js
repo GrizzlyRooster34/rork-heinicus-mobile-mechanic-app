@@ -1,5 +1,9 @@
-import 'jest-expo/mock-expo';
+// import 'jest-expo/mock-expo';
 import 'react-native-gesture-handler/jestSetup';
+
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
 
 // Mock react-native-safe-area-context
 jest.mock('react-native-safe-area-context', () => ({
@@ -32,4 +36,14 @@ jest.mock('expo-constants', () => ({
 }));
 
 // Silence the warning: Animated: `useNativeDriver` is not supported
-jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
+// jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
+
+jest.mock('@stripe/stripe-react-native', () => ({
+  StripeProvider: ({ children }) => children,
+  useStripe: () => ({
+    confirmPayment: jest.fn(),
+    createPaymentMethod: jest.fn(),
+    handleCardAction: jest.fn(),
+  }),
+  CardField: () => null,
+}));

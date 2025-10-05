@@ -11,7 +11,7 @@ interface AuthStore extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, firstName: string, lastName: string, phone?: string, role?: 'customer' | 'mechanic') => Promise<boolean>;
   logout: () => void;
-  setUser: (user: User) => void;
+  setUser: (user: User, token?: string | null) => void;
   updateUserRole: (userId: string, role: 'customer' | 'mechanic' | 'admin') => Promise<boolean>;
   getAllUsers: () => User[];
 }
@@ -232,7 +232,7 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
 
-      setUser: (user: User) => {
+      setUser: (user: User, token: string | null = null) => {
         // Production security: Validate user role
         if (user.role === 'mechanic' && user.id !== 'mechanic-cody') {
           console.warn('Unauthorized mechanic access attempt:', { 
@@ -261,7 +261,8 @@ export const useAuthStore = create<AuthStore>()(
         });
         
         set({ 
-          user, 
+          user,
+          token,
           isAuthenticated: true 
         });
       },

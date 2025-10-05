@@ -311,7 +311,28 @@ describe('AuthStore', () => {
   });
 
   describe('SetUser', () => {
-    test('should set user and update authentication state', () => {
+    test('should set user and token and update authentication state', () => {
+      const { result } = renderHook(() => useAuthStore());
+
+      const testUser = {
+        id: 'user-123',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        role: 'customer' as const,
+        createdAt: new Date(),
+      };
+
+      act(() => {
+        result.current.setUser(testUser, 'test-token');
+      });
+
+      expect(result.current.user).toEqual(testUser);
+      expect(result.current.token).toBe('test-token');
+      expect(result.current.isAuthenticated).toBe(true);
+    });
+
+    test('should set user and a null token when no token is provided', () => {
       const { result } = renderHook(() => useAuthStore());
 
       const testUser = {
@@ -328,6 +349,7 @@ describe('AuthStore', () => {
       });
 
       expect(result.current.user).toEqual(testUser);
+      expect(result.current.token).toBeNull();
       expect(result.current.isAuthenticated).toBe(true);
     });
   });
