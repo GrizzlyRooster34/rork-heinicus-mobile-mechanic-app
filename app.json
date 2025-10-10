@@ -15,7 +15,29 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.rork.mobile-mechanic-service-app-xkxuef89"
+      "bundleIdentifier": "app.rork.mobile-mechanic-service-app-xkxuef89",
+      "infoPlist": {
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
+        "NSLocationAlwaysUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
+        "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
+        "UIBackgroundModes": [
+          "location"
+        ],
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
+      },
+      "entitlements": {
+        "com": {
+          "apple": {
+            "developer": {
+              "networking": {
+                "wifi-info": true
+              }
+            }
+          }
+        }
+      }
     },
     "android": {
       "compileSdkVersion": 34,
@@ -39,7 +61,9 @@
         "WAKE_LOCK",
         "RECEIVE_BOOT_COMPLETED",
         "FOREGROUND_SERVICE",
-        "ACCESS_BACKGROUND_LOCATION"
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE_LOCATION",
+        "RECORD_AUDIO"
       ],
       "blockedPermissions": [
         "SYSTEM_ALERT_WINDOW"
@@ -62,17 +86,20 @@
       [
         "expo-location",
         {
+          "isAndroidForegroundServiceEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isIosBackgroundLocationEnabled": true,
           "locationAlwaysAndWhenInUsePermission": "This app needs access to location for mobile mechanic services.",
           "locationAlwaysPermission": "This app needs access to location even when closed for job notifications.",
-          "locationWhenInUsePermission": "This app needs access to location for mobile mechanic services.",
-          "isIosBackgroundLocationEnabled": true,
-          "isAndroidBackgroundLocationEnabled": true
+          "locationWhenInUsePermission": "This app needs access to location for mobile mechanic services."
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "This app needs access to camera to take photos of vehicle issues and parts."
+          "cameraPermission": "This app needs access to camera to take photos of vehicle issues and parts.",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+          "recordAudioAndroid": true
         }
       ],
       [
