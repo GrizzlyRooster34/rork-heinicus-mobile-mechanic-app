@@ -99,8 +99,8 @@ describe('Payment and Billing Workflow Integration', () => {
       },
     };
 
-    (useAppStore as jest.Mock).mockReturnValue(mockAppStore);
-    (useAuthStore as jest.Mock).mockReturnValue(mockAuthStore);
+    (useAppStore as unknown as jest.Mock).mockReturnValue(mockAppStore);
+    (useAuthStore as unknown as jest.Mock).mockReturnValue(mockAuthStore);
   });
 
   afterEach(() => {
@@ -403,9 +403,12 @@ describe('Payment and Billing Workflow Integration', () => {
     test('should handle network errors during payment', async () => {
       // Mock a network error during payment processing
       const originalSetTimeout = global.setTimeout;
-      global.setTimeout = jest.fn((callback) => {
-        throw new Error('Network timeout');
-      });
+      (global.setTimeout as any) = Object.assign(
+        jest.fn((callback) => {
+          throw new Error('Network timeout');
+        }),
+        { __promisify__: jest.fn() }
+      );
 
       const { getByTestId } = render(
         <PaymentModal
@@ -495,9 +498,9 @@ describe('Payment and Billing Workflow Integration', () => {
       });
 
       // Confirm acceptance - should trigger payment modal
-      const confirmAccept = mockAlert.mock.calls[0][2][1];
+      const confirmAccept = mockAlert.mock.calls[0]?.[2]?.[1];
       act(() => {
-        confirmAccept.onPress();
+        confirmAccept?.onPress();
       });
 
       // Payment modal should be triggered (in real implementation)
@@ -513,9 +516,9 @@ describe('Payment and Billing Workflow Integration', () => {
       const acceptButton = getByText('Accept Quote');
       fireEvent.press(acceptButton);
 
-      const confirmAccept = mockAlert.mock.calls[0][2][1];
+      const confirmAccept = mockAlert.mock.calls[0]?.[2]?.[1];
       act(() => {
-        confirmAccept.onPress();
+        confirmAccept?.onPress();
       });
 
       // Quote should remain in pending state after failed payment

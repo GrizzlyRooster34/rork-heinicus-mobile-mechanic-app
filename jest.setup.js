@@ -1,35 +1,35 @@
-import 'jest-expo/mock-expo';
-import 'react-native-gesture-handler/jestSetup';
+/* eslint-env jest */
 
-// Mock react-native-safe-area-context
-jest.mock('react-native-safe-area-context', () => ({
-  SafeAreaProvider: ({ children }) => children,
-  SafeAreaView: ({ children }) => children,
-  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
-}));
+// Silence the warning: Animated: `useNativeDriver` is not supported because the native animated module is missing
+// Mock by suppressing the console warning instead
+jest.spyOn(console, 'warn').mockImplementation((message) => {
+  if (
+    typeof message === 'string' &&
+    message.includes('useNativeDriver')
+  ) {
+    return;
+  }
+  console.warn(message);
+});
 
-// Mock expo-router
-jest.mock('expo-router', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    back: jest.fn(),
-    canGoBack: jest.fn(() => false),
-  }),
-  useLocalSearchParams: () => ({}),
-  useGlobalSearchParams: () => ({}),
-  usePathname: () => '/',
-  useSegments: () => [],
-}));
+// Mock AsyncStorage
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
 
-// Mock expo-constants
-jest.mock('expo-constants', () => ({
-  default: {
-    expoConfig: {
-      extra: {},
+// Mock for expo-location
+jest.mock('expo-location', () => ({
+  requestForegroundPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  getCurrentPositionAsync: jest.fn(() => Promise.resolve({
+    coords: {
+      latitude: 37.7749,
+      longitude: -122.4194,
+      altitude: 0,
+      accuracy: 5,
+      altitudeAccuracy: 5,
+      heading: 0,
+      speed: 0,
     },
-  },
+    timestamp: Date.now(),
+  })),
 }));
-
-// Silence the warning: Animated: `useNativeDriver` is not supported
-jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');

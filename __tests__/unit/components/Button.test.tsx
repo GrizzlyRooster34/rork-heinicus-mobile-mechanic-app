@@ -175,11 +175,12 @@ describe('Button Component', () => {
 
   describe('Edge Cases', () => {
     test('should handle empty title', () => {
-      const { container } = render(
+      const { getByText, queryByText } = render(
         <Button title="" onPress={jest.fn()} />
       );
 
-      expect(container).toBeTruthy();
+      // Empty title should still render without crashing
+      expect(queryByText('')).toBeTruthy();
     });
 
     test('should handle very long title', () => {

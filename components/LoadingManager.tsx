@@ -33,13 +33,28 @@ interface LoadingProviderProps {
   maxDisplayTime?: number;
 }
 
-export function LoadingProvider({ 
-  children, 
+export function LoadingProvider({
+  children,
   globalOverlay = true,
   maxDisplayTime = 30000 // 30 seconds max
 }: LoadingProviderProps) {
   const [loadingItems, setLoadingItems] = useState<Map<string, LoadingItem>>(new Map());
   const timeoutRefs = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  const hideLoading = useCallback((id: string) => {
+    setLoadingItems(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(id);
+      return newMap;
+    });
+
+    // Clear the timeout
+    const timeoutId = timeoutRefs.current.get(id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutRefs.current.delete(id);
+    }
+  }, []);
 
   const showLoading = useCallback((id: string, message: string, priority: 'low' | 'medium' | 'high' = 'medium') => {
     setLoadingItems(prev => {
@@ -62,21 +77,6 @@ export function LoadingProvider({
 
     timeoutRefs.current.set(id, timeoutId);
   }, [maxDisplayTime, hideLoading]);
-
-  const hideLoading = useCallback((id: string) => {
-    setLoadingItems(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(id);
-      return newMap;
-    });
-
-    // Clear the timeout
-    const timeoutId = timeoutRefs.current.get(id);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      timeoutRefs.current.delete(id);
-    }
-  }, []);
 
   const updateLoading = useCallback((id: string, message: string) => {
     setLoadingItems(prev => {

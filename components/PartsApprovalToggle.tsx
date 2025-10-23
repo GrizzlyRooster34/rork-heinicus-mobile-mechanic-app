@@ -113,7 +113,7 @@ export function PartsApprovalToggle({
 
           {showDetails && (
             <View style={styles.partsDetails}>
-              {partsCalculation.breakdown.map((part: any, index: number) => (
+              {partsCalculation.breakdown.map((part, index) => (
                 <View key={index} style={styles.partItem}>
                   <View style={styles.partInfo}>
                     <Text style={styles.partName}>{part.name}</Text>

@@ -24,12 +24,11 @@ export default function MechanicTabLayout() {
 
   // Production security: Only allow Cody as mechanic
   if (!isAuthenticated || !user || user.role !== 'mechanic' || user.id !== 'mechanic-cody') {
-    logger.warn('Unauthorized mechanic access attempt', { 
-      isAuthenticated, 
-      userId: user?.id, 
-      role: user?.role,
-      timestamp: new Date().toISOString() 
-    });
+    logger.warn(
+      'Unauthorized mechanic access attempt',
+      'MechanicLayout',
+      { isAuthenticated, userId: user?.id, role: user?.role, timestamp: new Date().toISOString() }
+    );
     return <Redirect href="/auth" />;
   }
 

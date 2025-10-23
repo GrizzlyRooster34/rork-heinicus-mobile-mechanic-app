@@ -36,7 +36,7 @@ export function ServiceRequestForm({
     initialData?.vehicleType || 'car'
   );
   const [serviceType, setServiceType] = useState<ServiceType>(
-    initialData?.serviceType || 'general'
+    initialData?.serviceType || 'general_repair'
   );
 
   // Form validation configuration

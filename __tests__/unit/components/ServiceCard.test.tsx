@@ -13,7 +13,7 @@ jest.mock('lucide-react-native', () => ({
 
 describe('ServiceCard', () => {
   const mockService: ServiceCategory = {
-    id: 'oil-change',
+    id: 'oil_change',
     title: 'Oil Change',
     description: 'Complete oil and filter change service',
     basePrice: 49.99,
@@ -43,7 +43,7 @@ describe('ServiceCard', () => {
 
     test('should render with different service data', () => {
       const differentService: ServiceCategory = {
-        id: 'brake-repair',
+        id: 'brake_service',
         title: 'Brake Repair',
         description: 'Professional brake inspection and repair',
         basePrice: 199.99,
@@ -65,7 +65,7 @@ describe('ServiceCard', () => {
 
     test('should handle missing or undefined service properties gracefully', () => {
       const minimalService: ServiceCategory = {
-        id: 'test-service',
+        id: 'general_repair',
         title: 'Test Service',
         description: '',
         basePrice: 0,

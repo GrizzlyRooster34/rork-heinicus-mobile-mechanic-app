@@ -1,3 +1,5 @@
+// This is your new schema.prisma file
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,441 +9,172 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- Core Models ---
+
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
+  role      UserRole
   firstName String
   lastName  String
+  email     String   @unique
   phone     String?
-  role      UserRole @default(CUSTOMER)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  address   String?
+  joinedAt  DateTime @default(now())
 
-  // Profile relationships
-  customerProfile CustomerProfile?
-  mechanicProfile MechanicProfile?
-  adminProfile    AdminProfile?
-
-  // Job relationships
-  customerJobs Job[] @relation("CustomerJobs")
-  mechanicJobs Job[] @relation("MechanicJobs")
-
-  // Reviews
-  reviewsGiven    Review[] @relation("ReviewsGiven")
-  reviewsReceived Review[] @relation("ReviewsReceived")
-
-  // Payments
-  payments Payment[]
-
-  // Notifications
-  notifications Notification[]
-
-  // Chat messages
-  chatMessages ChatMessage[]
-
-  @@map("users")
-}
-
-model CustomerProfile {
-  id                 String    @id @default(cuid())
-  userId             String    @unique
-  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  preferredLanguage  String?   @default("en")
-  emergencyContact   String?
-  insuranceProvider  String?
-  insurancePolicyNum String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-
-  // Vehicles
-  vehicles Vehicle[]
-
-  @@map("customer_profiles")
-}
-
-model MechanicProfile {
-  id                    String                 @id @default(cuid())
-  userId                String                 @unique
-  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  licenseNumber         String?
-  yearsExperience       Int?
-  specializations       String[]
-  serviceRadius         Float?                 @default(25.0)
-  hourlyRate            Float?
-  isAvailable           Boolean                @default(true)
-  verificationStatus    VerificationStatus     @default(PENDING)
-  averageRating         Float?                 @default(0.0)
-  totalReviews          Int                    @default(0)
-  totalJobsCompleted    Int                    @default(0)
-  emergencyServiceOnly  Boolean                @default(false)
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-
-  // Verification
-  verificationSubmissions MechanicVerification[]
-
-  // Tools
-  tools MechanicTool[]
-
-  // Availability
-  availability MechanicAvailability[]
-
-  @@map("mechanic_profiles")
-}
-
-model AdminProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permissions String[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("admin_profiles")
+  // Relations
+  vehicles          Vehicle[]
+  quotes            Quote[]
+  jobsAsCustomer    Job[]             @relation("CustomerJobs")
+  jobsAsMechanic    Job[]             @relation("MechanicJobs")
+  notificationPrefs NotificationPref?
+  pricingProfile    PricingProfile?
+  availability      Availability?
 }
 
 model Vehicle {
-  id           String          @id @default(cuid())
-  customerId   String
-  customer     CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  make         String
-  model        String
-  year         Int
-  vin          String?
-  color        String?
-  mileage      Int?
-  vehicleType  VehicleType     @default(CAR)
-  isPrimary    Boolean         @default(false)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id      String  @id @default(cuid())
+  userId  String
+  user    User    @relation(fields: [userId], references: [id])
+  vin     String? @unique
+  year    Int?
+  make    String?
+  model   String?
+  notes   String?
 
-  // Jobs
-  jobs Job[]
-
-  @@map("vehicles")
+  // Relations
+  quotes Quote[]
 }
 
-model Job {
-  id                    String        @id @default(cuid())
-  customerId            String
-  customer              User          @relation("CustomerJobs", fields: [customerId], references: [id])
-  mechanicId            String?
-  mechanic              User?         @relation("MechanicJobs", fields: [mechanicId], references: [id])
-  vehicleId             String
-  vehicle               Vehicle       @relation(fields: [vehicleId], references: [id])
-  title                 String
-  description           String
-  category              ServiceType
-  urgency               UrgencyLevel  @default(NORMAL)
-  status                JobStatus     @default(PENDING)
-  location              String
-  latitude              Float?
-  longitude             Float?
-  scheduledDate         DateTime?
-  estimatedDuration     Int?          // in minutes
-  actualStartTime       DateTime?
-  actualEndTime         DateTime?
-  customerNotes         String?
-  mechanicNotes         String?
-  photosBeforeService   String[]
-  photosDuringService   String[]
-  photosAfterService    String[]
-  totalCost             Float?
-  laborCost             Float?
-  partsCost             Float?
-  isEmergency           Boolean       @default(false)
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+model Service {
+  id                 String  @id @default(cuid())
+  name               String
+  category           String
+  basePrice          Float
+  defaultLaborRate   Float
+  estHours           Float
+  requiredTools      String[]
 
-  // Quotes
+  // Relations
   quotes Quote[]
-
-  // Payments
-  payments Payment[]
-
-  // Reviews
-  reviews Review[]
-
-  // Timeline
-  timeline JobTimeline[]
-
-  // Chat messages
-  chatMessages ChatMessage[]
-
-  @@map("jobs")
 }
 
 model Quote {
-  id                String      @id @default(cuid())
-  jobId             String
-  job               Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  laborCost         Float
-  partsCost         Float
-  totalCost         Float
-  estimatedDuration Int         // in minutes
-  validUntil        DateTime
-  status            QuoteStatus @default(PENDING)
-  notes             String?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  id              String   @id @default(cuid())
+  customerId      String
+  customer        User     @relation(fields: [customerId], references: [id])
+  vehicleId       String
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id])
+  serviceId       String
+  service         Service  @relation(fields: [serviceId], references: [id])
+  lineItems       Json     // Store as JSON: [{ label: string, amount: number }]
+  laborRate       Float
+  estHours        Float
+  travelFee       Float
+  discountsApplied Json    // Store as JSON: [{ type: string, pct: number, amount: number }]
+  status          QuoteStatus @default(PENDING)
+  subtotal        Float
+  taxes           Float?
+  total           Float
 
-  // Parts breakdown
-  parts QuotePart[]
-
-  @@map("quotes")
+  // Relations
+  job Job?
 }
 
-model QuotePart {
+model Job {
+  id          String   @id @default(cuid())
+  quoteId     String   @unique
+  quote       Quote    @relation(fields: [quoteId], references: [id])
+  customerId  String
+  customer    User     @relation("CustomerJobs", fields: [customerId], references: [id])
+  mechanicId  String?
+  mechanic    User?    @relation("MechanicJobs", fields: [mechanicId], references: [id])
+  status      JobStatus @default(PENDING)
+  urgency     UrgencyLevel
+  schedule    Json?    // Store as JSON: { start: datetime, end?: datetime }
+  location    Json     // Store as JSON: { lat: number, lng: number, address?: string }
+  photos      String[]
+  partsUsed   Json     // Store as JSON: [{ name: string, qty: number, unit_cost: number }]
+  timers      Json     // Store as JSON: [{ start: datetime, end?: datetime }]
+  totals      Json     // Store as JSON: { labor: number, parts: number, fees: number, discounts: number, grand_total: number }
+  rating      Json?    // Store as JSON: { stars: number, review?: string }
+}
+
+// --- Supporting Models ---
+
+model PricingProfile {
+  id            String @id @default(cuid())
+  mechanicId    String @unique
+  mechanic      User   @relation(fields: [mechanicId], references: [id])
+  generalRates  Json   // Store as JSON: { standard: number, emergency: number, travel_fee: number, minimum: number }
+  discounts     Json   // Store as JSON: { senior_pct: number, military_pct: number, repeat_pct: number }
+}
+
+model Availability {
+  id                  String   @id @default(cuid())
+  mechanicId          String   @unique
+  mechanic            User     @relation(fields: [mechanicId], references: [id])
+  daysEnabled         String[]
+  startTime           String   // "HH:mm"
+  endTime             String   // "HH:mm"
+  maxJobsPerDay       Int
+  travelRadiusMiles   Int
+  autoAccept          Boolean
+  emergencyEnabled    Boolean
+}
+
+model Tool {
+  id        String   @id @default(cuid())
+  name      String
+  category  String
+  required  Boolean
+  available Boolean
+  notes     String?
+}
+
+model NotificationPref {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  user        User    @relation(fields: [userId], references: [id])
+  jobUpdates  Boolean
+  maintenance Boolean
+  promos      Boolean
+  emergency   Boolean
+  quietHours  Json?   // Store as JSON: { start: "HH:mm", end: "HH:mm" }
+}
+
+model AnalyticsSnapshot {
   id          String @id @default(cuid())
-  quoteId     String
-  quote       Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
-  partName    String
-  partNumber  String?
-  quantity    Int
-  unitPrice   Float
-  totalPrice  Float
-  description String?
-
-  @@map("quote_parts")
+  period      String // "week", "month", "quarter", "year"
+  totals      Json
+  breakdown   Json
+  topServices Json?
 }
 
-model Payment {
-  id                String        @id @default(cuid())
-  userId            String
-  user              User          @relation(fields: [userId], references: [id])
-  jobId             String
-  job               Job           @relation(fields: [jobId], references: [id])
-  amount            Float
-  currency          String        @default("USD")
-  status            PaymentStatus @default(PENDING)
-  paymentMethod     String
-  stripePaymentId   String?
-  stripeIntentId    String?
-  refundAmount      Float?
-  refundReason      String?
-  processingFees    Float?
-  receiptUrl        String?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+// --- Enums ---
 
-  @@map("payments")
-}
-
-model Review {
-  id           String   @id @default(cuid())
-  jobId        String
-  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  reviewerId   String
-  reviewer     User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
-  revieweeId   String
-  reviewee     User     @relation("ReviewsReceived", fields: [revieweeId], references: [id])
-  rating       Int      // 1-5 stars
-  comment      String?
-  photos       String[]
-  isVerified   Boolean  @default(false)
-  isHidden     Boolean  @default(false)
-  reportCount  Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Detailed ratings
-  punctualityRating    Int?
-  qualityRating        Int?
-  communicationRating  Int?
-  valueRating          Int?
-
-  @@map("reviews")
-}
-
-model MechanicVerification {
-  id           String             @id @default(cuid())
-  mechanicId   String
-  mechanic     MechanicProfile    @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
-  fullName     String
-  photoUri     String
-  idUri        String
-  status       VerificationStatus @default(PENDING)
-  submittedAt  DateTime           @default(now())
-  reviewedAt   DateTime?
-  reviewedBy   String?
-  reviewNotes  String?
-
-  @@map("mechanic_verifications")
-}
-
-model MechanicTool {
-  id             String          @id @default(cuid())
-  mechanicId     String
-  mechanic       MechanicProfile @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
-  toolName       String
-  toolType       String
-  brand          String?
-  condition      String?
-  lastMaintained DateTime?
-  isAvailable    Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-
-  @@map("mechanic_tools")
-}
-
-model MechanicAvailability {
-  id         String          @id @default(cuid())
-  mechanicId String
-  mechanic   MechanicProfile @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
-  dayOfWeek  Int             // 0-6 (Sunday-Saturday)
-  startTime  String          // HH:MM format
-  endTime    String          // HH:MM format
-  isActive   Boolean         @default(true)
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
-
-  @@map("mechanic_availability")
-}
-
-model JobTimeline {
-  id          String            @id @default(cuid())
-  jobId       String
-  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  event       JobTimelineEvent
-  description String
-  timestamp   DateTime          @default(now())
-  metadata    Json?
-
-  @@map("job_timeline")
-}
-
-model ChatMessage {
-  id        String      @id @default(cuid())
-  jobId     String
-  job       Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  senderId  String
-  sender    User        @relation(fields: [senderId], references: [id])
-  message   String
-  messageType MessageType @default(TEXT)
-  attachments String[]
-  isRead    Boolean     @default(false)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  @@map("chat_messages")
-}
-
-model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      NotificationType
-  title     String
-  message   String
-  data      Json?
-  isRead    Boolean          @default(false)
-  isDelivered Boolean        @default(false)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-
-  @@map("notifications")
-}
-
-// Enums
 enum UserRole {
   CUSTOMER
   MECHANIC
   ADMIN
 }
 
-enum VehicleType {
-  CAR
-  TRUCK
-  MOTORCYCLE
-  SCOOTER
-  VAN
-  SUV
-}
-
-enum ServiceType {
-  TIRE_REPAIR
-  TIRE_REPLACEMENT
-  BATTERY_SERVICE
-  BRAKE_REPAIR
-  ENGINE_DIAGNOSIS
-  OIL_CHANGE
-  TRANSMISSION_SERVICE
-  ELECTRICAL_REPAIR
-  SUSPENSION_REPAIR
-  COOLING_SYSTEM
-  EMERGENCY_ROADSIDE
-  GENERAL_MAINTENANCE
-}
-
-enum UrgencyLevel {
-  LOW
-  NORMAL
-  HIGH
-  EMERGENCY
-}
-
-enum JobStatus {
-  PENDING
-  QUOTED
-  ACCEPTED
-  ASSIGNED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-  DISPUTED
-}
-
 enum QuoteStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  EXPIRED
-}
-
-enum PaymentStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-  REFUNDED
-  DISPUTED
-}
-
-enum VerificationStatus {
   PENDING
   APPROVED
   REJECTED
   EXPIRED
 }
 
-enum JobTimelineEvent {
-  JOB_CREATED
-  QUOTE_SENT
-  QUOTE_ACCEPTED
-  MECHANIC_ASSIGNED
-  MECHANIC_EN_ROUTE
-  SERVICE_STARTED
-  SERVICE_COMPLETED
-  PAYMENT_PROCESSED
-  JOB_CANCELLED
-  DISPUTE_RAISED
+enum JobStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELED
 }
 
-enum MessageType {
-  TEXT
-  IMAGE
-  FILE
-  SYSTEM
-}
-
-enum NotificationType {
-  JOB_UPDATE
-  PAYMENT_UPDATE
-  CHAT_MESSAGE
-  REVIEW_REQUEST
-  SYSTEM_ALERT
-  MARKETING
+enum UrgencyLevel {
+  LOW
+  MEDIUM
+  HIGH
+  EMERGENCY
 }

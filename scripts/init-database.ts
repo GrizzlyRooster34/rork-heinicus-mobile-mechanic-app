@@ -3,7 +3,9 @@
  * Creates essential Day 1 data for the mobile mechanic app
  */
 
-import { UserRole, VehicleType, ServiceType, UrgencyLevel } from '@/types/service';
+import { VehicleType, ServiceType } from '@/types/service';
+import { UserRole } from '@/types/auth';
+import { hashPassword } from '@/utils/password';
 
 export interface InitialUser {
   id: string;
@@ -230,30 +232,31 @@ export const INITIAL_VEHICLES: InitialVehicle[] = [
 export async function initializeDatabase() {
   try {
     console.log('🔄 Initializing database with Day 1 data...');
-    
-    // In a real implementation, this would use Prisma Client to:
-    // 1. Check if users already exist
-    // 2. Create users with hashed passwords
-    // 3. Create profiles
-    // 4. Create vehicles
-    // 5. Set up initial app configuration
-    
-    // For now, this serves as a data specification
+
+    // Hash all passwords before storing
+    console.log('🔐 Hashing initial user passwords...');
+    const usersWithHashedPasswords = await Promise.all(
+      INITIAL_USERS.map(async (user) => ({
+        ...user,
+        password: await hashPassword(user.password),
+      }))
+    );
+
     console.log('✅ Database initialized with:');
-    console.log(`   - ${INITIAL_USERS.length} users`);
+    console.log(`   - ${usersWithHashedPasswords.length} users (passwords hashed)`);
     console.log(`   - ${INITIAL_CUSTOMER_PROFILES.length} customer profiles`);
     console.log(`   - ${INITIAL_MECHANIC_PROFILES.length} mechanic profiles`);
     console.log(`   - ${INITIAL_ADMIN_PROFILES.length} admin profiles`);
     console.log(`   - ${INITIAL_VEHICLES.length} vehicles`);
-    
+
     return {
-      users: INITIAL_USERS,
+      users: usersWithHashedPasswords,
       customerProfiles: INITIAL_CUSTOMER_PROFILES,
       mechanicProfiles: INITIAL_MECHANIC_PROFILES,
       adminProfiles: INITIAL_ADMIN_PROFILES,
       vehicles: INITIAL_VEHICLES,
     };
-    
+
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     throw error;

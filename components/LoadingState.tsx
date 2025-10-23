@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ViewStyle, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, TouchableOpacity } from 'react-native';
 import { Colors } from '@/constants/colors';
 import * as Icons from 'lucide-react-native';
 
@@ -130,9 +130,9 @@ export function LoadingButton({
   variant = 'primary',
   size = 'medium',
 }: LoadingButtonProps) {
-  const getButtonStyle = () => {
-    const baseStyle = [styles.button];
-    
+  const getButtonStyle = (): ViewStyle[] => {
+    const baseStyle: ViewStyle[] = [styles.button];
+
     if (variant === 'primary') {
       baseStyle.push(styles.primaryButton);
     } else if (variant === 'secondary') {
@@ -155,8 +155,8 @@ export function LoadingButton({
   };
 
   const getTextStyle = () => {
-    const baseStyle = [styles.buttonText];
-    
+    const baseStyle: TextStyle[] = [styles.buttonText];
+
     if (variant === 'primary') {
       baseStyle.push(styles.primaryButtonText);
     } else if (variant === 'secondary') {
@@ -184,7 +184,7 @@ export function LoadingButton({
 
   return (
     <TouchableOpacity
-      style={[...getButtonStyle(), style]}
+      style={[getButtonStyle(), style]}
       onPress={onPress}
       disabled={isLoading || disabled}
     >

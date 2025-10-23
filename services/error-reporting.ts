@@ -102,12 +102,16 @@ class ErrorReportingService {
       this.reportQueue.shift(); // Remove oldest report
     }
 
-    // Log locally
-    logger[report.level](`Error Report Queued:`, {
-      id: report.id,
-      message: report.message,
-      context: report.context,
-    });
+    // Log locally - map fatal to error since logger doesn't have fatal
+    const logLevel = report.level === 'fatal' ? 'error' : report.level;
+    logger[logLevel](
+      `Error Report Queued`,
+      report.context,
+      {
+        id: report.id,
+        message: report.message,
+      }
+    );
   }
 
   private async processQueue(): Promise<void> {
@@ -133,14 +137,18 @@ class ErrorReportingService {
     while (attempts < this.config.retryAttempts) {
       try {
         await this.performSend(report);
-        logger.info(`Error report sent successfully:`, { id: report.id });
+        logger.info('Error report sent successfully', report.context, { id: report.id });
         return;
       } catch (error) {
         attempts++;
-        logger.warn(`Failed to send error report (attempt ${attempts}):`, {
-          id: report.id,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
+        logger.warn(
+          `Failed to send error report (attempt ${attempts})`,
+          report.context,
+          {
+            id: report.id,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          }
+        );
 
         if (attempts < this.config.retryAttempts) {
           // Exponential backoff
@@ -149,9 +157,13 @@ class ErrorReportingService {
       }
     }
 
-    logger.error(`Failed to send error report after ${this.config.retryAttempts} attempts:`, {
-      id: report.id,
-    });
+    logger.error(
+      `Failed to send error report after ${this.config.retryAttempts} attempts`,
+      report.context,
+      {
+        id: report.id,
+      }
+    );
   }
 
   private async performSend(report: ErrorReport): Promise<void> {

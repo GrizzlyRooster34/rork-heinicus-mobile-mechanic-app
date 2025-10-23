@@ -109,7 +109,7 @@ describe('User-Vehicle Workflow Integration', () => {
         vin: 'TOYOTA123456789',
         color: 'Silver',
         mileage: 15000,
-        vehicleType: 'CAR',
+        vehicleType: 'car',
         isPrimary: true,
       });
 
@@ -128,7 +128,7 @@ describe('User-Vehicle Workflow Integration', () => {
           vin: 'TOYOTA123456789',
           color: 'Silver',
           mileage: 15000,
-          vehicleType: 'CAR',
+          vehicleType: 'car',
           isPrimary: true,
           createdAt: firstVehicle!.createdAt.toISOString(),
         }
@@ -160,7 +160,7 @@ describe('User-Vehicle Workflow Integration', () => {
         vin: 'HONDA987654321',
         color: 'Blue',
         mileage: 8000,
-        vehicleType: 'CAR',
+        vehicleType: 'car',
         isPrimary: false,
       });
 
@@ -178,7 +178,7 @@ describe('User-Vehicle Workflow Integration', () => {
         vin: 'HONDA987654321',
         color: 'Blue',
         mileage: 8000,
-        vehicleType: 'CAR',
+        vehicleType: 'car',
         isPrimary: false,
         createdAt: secondVehicle!.createdAt.toISOString(),
       });
@@ -258,7 +258,7 @@ describe('User-Vehicle Workflow Integration', () => {
         make: 'Ford',
         model: 'F-150',
         year: 2022,
-        vehicleType: 'TRUCK',
+        vehicleType: 'truck',
         isPrimary: true,
       });
 
@@ -267,7 +267,7 @@ describe('User-Vehicle Workflow Integration', () => {
         make: 'Tesla',
         model: 'Model 3',
         year: 2023,
-        vehicleType: 'CAR',
+        vehicleType: 'car',
         isPrimary: true,
       });
 
@@ -279,7 +279,7 @@ describe('User-Vehicle Workflow Integration', () => {
           make: 'Ford',
           model: 'F-150',
           year: 2022,
-          vehicleType: 'TRUCK',
+          vehicleType: 'truck',
           isPrimary: true,
           createdAt: customer1Vehicle!.createdAt.toISOString(),
         },
@@ -289,7 +289,7 @@ describe('User-Vehicle Workflow Integration', () => {
           make: 'Tesla',
           model: 'Model 3',
           year: 2023,
-          vehicleType: 'CAR',
+          vehicleType: 'car',
           isPrimary: true,
           createdAt: customer2Vehicle!.createdAt.toISOString(),
         }

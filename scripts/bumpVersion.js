@@ -2,7 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const appJsonPath = path.join(__dirname, '../app.json');
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const appConfigPath = path.join(__dirname, '../app.json');
 const packageJsonPath = path.join(__dirname, '../package.json');
 
 // Parse command line arguments
@@ -37,7 +42,7 @@ function incrementVersion(version, type) {
 }
 
 try {
-  const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
+  const appJson = JSON.parse(fs.readFileSync(appConfigPath, 'utf8'));
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   const gitInfo = getGitInfo();
   
@@ -80,7 +85,7 @@ try {
   packageJson.version = newVersion;
   
   // Write files
-  fs.writeFileSync(appJsonPath, JSON.stringify(appJson, null, 2));
+  fs.writeFileSync(appConfigPath, JSON.stringify(appJson, null, 2));
   fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
   
   // Generate build summary

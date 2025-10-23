@@ -14,13 +14,15 @@ export function useUsers() {
     return execute(() => mobileDB.getUsers());
   }, [execute]);
 
-  const authenticateUser = useCallback((email: string, password: string) => {
-    return execute(() => mobileDB.authenticateUser(email, password));
-  }, [execute]);
+  const authenticateUser = useCallback(async (email: string, password: string) => {
+    const user = await mobileDB.authenticateUser(email, password);
+    return user;
+  }, []);
 
-  const createUser = useCallback((userData: Omit<User, 'id' | 'createdAt'> & { password: string }) => {
-    return execute(() => mobileDB.createUser(userData));
-  }, [execute]);
+  const createUser = useCallback(async (userData: Omit<User, 'id' | 'createdAt'> & { password: string }) => {
+    const user = await mobileDB.createUser(userData);
+    return user;
+  }, []);
 
   return {
     ...state,
@@ -43,19 +45,18 @@ export function useVehicles(customerId?: string) {
     return execute(() => mobileDB.getVehiclesForCustomer(customerId));
   }, [execute, customerId]);
 
-  const addVehicle = useCallback((vehicleData: Omit<Vehicle, 'id' | 'createdAt'>) => {
-    return execute(() => mobileDB.addVehicle(vehicleData));
-  }, [execute]);
+  const addVehicle = useCallback(async (vehicleData: Omit<Vehicle, 'id' | 'createdAt'>) => {
+    const vehicle = await mobileDB.addVehicle(vehicleData);
+    return vehicle;
+  }, []);
 
-  const updateVehicle = useCallback((vehicleId: string, updates: Partial<Vehicle>) => {
-    return execute(async () => {
-      const success = await mobileDB.updateVehicle(vehicleId, updates);
-      if (!success) {
-        throw new Error('Failed to update vehicle');
-      }
-      return success;
-    });
-  }, [execute]);
+  const updateVehicle = useCallback(async (vehicleId: string, updates: Partial<Vehicle>) => {
+    const success = await mobileDB.updateVehicle(vehicleId, updates);
+    if (!success) {
+      throw new Error('Failed to update vehicle');
+    }
+    return success;
+  }, []);
 
   return {
     ...state,

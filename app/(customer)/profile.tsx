@@ -66,12 +66,14 @@ export default function CustomerProfileScreen() {
 
     const vehicle: Vehicle = {
       id: Date.now().toString(),
+      customerId: user?.id || Date.now().toString(),
       make: vehicleMake.trim(),
       model: vehicleModel.trim(),
       year,
       vehicleType: 'car',
       color: vehicleColor.trim() || undefined,
       mileage: vehicleMileage.trim() ? parseInt(vehicleMileage) : 0,
+      createdAt: new Date(),
     };
 
     addVehicle(vehicle);

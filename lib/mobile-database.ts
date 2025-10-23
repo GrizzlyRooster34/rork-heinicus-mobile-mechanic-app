@@ -8,6 +8,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeDatabase, INITIAL_USERS, INITIAL_VEHICLES, INITIAL_CUSTOMER_PROFILES } from '../scripts/init-database';
 import { User } from '@/types/auth';
 import { Vehicle } from '@/types/service';
+import { hashPassword, verifyPassword, isBcryptHash } from '@/utils/password';
+
+// Internal database User type that includes password for authentication
+type StoredUser = User & { password: string };
 
 const STORAGE_KEYS = {
   USERS: '@heinicus/users',
@@ -82,12 +86,25 @@ export class MobileDatabase {
   }
 
   /**
-   * Get all users
+   * Get all users (internal - includes passwords)
    */
-  async getUsers(): Promise<User[]> {
+  private async getStoredUsers(): Promise<StoredUser[]> {
     try {
       const usersJson = await AsyncStorage.getItem(STORAGE_KEYS.USERS);
       return usersJson ? JSON.parse(usersJson) : [];
+    } catch (error) {
+      console.error('Error getting users:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get all users (public - excludes passwords)
+   */
+  async getUsers(): Promise<User[]> {
+    try {
+      const storedUsers = await this.getStoredUsers();
+      return storedUsers.map(({ password, ...user }) => user as User);
     } catch (error) {
       console.error('Error getting users:', error);
       return [];
@@ -99,10 +116,33 @@ export class MobileDatabase {
    */
   async authenticateUser(email: string, password: string): Promise<User | null> {
     try {
-      const users = await this.getUsers();
-      const user = users.find(u => u.email === email && u.password === password);
-      
-      if (user) {
+      const users = await this.getStoredUsers();
+      const user = users.find(u => u.email === email);
+
+      if (!user) {
+        return null;
+      }
+
+      // Check if password is hashed (bcrypt) or plain text (for migration)
+      let isValidPassword = false;
+
+      if (isBcryptHash(user.password)) {
+        // Verify against bcrypt hash
+        isValidPassword = await verifyPassword(password, user.password);
+      } else {
+        // Legacy plain text comparison (for backward compatibility during migration)
+        console.warn('User has plain text password, migrating to bcrypt...', email);
+        isValidPassword = user.password === password;
+
+        // If authentication succeeds, migrate to bcrypt
+        if (isValidPassword) {
+          const hashedPassword = await hashPassword(password);
+          await this.updateUserPassword(user.id, hashedPassword);
+          console.log('Password migrated to bcrypt for user:', email);
+        }
+      }
+
+      if (isValidPassword) {
         // Convert to proper User type (remove password from response)
         const { password: _, ...userWithoutPassword } = user;
         return {
@@ -110,7 +150,7 @@ export class MobileDatabase {
           role: userWithoutPassword.role as 'customer' | 'mechanic' | 'admin'
         };
       }
-      
+
       return null;
     } catch (error) {
       console.error('Error authenticating user:', error);
@@ -119,26 +159,47 @@ export class MobileDatabase {
   }
 
   /**
+   * Update a user's password (internal method)
+   */
+  private async updateUserPassword(userId: string, hashedPassword: string): Promise<boolean> {
+    try {
+      const users = await this.getStoredUsers();
+      const updatedUsers = users.map(u =>
+        u.id === userId ? { ...u, password: hashedPassword } : u
+      );
+      await AsyncStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(updatedUsers));
+      return true;
+    } catch (error) {
+      console.error('Error updating user password:', error);
+      return false;
+    }
+  }
+
+  /**
    * Create a new user
    */
   async createUser(userData: Omit<User, 'id' | 'createdAt'> & { password: string }): Promise<User | null> {
     try {
-      const users = await this.getUsers();
-      
+      const users = await this.getStoredUsers();
+
       // Check if user with email already exists
       if (users.some(u => u.email === userData.email)) {
         throw new Error('User with this email already exists');
       }
-      
+
+      // Hash the password before storing
+      const hashedPassword = await hashPassword(userData.password);
+
       const newUser = {
         ...userData,
+        password: hashedPassword, // Store hashed password
         id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         createdAt: new Date().toISOString(),
       };
-      
+
       const updatedUsers = [...users, newUser];
       await AsyncStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(updatedUsers));
-      
+
       // Return user without password
       const { password: _, ...userWithoutPassword } = newUser;
       return {
@@ -209,6 +270,243 @@ export class MobileDatabase {
       return true;
     } catch (error) {
       console.error('Error updating vehicle:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Create a new service request
+   */
+  async createServiceRequest(requestData: {
+    customerId: string;
+    serviceType: string;
+    description: string;
+    vehicleInfo: {
+      make: string;
+      model: string;
+      year: number;
+      vin?: string;
+    };
+    location: {
+      address: string;
+      latitude?: number;
+      longitude?: number;
+    };
+    scheduledDate?: string;
+    partsApproved?: boolean;
+    estimatedCost?: number;
+  }): Promise<any> {
+    try {
+      const requestsJson = await AsyncStorage.getItem(STORAGE_KEYS.SERVICE_REQUESTS);
+      const requests = requestsJson ? JSON.parse(requestsJson) : [];
+
+      const newRequest = {
+        ...requestData,
+        id: `job-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        partsApproved: requestData.partsApproved ?? false,
+        timeStarted: null,
+        timePaused: null,
+        timeEnded: null,
+        totalDuration: 0,
+        mechanicId: null,
+        activityLog: [],
+        photos: [],
+      };
+
+      const updatedRequests = [...requests, newRequest];
+      await AsyncStorage.setItem(STORAGE_KEYS.SERVICE_REQUESTS, JSON.stringify(updatedRequests));
+
+      return newRequest;
+    } catch (error) {
+      console.error('Error creating service request:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get all service requests
+   */
+  async getServiceRequests(): Promise<any[]> {
+    try {
+      const requestsJson = await AsyncStorage.getItem(STORAGE_KEYS.SERVICE_REQUESTS);
+      return requestsJson ? JSON.parse(requestsJson) : [];
+    } catch (error) {
+      console.error('Error getting service requests:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get service requests for a specific customer
+   */
+  async getServiceRequestsForCustomer(customerId: string): Promise<any[]> {
+    try {
+      const requests = await this.getServiceRequests();
+      return requests.filter((r: any) => r.customerId === customerId);
+    } catch (error) {
+      console.error('Error getting customer service requests:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get service requests for a specific mechanic
+   */
+  async getServiceRequestsForMechanic(mechanicId: string): Promise<any[]> {
+    try {
+      const requests = await this.getServiceRequests();
+      return requests.filter((r: any) => r.mechanicId === mechanicId);
+    } catch (error) {
+      console.error('Error getting mechanic service requests:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get a single service request by ID
+   */
+  async getServiceRequestById(requestId: string): Promise<any | null> {
+    try {
+      const requests = await this.getServiceRequests();
+      return requests.find((r: any) => r.id === requestId) || null;
+    } catch (error) {
+      console.error('Error getting service request:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Update service request status
+   */
+  async updateServiceRequestStatus(requestId: string, status: string): Promise<boolean> {
+    try {
+      const requests = await this.getServiceRequests();
+      const updatedRequests = requests.map((r: any) =>
+        r.id === requestId
+          ? { ...r, status, updatedAt: new Date().toISOString() }
+          : r
+      );
+
+      await AsyncStorage.setItem(STORAGE_KEYS.SERVICE_REQUESTS, JSON.stringify(updatedRequests));
+      return true;
+    } catch (error) {
+      console.error('Error updating service request status:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Assign a mechanic to a service request
+   */
+  async assignMechanic(requestId: string, mechanicId: string): Promise<boolean> {
+    try {
+      const requests = await this.getServiceRequests();
+      const updatedRequests = requests.map((r: any) =>
+        r.id === requestId
+          ? {
+              ...r,
+              mechanicId,
+              status: 'accepted',
+              updatedAt: new Date().toISOString(),
+            }
+          : r
+      );
+
+      await AsyncStorage.setItem(STORAGE_KEYS.SERVICE_REQUESTS, JSON.stringify(updatedRequests));
+      return true;
+    } catch (error) {
+      console.error('Error assigning mechanic:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Update service request data
+   */
+  async updateServiceRequest(requestId: string, updates: any): Promise<boolean> {
+    try {
+      const requests = await this.getServiceRequests();
+      const updatedRequests = requests.map((r: any) =>
+        r.id === requestId
+          ? { ...r, ...updates, updatedAt: new Date().toISOString() }
+          : r
+      );
+
+      await AsyncStorage.setItem(STORAGE_KEYS.SERVICE_REQUESTS, JSON.stringify(updatedRequests));
+      return true;
+    } catch (error) {
+      console.error('Error updating service request:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Add photo to service request
+   */
+  async addServiceRequestPhoto(
+    requestId: string,
+    photo: {
+      url: string;
+      description?: string;
+      mechanicId: string;
+    }
+  ): Promise<boolean> {
+    try {
+      const requests = await this.getServiceRequests();
+      const updatedRequests = requests.map((r: any) => {
+        if (r.id === requestId) {
+          const photos = r.photos || [];
+          photos.push({
+            id: `photo-${Date.now()}`,
+            ...photo,
+            timestamp: new Date().toISOString(),
+          });
+          return { ...r, photos, updatedAt: new Date().toISOString() };
+        }
+        return r;
+      });
+
+      await AsyncStorage.setItem(STORAGE_KEYS.SERVICE_REQUESTS, JSON.stringify(updatedRequests));
+      return true;
+    } catch (error) {
+      console.error('Error adding photo to service request:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Add activity log entry to service request
+   */
+  async addServiceRequestActivity(
+    requestId: string,
+    activity: {
+      mechanicId: string;
+      activity: string;
+      notes?: string;
+      duration?: number;
+    }
+  ): Promise<boolean> {
+    try {
+      const requests = await this.getServiceRequests();
+      const updatedRequests = requests.map((r: any) => {
+        if (r.id === requestId) {
+          const activityLog = r.activityLog || [];
+          activityLog.push({
+            ...activity,
+            timestamp: new Date().toISOString(),
+          });
+          return { ...r, activityLog, updatedAt: new Date().toISOString() };
+        }
+        return r;
+      });
+
+      await AsyncStorage.setItem(STORAGE_KEYS.SERVICE_REQUESTS, JSON.stringify(updatedRequests));
+      return true;
+    } catch (error) {
+      console.error('Error adding activity to service request:', error);
       return false;
     }
   }

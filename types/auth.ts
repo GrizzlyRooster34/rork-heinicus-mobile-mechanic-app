@@ -1,3 +1,5 @@
+export type UserRole = 'customer' | 'mechanic' | 'admin' | 'CUSTOMER' | 'MECHANIC' | 'ADMIN';
+
 export interface User {
   id: string;
   email: string;

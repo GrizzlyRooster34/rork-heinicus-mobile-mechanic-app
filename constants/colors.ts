@@ -10,7 +10,8 @@ export const Colors = {
   card: '#2A2A2A',
   
   // Border and divider colors
-  border: '#3A3A3A',
+  border: '#4A4A4A',  // Increased contrast from #3A3A3A for better visibility
+  borderLight: '#5A5A5A',  // For emphasized borders
   
   // Text colors
   text: '#FFFFFF',

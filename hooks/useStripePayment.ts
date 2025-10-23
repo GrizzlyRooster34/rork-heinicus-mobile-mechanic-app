@@ -1,290 +1,147 @@
 import { useState, useCallback } from 'react';
-import { Alert, Platform } from 'react-native';
-import { 
-  useStripe, 
-  useApplePay, 
-  useGooglePay,
-  CreatePaymentMethodResult,
-  ConfirmPaymentResult,
-  ApplePay,
-  GooglePay
-} from '@stripe/stripe-react-native';
-import { PaymentIntentResponse } from '@/lib/stripe-service';
+import { Alert } from 'react-native';
+import { useStripe, PaymentSheetError } from '@stripe/stripe-react-native';
 import { Quote } from '@/types/service';
 
-export interface PaymentHookParams {
+// This function would live in a service file that communicates with your backend
+async function fetchPaymentSheetParams(quote: Quote, paymentType: 'deposit' | 'full' | 'completion') {
+  const getPaymentAmount = () => {
+    if (paymentType === 'deposit') {
+      return Math.round(quote.totalCost * 0.3); // 30% deposit
+    }
+    // In a real app, you might have different logic for completion
+    return quote.totalCost;
+  };
+
+  const amount = getPaymentAmount();
+
+  // In a real app, you would make a fetch request to your backend API
+  // const response = await fetch(`YOUR_BACKEND_URL/payment-sheet`, {
+  //   method: 'POST',
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //   },
+  //   body: JSON.stringify({ amount: amount * 100 }), // amount in cents
+  // });
+  // const { paymentIntent, ephemeralKey, customer } = await response.json();
+  // return { paymentIntent, ephemeralKey, customer };
+
+  // For demonstration purposes, we'll simulate the backend response.
+  // NOTE: This is not secure and should be replaced with a real backend call.
+  console.warn('Simulating backend response for payment sheet. This is not secure!');
+  return {
+    paymentIntent: `pi_${Math.random().toString(36).substr(2)}_secret_${Math.random().toString(36).substr(2)}`,
+    ephemeralKey: `ek_test_${Math.random().toString(36).substr(2)}`,
+    customer: `cus_${Math.random().toString(36).substr(2)}`,
+    publishableKey: 'YOUR_STRIPE_PUBLISHABLE_KEY', // This should also come from the backend or config
+  };
+}
+
+interface UseStripePaymentOptions {
   quote: Quote;
   paymentType: 'deposit' | 'full' | 'completion';
-  customerId?: string;
-  onSuccess: (result: ConfirmPaymentResult) => void;
+  onSuccess: (result: any) => void;
   onError: (error: string) => void;
 }
 
-export interface PaymentState {
-  isProcessing: boolean;
-  paymentIntent: PaymentIntentResponse | null;
-  error: string | null;
-}
-
-export const useStripePayment = ({
-  quote,
-  paymentType,
-  customerId,
-  onSuccess,
-  onError,
-}: PaymentHookParams) => {
-  const { confirmPayment, createPaymentMethod } = useStripe();
-  const { presentApplePay, confirmApplePayPayment } = useApplePay();
-  const { initGooglePay, presentGooglePay } = useGooglePay();
-
-  const [state, setState] = useState<PaymentState>({
-    isProcessing: false,
-    paymentIntent: null,
-    error: null,
-  });
+export const useStripePayment = ({ quote, paymentType, onSuccess, onError }: UseStripePaymentOptions) => {
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const [isProcessing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Calculate payment amount based on type
-  const getPaymentAmount = useCallback(() => {
+  const paymentAmount = (() => {
     if (paymentType === 'deposit') {
       return Math.round(quote.totalCost * 0.3); // 30% deposit
-    } else if (paymentType === 'completion') {
-      // Include additional parts if any
-      return quote.totalCost + (quote.partsCost || 0);
     }
     return quote.totalCost;
-  }, [quote, paymentType]);
+  })();
 
-  // Initialize payment intent
-  const initializePayment = useCallback(async (): Promise<PaymentIntentResponse> => {
+  const initializePaymentSheet = useCallback(async () => {
+    setProcessing(true);
+    setError(null);
+
     try {
-      setState(prev => ({ ...prev, isProcessing: true, error: null }));
+      const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams(quote, paymentType);
 
-      const amount = getPaymentAmount();
-      
-      // For now, simulate the payment intent creation
-      // In a real app, this would call the backend API
-      const paymentIntent: PaymentIntentResponse = {
-        clientSecret: `pi_${Math.random().toString(36).substr(2, 9)}_secret_${Math.random().toString(36).substr(2, 9)}`,
-        paymentIntentId: `pi_${Math.random().toString(36).substr(2, 9)}`,
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: 'usd',
-      };
-
-      setState(prev => ({ 
-        ...prev, 
-        paymentIntent,
-        isProcessing: false 
-      }));
-
-      return paymentIntent;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to initialize payment';
-      setState(prev => ({ 
-        ...prev, 
-        error: errorMessage, 
-        isProcessing: false 
-      }));
-      throw error;
-    }
-  }, [quote, paymentType, customerId, getPaymentAmount]);
-
-  // Process card payment
-  const processCardPayment = useCallback(async (
-    paymentMethodId?: string
-  ): Promise<ConfirmPaymentResult> => {
-    try {
-      setState(prev => ({ ...prev, isProcessing: true, error: null }));
-
-      let paymentIntent = state.paymentIntent;
-      if (!paymentIntent) {
-        paymentIntent = await initializePayment();
-      }
-
-      let paymentMethod: CreatePaymentMethodResult;
-      
-      if (paymentMethodId) {
-        // Use existing payment method
-        paymentMethod = { paymentMethod: { id: paymentMethodId } } as CreatePaymentMethodResult;
-      } else {
-        // Create new payment method
-        paymentMethod = await createPaymentMethod({
-          paymentMethodType: 'Card',
-        });
-      }
-
-      if (paymentMethod.error) {
-        throw new Error(paymentMethod.error.message);
-      }
-
-      // Confirm payment
-      const result = await confirmPayment(paymentIntent.clientSecret, {
-        paymentMethodType: 'Card',
-        paymentMethodData: paymentMethod.paymentMethod
-          ? { paymentMethodId: paymentMethod.paymentMethod.id }
-          : undefined,
-      });
-
-      setState(prev => ({ ...prev, isProcessing: false }));
-
-      if (result.error) {
-        throw new Error(result.error.message);
-      }
-
-      onSuccess(result);
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Payment failed';
-      setState(prev => ({ 
-        ...prev, 
-        error: errorMessage, 
-        isProcessing: false 
-      }));
-      onError(errorMessage);
-      throw error;
-    }
-  }, [state.paymentIntent, initializePayment, createPaymentMethod, confirmPayment, onSuccess, onError]);
-
-  // Process Apple Pay payment
-  const processApplePayPayment = useCallback(async (): Promise<ConfirmPaymentResult> => {
-    try {
-      if (Platform.OS !== 'ios') {
-        throw new Error('Apple Pay is only available on iOS');
-      }
-
-      setState(prev => ({ ...prev, isProcessing: true, error: null }));
-
-      let paymentIntent = state.paymentIntent;
-      if (!paymentIntent) {
-        paymentIntent = await initializePayment();
-      }
-
-      const amount = getPaymentAmount();
-
-      // Present Apple Pay
-      const { error: applePayError } = await presentApplePay({
-        cartItems: [{
-          label: quote.description,
-          amount: amount.toString(),
-          paymentType: 'final',
-        }],
-        country: 'US',
-        currency: 'USD',
-        shippingMethods: [],
-        requiredShippingAddressFields: [],
-        requiredBillingContactFields: ['emailAddress'],
-      });
-
-      if (applePayError) {
-        throw new Error(applePayError.message);
-      }
-
-      // Confirm Apple Pay payment
-      const result = await confirmApplePayPayment(paymentIntent.clientSecret);
-
-      setState(prev => ({ ...prev, isProcessing: false }));
-
-      if (result.error) {
-        throw new Error(result.error.message);
-      }
-
-      onSuccess(result);
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Apple Pay failed';
-      setState(prev => ({ 
-        ...prev, 
-        error: errorMessage, 
-        isProcessing: false 
-      }));
-      onError(errorMessage);
-      throw error;
-    }
-  }, [state.paymentIntent, initializePayment, getPaymentAmount, quote, presentApplePay, confirmApplePayPayment, onSuccess, onError]);
-
-  // Process Google Pay payment
-  const processGooglePayPayment = useCallback(async (): Promise<ConfirmPaymentResult> => {
-    try {
-      if (Platform.OS !== 'android') {
-        throw new Error('Google Pay is only available on Android');
-      }
-
-      setState(prev => ({ ...prev, isProcessing: true, error: null }));
-
-      // Initialize Google Pay
-      const { error: initError } = await initGooglePay({
-        testEnvironment: process.env.NODE_ENV !== 'production',
-        merchantName: 'Heinicus Mobile Mechanic',
-        countryCode: 'US',
-        billingAddressConfig: {
-          format: 'MIN',
-          isRequired: false,
+      const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: 'Heinicus Mobile Mechanic',
+        customerId: customer,
+        customerEphemeralKeySecret: ephemeralKey,
+        paymentIntentClientSecret: paymentIntent,
+        allowsDelayedPaymentMethods: true,
+        googlePay: {
+          merchantCountryCode: 'US',
+          testEnv: process.env.NODE_ENV !== 'production',
+          currencyCode: 'usd',
+        },
+        applePay: {
+          merchantCountryCode: 'US',
         },
       });
 
       if (initError) {
-        throw new Error(initError.message);
+        console.error('Stripe initPaymentSheet error:', initError);
+        setError(initError.message);
+        onError(initError.message);
+        return false;
       }
-
-      let paymentIntent = state.paymentIntent;
-      if (!paymentIntent) {
-        paymentIntent = await initializePayment();
-      }
-
-      const amount = getPaymentAmount();
-
-      // Present Google Pay
-      const { error: googlePayError } = await presentGooglePay({
-        clientSecret: paymentIntent.clientSecret,
-        forSetupIntent: false,
-        currencyCode: 'USD',
-      });
-
-      if (googlePayError) {
-        throw new Error(googlePayError.message);
-      }
-
-      setState(prev => ({ ...prev, isProcessing: false }));
-
-      // Note: Google Pay automatically confirms the payment
-      const result: ConfirmPaymentResult = {
-        paymentIntent: {
-          id: paymentIntent.paymentIntentId,
-          amount: paymentIntent.amount,
-          currency: paymentIntent.currency,
-          status: 'succeeded',
-        },
-      };
-
-      onSuccess(result);
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Google Pay failed';
-      setState(prev => ({ 
-        ...prev, 
-        error: errorMessage, 
-        isProcessing: false 
-      }));
+      return true;
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Failed to initialize payment sheet';
+      console.error(errorMessage, e);
+      setError(errorMessage);
       onError(errorMessage);
-      throw error;
+      return false;
+    } finally {
+      setProcessing(false);
     }
-  }, [state.paymentIntent, initializePayment, getPaymentAmount, initGooglePay, presentGooglePay, onSuccess, onError]);
+  }, [initPaymentSheet, quote, paymentType, onError]);
 
-  // Reset payment state
-  const resetPayment = useCallback(() => {
-    setState({
-      isProcessing: false,
-      paymentIntent: null,
-      error: null,
-    });
-  }, []);
+  const openPaymentSheet = useCallback(async () => {
+    const initialized = await initializePaymentSheet();
+    if (!initialized) {
+      return null;
+    }
+
+    setProcessing(true);
+    const { error: presentError } = await presentPaymentSheet();
+    setProcessing(false);
+
+    if (presentError) {
+      if (presentError.code !== PaymentSheetError.Canceled) {
+        console.error('Stripe presentPaymentSheet error:', presentError);
+        setError(presentError.message);
+        onError(presentError.message);
+      }
+      return null;
+    }
+
+    // Payment succeeded
+    const result = { success: true, paymentIntent: { id: 'simulated' } };
+    onSuccess(result);
+    return result;
+  }, [initializePaymentSheet, presentPaymentSheet, onSuccess, onError]);
+
+  const processCardPayment = useCallback(async () => {
+    return await openPaymentSheet();
+  }, [openPaymentSheet]);
+
+  const processApplePayPayment = useCallback(async () => {
+    return await openPaymentSheet();
+  }, [openPaymentSheet]);
+
+  const processGooglePayPayment = useCallback(async () => {
+    return await openPaymentSheet();
+  }, [openPaymentSheet]);
 
   return {
-    ...state,
-    initializePayment,
+    isProcessing,
+    error,
+    paymentAmount,
+    openPaymentSheet,
     processCardPayment,
     processApplePayPayment,
     processGooglePayPayment,
-    resetPayment,
-    paymentAmount: getPaymentAmount(),
   };
 };

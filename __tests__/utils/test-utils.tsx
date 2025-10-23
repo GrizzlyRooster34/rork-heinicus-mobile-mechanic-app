@@ -23,7 +23,7 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
     defaultOptions: {
       queries: {
         retry: false,
-        cacheTime: 0,
+        gcTime: 0,
       },
       mutations: {
         retry: false,
@@ -76,7 +76,7 @@ export const createMockVehicle = (overrides = {}) => ({
   vin: 'TEST123456789',
   color: 'Silver',
   mileage: 50000,
-  vehicleType: 'CAR' as const,
+  vehicleType: 'car' as const,
   isPrimary: true,
   createdAt: new Date(),
   ...overrides,
@@ -91,6 +91,20 @@ export const createMockServiceRequest = (overrides = {}) => ({
   urgency: 'medium' as const,
   status: 'pending' as const,
   estimatedCost: 75.00,
+  createdAt: new Date(),
+  ...overrides,
+});
+
+export const createMockQuote = (overrides = {}) => ({
+  id: 'test-quote-id',
+  serviceRequestId: 'test-service-id',
+  laborCost: 100,
+  partsCost: 50,
+  travelCost: 25,
+  totalCost: 175,
+  estimatedDuration: 2,
+  validUntil: new Date(Date.now() + 86400000),
+  status: 'pending' as const,
   createdAt: new Date(),
   ...overrides,
 });

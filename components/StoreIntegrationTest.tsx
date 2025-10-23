@@ -84,11 +84,13 @@ export function StoreIntegrationTest() {
     try {
       const testVehicle = {
         id: 'test-vehicle',
+        customerId: authStore.user?.id || 'test-customer',
         make: 'Toyota',
         model: 'Camry',
         year: 2020,
         vehicleType: 'car' as const,
-        mileage: 50000
+        mileage: 50000,
+        createdAt: new Date()
       };
 
       const originalVehicleCount = appStore.vehicles.length;

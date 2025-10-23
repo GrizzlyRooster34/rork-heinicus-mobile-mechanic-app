@@ -76,6 +76,9 @@ describe('PaymentModal', () => {
     laborCost: 50,
     partsCost: 25,
     totalCost: 75,
+    travelCost: 25,
+    estimatedDuration: 2,
+    validUntil: new Date(Date.now() + 86400000),
     status: 'pending' as const,
     createdAt: new Date(),
   };

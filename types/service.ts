@@ -1,10 +1,11 @@
 import { User } from './auth';
 import { Review, Rating, MechanicRatingProfile } from './rating';
 
-export type VehicleType = 'car' | 'motorcycle' | 'scooter';
+export type VehicleType = 'car' | 'truck' | 'suv' | 'van' | 'motorcycle' | 'scooter';
 
 export interface Vehicle {
   id: string;
+  customerId: string;
   make: string;
   model: string;
   year: number;
@@ -15,9 +16,11 @@ export interface Vehicle {
   mileage: number;
   color?: string;
   licensePlate?: string;
+  isPrimary?: boolean;
   lastServiceDate?: Date;
   nextServiceDue?: Date;
   maintenanceHistory?: MaintenanceRecord[];
+  createdAt: Date;
 }
 
 export interface VinData {
@@ -191,7 +194,7 @@ export interface Quote {
   depositAmount?: number; // Deposit amount
   remainingBalance?: number; // Remaining balance after deposit
   finalAmount?: number; // Final amount paid
-  paymentMethod?: string; // Payment method used
+  paymentMethod?: 'card' | 'cash' | 'check' | 'apple_pay' | 'google_pay';
   paymentIntentId?: string; // Stripe payment intent ID
   stripeCustomerId?: string; // Stripe customer ID
   notes?: string;
@@ -200,7 +203,6 @@ export interface Quote {
     description: string;
     cost: number;
   }[];
-  paymentMethod?: 'card' | 'cash' | 'check' | 'apple_pay' | 'google_pay';
   stripePaymentIntentId?: string;
   vehicleType?: VehicleType;
   partsApproved?: boolean; // New field for parts approval

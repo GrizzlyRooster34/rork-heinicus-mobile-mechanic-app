@@ -215,9 +215,13 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   labelRequired: {
-    // No additional styles, asterisk is handled separately
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.text,
   },
   labelError: {
+    fontSize: 14,
+    fontWeight: '500',
     color: Colors.error,
   },
   requiredAsterisk: {

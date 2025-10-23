@@ -6,7 +6,12 @@
 const fs = require('fs');
 const path = require('path');
 
-const appJsonPath = path.join(__dirname, '../app.json');
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const appConfigPath = path.join(__dirname, '../app.json');
 const packageJsonPath = path.join(__dirname, '../package.json');
 const easJsonPath = path.join(__dirname, '../eas.json');
 
@@ -82,7 +87,7 @@ function checkBuildEnvironment() {
 
 function getBuildInfo() {
   try {
-    const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
+    const appJson = JSON.parse(fs.readFileSync(appConfigPath, 'utf8'));
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
     
     return {
@@ -106,7 +111,7 @@ function main() {
   // Check configuration files
   console.log('\\n📁 Configuration Files:');
   const filesOk = [
-    checkFile(appJsonPath, 'app.json'),
+    checkFile(appConfigPath, 'app.json'),
     checkFile(packageJsonPath, 'package.json'),
     checkFile(easJsonPath, 'eas.json')
   ].every(Boolean);
@@ -118,7 +123,7 @@ function main() {
   
   // Validate configurations
   try {
-    const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
+    const appJson = JSON.parse(fs.readFileSync(appConfigPath, 'utf8'));
     const easJson = JSON.parse(fs.readFileSync(easJsonPath, 'utf8'));
     
     console.log('\\n🔧 Configuration Validation:');

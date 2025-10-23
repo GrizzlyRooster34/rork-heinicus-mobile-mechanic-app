@@ -4,6 +4,7 @@ import { Colors } from '@/constants/colors';
 import { useAppStore } from '@/stores/app-store';
 import { calculateMaintenanceDue, getMaintenanceIntervals } from '@/utils/quote-generator';
 import { SERVICE_CATEGORIES } from '@/constants/services';
+import { MaintenanceReminder } from '@/types/service';
 import * as Icons from 'lucide-react-native';
 import { router } from 'expo-router';
 
@@ -135,17 +136,16 @@ export function MaintenanceReminders() {
 
   const handleDismissReminder = (vehicleId: string, serviceType: string) => {
     // Add to dismissed reminders or mark as acknowledged
-    const reminder = {
+    const reminder: MaintenanceReminder = {
       id: `${vehicleId}-${serviceType}-${Date.now()}`,
       vehicleId,
       serviceType: serviceType as any,
       description: `Scheduled ${serviceType} maintenance`,
       dueDate: new Date(),
       dueMileage: undefined,
-      isOverdue: false,
-      reminderSent: true,
       priority: 'low' as const,
       completed: false,
+      reminderSent: true,
       createdAt: new Date(),
     };
     

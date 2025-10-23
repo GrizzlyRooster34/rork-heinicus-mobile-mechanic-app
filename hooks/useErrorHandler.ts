@@ -33,11 +33,15 @@ export function useErrorHandler(
     // Log error if enabled
     if (opts.logError !== false) {
       const logLevel = opts.level || 'error';
-      logger[logLevel](`Error in ${opts.context || 'component'}:`, {
-        message: error.message,
-        stack: error.stack,
-        timestamp: new Date().toISOString(),
-      });
+      logger[logLevel](
+        `Error in ${opts.context || 'component'}`,
+        opts.context || 'component',
+        {
+          message: error.message,
+          stack: error.stack,
+          timestamp: new Date().toISOString(),
+        }
+      );
     }
 
     // Show alert if enabled

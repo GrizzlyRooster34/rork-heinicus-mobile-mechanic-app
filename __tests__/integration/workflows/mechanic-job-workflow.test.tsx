@@ -69,8 +69,8 @@ describe('Mechanic Job Workflow Integration', () => {
       },
     };
 
-    (useAppStore as jest.Mock).mockReturnValue(mockAppStore);
-    (useAuthStore as jest.Mock).mockReturnValue(mockAuthStore);
+    (useAppStore as unknown as jest.Mock).mockReturnValue(mockAppStore);
+    (useAuthStore as unknown as jest.Mock).mockReturnValue(mockAuthStore);
   });
 
   describe('Job Discovery and Assignment', () => {

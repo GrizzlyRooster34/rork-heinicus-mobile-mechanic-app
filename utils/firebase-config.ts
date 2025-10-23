@@ -3,12 +3,14 @@ export const ENV_CONFIG = {
   showQuickAccess: true, // Always true for development
   isProduction: false,
   enableLogging: true,
+  requireSignature: false,
 };
 
 export const PRODUCTION_CONFIG = {
   showQuickAccess: true,
   isProduction: true,
   enableLogging: false,
+  requireSignature: true,
 };
 
 export const COLLECTIONS = {

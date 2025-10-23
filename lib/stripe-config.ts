@@ -30,7 +30,7 @@ export const initializeStripe = async () => {
 
 // Server-side Stripe instance
 export const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2024-12-18.acacia', // Use latest API version
+  apiVersion: '2025-09-30.clover', // Use latest API version
   typescript: true,
 });
 

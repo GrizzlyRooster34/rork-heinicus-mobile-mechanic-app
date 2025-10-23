@@ -65,7 +65,7 @@ const createTRPCClient = () => {
     links: [
       httpLink({
         url: `${baseUrl}/api/trpc`,
-      // transformer: superjson, // Remove transformer for now to avoid tRPC error
+      // transformer: superjson, // Disable transformer to avoid tRPC configuration errors
       headers: () => {
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',

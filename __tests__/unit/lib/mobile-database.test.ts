@@ -219,7 +219,8 @@ describe('MobileDatabase', () => {
         make: 'Toyota',
         model: 'Prius',
         year: 2021,
-        vehicleType: 'CAR' as const,
+        vehicleType: 'car' as const,
+        mileage: 0,
         isPrimary: false,
       };
 

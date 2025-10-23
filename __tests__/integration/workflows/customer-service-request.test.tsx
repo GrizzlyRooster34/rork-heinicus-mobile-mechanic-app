@@ -86,8 +86,8 @@ describe('Customer Service Request Workflow Integration', () => {
       },
     };
 
-    (useAppStore as jest.Mock).mockReturnValue(mockAppStore);
-    (useAuthStore as jest.Mock).mockReturnValue(mockAuthStore);
+    (useAppStore as unknown as jest.Mock).mockReturnValue(mockAppStore);
+    (useAuthStore as unknown as jest.Mock).mockReturnValue(mockAuthStore);
   });
 
   describe('Complete Service Request Flow', () => {
@@ -255,9 +255,9 @@ describe('Customer Service Request Workflow Integration', () => {
       });
 
       // Confirm decline
-      const confirmDecline = mockAlert.mock.calls[0][2][1];
+      const confirmDecline = mockAlert.mock.calls[0]?.[2]?.[1];
       act(() => {
-        confirmDecline.onPress();
+        confirmDecline?.onPress();
       });
 
       expect(mockAppStore.updateQuote).toHaveBeenCalledWith('quote-123', { status: 'declined' });
@@ -275,9 +275,9 @@ describe('Customer Service Request Workflow Integration', () => {
       fireEvent.press(acceptButton);
 
       // Mock Alert confirm
-      const confirmAccept = mockAlert.mock.calls[0][2][1];
+      const confirmAccept = mockAlert.mock.calls[0]?.[2]?.[1];
       act(() => {
-        confirmAccept.onPress();
+        confirmAccept?.onPress();
       });
 
       // Should trigger payment modal

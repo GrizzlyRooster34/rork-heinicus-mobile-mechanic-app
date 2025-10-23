@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
+import { View, StyleSheet, Animated, ViewStyle, DimensionValue } from 'react-native';
 import { Colors } from '@/constants/colors';
 
 interface SkeletonProps {
-  width?: number | string;
+  width?: DimensionValue;
   height?: number;
   borderRadius?: number;
   style?: ViewStyle;
@@ -145,7 +145,7 @@ export function SkeletonList({
 }
 
 interface SkeletonButtonProps {
-  width?: number | string;
+  width?: DimensionValue;
   height?: number;
   style?: ViewStyle;
 }
@@ -166,7 +166,7 @@ export function SkeletonButton({
 }
 
 interface SkeletonImageProps {
-  width?: number | string;
+  width?: DimensionValue;
   height?: number;
   borderRadius?: number;
   style?: ViewStyle;

@@ -20,6 +20,7 @@ jest.mock('@/constants/colors', () => ({
 jest.mock('lucide-react-native', () => ({
   AlertTriangle: ({ size, color }: any) => `AlertTriangle-${size}-${color}`,
   RefreshCw: ({ size, color }: any) => `RefreshCw-${size}-${color}`,
+  Share: ({ size, color }: any) => `Share-${size}-${color}`,
 }));
 
 // Test component that throws an error
@@ -79,8 +80,8 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      expect(getByText('App Error')).toBeTruthy();
-      expect(getByText('The app encountered an error and needs to restart.')).toBeTruthy();
+      expect(getByText('Component Error')).toBeTruthy();
+      expect(getByText('A component encountered an error. This feature may not work properly.')).toBeTruthy();
       expect(getByText('Try Again')).toBeTruthy();
     });
 
@@ -121,7 +122,7 @@ describe('ErrorBoundary', () => {
       );
 
       expect(getByText('Custom error message')).toBeTruthy();
-      expect(queryByText('App Error')).toBeNull();
+      expect(queryByText('Component Error')).toBeNull();
     });
 
     test('should prefer custom fallback over default error UI', () => {
@@ -154,7 +155,7 @@ describe('ErrorBoundary', () => {
       );
 
       // Should show error state
-      expect(getByText('App Error')).toBeTruthy();
+      expect(getByText('Component Error')).toBeTruthy();
       const retryButton = getByText('Try Again');
 
       // Press retry button
@@ -175,7 +176,7 @@ describe('ErrorBoundary', () => {
       class TestErrorBoundary extends ErrorBoundary {
         constructor(props: any) {
           super(props);
-          this.state = { hasError: true, error: new Error('Test error') };
+          this.state = { hasError: true, error: new Error('Test error'), errorId: 'test-error-id' };
         }
       }
 
@@ -227,7 +228,7 @@ describe('ErrorBoundary', () => {
       );
 
       // If error UI is shown, hasError is true
-      expect(getByText('App Error')).toBeTruthy();
+      expect(getByText('Component Error')).toBeTruthy();
     });
   });
 
@@ -273,8 +274,8 @@ describe('ErrorBoundary', () => {
       );
 
       // All text should be readable by screen readers
-      expect(getByText('App Error')).toBeTruthy();
-      expect(getByText('The app encountered an error and needs to restart.')).toBeTruthy();
+      expect(getByText('Component Error')).toBeTruthy();
+      expect(getByText('A component encountered an error. This feature may not work properly.')).toBeTruthy();
       expect(getByText('Try Again')).toBeTruthy();
     });
 
@@ -306,7 +307,7 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      expect(getByText('App Error')).toBeTruthy();
+      expect(getByText('Component Error')).toBeTruthy();
     });
 
     test('should handle non-Error objects thrown', () => {
@@ -326,7 +327,7 @@ describe('ErrorBoundary', () => {
 
     test('should not crash when rendering without children', () => {
       expect(() => {
-        render(<ErrorBoundary />);
+        render(<ErrorBoundary children={undefined} />);
       }).not.toThrow();
     });
   });

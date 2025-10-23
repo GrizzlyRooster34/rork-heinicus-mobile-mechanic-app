@@ -95,10 +95,10 @@ export function sanitizeVehicle(vehicle: Partial<Vehicle>): Partial<Vehicle> {
 export function sanitizeContact(contact: Partial<Contact>): Partial<Contact> {
   return {
     ...contact,
-    firstName: contact.firstName?.trim(),
-    lastName: contact.lastName?.trim(),
-    email: contact.email?.toLowerCase()?.trim(),
-    phone: contact.phone?.trim(),
+    firstName: contact.firstName?.trim() ?? contact.firstName,
+    lastName: contact.lastName?.trim() ?? contact.lastName,
+    email: contact.email?.toLowerCase()?.trim() ?? contact.email,
+    phone: contact.phone?.trim() ?? contact.phone,
     address: contact.address,
   };
 }

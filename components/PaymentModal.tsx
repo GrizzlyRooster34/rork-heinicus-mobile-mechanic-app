@@ -70,7 +70,7 @@ function PaymentModalContent({ quote, paymentType = 'full', onSuccess, onCancel 
       updateQuote(quote.id, {
         status: 'paid',
         paidAt: now,
-        paymentMethod: selectedPaymentMethod,
+        paymentMethod: selectedPaymentMethod as 'card' | 'cash' | 'check',
         finalAmount: stripePayment.paymentAmount,
         partsCost: partsCost,
         paymentIntentId: result.paymentIntent?.id,
@@ -78,7 +78,8 @@ function PaymentModalContent({ quote, paymentType = 'full', onSuccess, onCancel 
       
       updateServiceRequest(quote.serviceRequestId, {
         status: 'completed',
-        paidAt: now
+        paidAt: now,
+        completedAt: now
       });
       
       Alert.alert(
@@ -90,13 +91,14 @@ function PaymentModalContent({ quote, paymentType = 'full', onSuccess, onCancel 
       updateQuote(quote.id, {
         status: 'paid',
         paidAt: now,
-        paymentMethod: selectedPaymentMethod,
+        paymentMethod: selectedPaymentMethod as 'card' | 'cash' | 'check',
         paymentIntentId: result.paymentIntent?.id,
       });
       
       updateServiceRequest(quote.serviceRequestId, {
         status: 'completed',
-        paidAt: now
+        paidAt: now,
+        completedAt: now
       });
       
       Alert.alert(

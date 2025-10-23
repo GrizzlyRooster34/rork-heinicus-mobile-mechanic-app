@@ -26,7 +26,10 @@ export function StripePayment({ quote, onSuccess, onCancel }: StripePaymentProps
       const paymentIntent = await createPaymentIntent(quote);
       
       // 2. Confirm payment with Stripe
-      const result = await confirmPayment(paymentIntent.client_secret || '', paymentMethod);
+      if (!paymentIntent.client_secret) {
+        throw new Error('Payment intent client secret is missing');
+      }
+      const result = await confirmPayment(paymentIntent.client_secret, paymentMethod);
       
       if (result.success) {
         onSuccess(result.paymentIntentId || '');

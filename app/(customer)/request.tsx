@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Alert, Modal } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, Alert, Modal, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { SERVICE_CATEGORIES, getToolsForService, getRequiredToolsForService, getServicesForVehicleType, getToolLoadoutSuggestions } from '@/constants/services';
@@ -76,151 +76,8 @@ export default function CustomerRequestScreen() {
     }
   }, [setCurrentLocation]);
 
-  useEffect(() => {
-    getCurrentLocation();
-  }, [getCurrentLocation]);
-
-  useEffect(() => {
-    // Set selected vehicle from params or default to first vehicle
-    if (params.vehicleId) {
-      const vehicle = vehicles.find(v => v.id === params.vehicleId);
-      if (vehicle) {
-        setSelectedVehicle(vehicle);
-        setSelectedVehicleType(vehicle.vehicleType);
-      }
-    } else if (vehicles.length > 0 && !selectedVehicle) {
-      setSelectedVehicle(vehicles[0]);
-      setSelectedVehicleType(vehicles[0].vehicleType);
-    }
-  }, [vehicles, params.vehicleId, selectedVehicle]);
-
-  useEffect(() => {
-    // Auto-generate quote if requested
-    if (params.autoQuote === 'true' && selectedService && description && selectedVehicle) {
-      // Small delay to ensure UI is ready
-      setTimeout(() => {
-        handleSubmit();
-      }, 500);
-    }
-  }, [params.autoQuote, selectedService, description, selectedVehicle, handleSubmit]);
-
-
-  const handleVinScanned = (vinData: { vin: string; vehicleType: VehicleType; make?: string; model?: string; year?: number; trim?: string; engine?: string }) => {
-    setVinNumber(vinData.vin);
-    setSelectedVehicleType(vinData.vehicleType);
-    setShowVinScanner(false);
-    
-    // Production logging
-    logProductionEvent('vin_scanned', {
-      vin: vinData.vin,
-      make: vinData.make,
-      model: vinData.model,
-      year: vinData.year,
-      vehicleType: vinData.vehicleType
-    });
-    
-    // Auto-create vehicle if it doesn't exist
-    const existingVehicle = vehicles.find(v => v.vin === vinData.vin);
-    if (!existingVehicle) {
-      Alert.alert(
-        'Vehicle Decoded',
-        `${vinData.year} ${vinData.make} ${vinData.model} (${vinData.vehicleType})
-VIN: ${vinData.vin}
-
-Would you like to add this vehicle to your profile?`,
-        [
-          { text: 'Skip', style: 'cancel' },
-          { 
-            text: 'Add Vehicle', 
-            onPress: () => {
-              const newVehicle: Vehicle = {
-                id: Date.now().toString(),
-                make: vinData.make || 'Unknown',
-                model: vinData.model || 'Unknown',
-                year: vinData.year || new Date().getFullYear(),
-                vehicleType: vinData.vehicleType,
-                vin: vinData.vin,
-                trim: vinData.trim,
-                engine: vinData.engine,
-                mileage: 0, // User can update this later
-              };
-              addVehicle(newVehicle);
-              setSelectedVehicle(newVehicle);
-              setSelectedVehicleType(newVehicle.vehicleType);
-              Alert.alert('Vehicle Added', 'Vehicle has been added to your profile.');
-            }
-          }
-        ]
-      );
-    } else {
-      setSelectedVehicle(existingVehicle);
-      setSelectedVehicleType(existingVehicle.vehicleType);
-      Alert.alert('Vehicle Found', 'This vehicle is already in your profile.');
-    }
-  };
-
-  const handleAIDiagnosis = (diagnosis: DiagnosticResult) => {
-    setAiDiagnosis(diagnosis);
-    
-    // Production logging
-    logProductionEvent('ai_diagnosis_completed', {
-      diagnosisId: diagnosis.id,
-      confidence: diagnosis.confidence,
-      urgencyLevel: diagnosis.urgencyLevel,
-      vehicleMake: selectedVehicle?.make,
-      vehicleModel: selectedVehicle?.model,
-      vehicleType: selectedVehicleType
-    });
-    
-    // Auto-fill description if empty
-    if (!description.trim() && diagnosis.likelyCauses.length > 0) {
-      setDescription(`AI Analysis suggests: ${diagnosis.likelyCauses[0]}. ${diagnosis.diagnosticSteps[0] || ''}`);
-    }
-    
-    // Set urgency based on AI recommendation
-    setUrgency(diagnosis.urgencyLevel);
-    
-    // Try to match AI services to our service types
-    const matchedService = matchAIServiceToType(diagnosis.matchedServices, selectedVehicleType);
-    if (matchedService && !selectedService) {
-      setSelectedService(matchedService);
-    }
-  };
-
-  const matchAIServiceToType = (aiServices: string[], vehicleType: VehicleType): ServiceType | null => {
-    const serviceMap: Record<string, ServiceType[]> = {
-      'oil': vehicleType === 'motorcycle' ? ['motorcycle_oil_change'] : 
-             vehicleType === 'scooter' ? ['scooter_oil_change'] : ['oil_change'],
-      'brake': vehicleType === 'motorcycle' ? ['motorcycle_brake_inspection'] : 
-               vehicleType === 'scooter' ? ['scooter_brake_inspection'] : ['brake_service'],
-      'tire': vehicleType === 'motorcycle' ? ['motorcycle_tire_replacement'] : 
-              vehicleType === 'scooter' ? ['scooter_tire_replacement'] : ['tire_service'],
-      'battery': vehicleType === 'motorcycle' ? ['motorcycle_battery_service'] : 
-                 vehicleType === 'scooter' ? ['scooter_battery_service'] : ['battery_service'],
-      'engine': vehicleType === 'motorcycle' ? ['motorcycle_diagnostic'] : 
-                vehicleType === 'scooter' ? ['scooter_diagnostic'] : ['engine_diagnostic'],
-      'transmission': ['transmission'],
-      'air conditioning': ['ac_service'],
-      'a/c': ['ac_service'],
-      'diagnostic': vehicleType === 'motorcycle' ? ['motorcycle_diagnostic'] : 
-                    vehicleType === 'scooter' ? ['scooter_diagnostic'] : ['engine_diagnostic'],
-      'chain': ['motorcycle_chain_service'],
-      'carburetor': ['scooter_carburetor_clean'],
-    };
-
-    for (const aiService of aiServices) {
-      const lowerService = aiService.toLowerCase();
-      for (const [keyword, serviceTypes] of Object.entries(serviceMap)) {
-        if (lowerService.includes(keyword)) {
-          return serviceTypes[0];
-        }
-      }
-    }
-    
-    return 'general_repair';
-  };
-
-  const handleSubmit = async () => {
+  // Define handleSubmit before useEffect that uses it (line 207)
+  const handleSubmit = useCallback(async () => {
     if (!selectedService) {
       Alert.alert('Error', 'Please select a service type.');
       return;
@@ -249,7 +106,7 @@ Would you like to add this vehicle to your profile?`,
     try {
       // Get required tools for this service
       const requiredTools = getRequiredToolsForService(selectedService).map(tool => tool.id);
-      
+
       const request: ServiceRequest = {
         id: Date.now().toString(),
         type: selectedService,
@@ -328,6 +185,153 @@ Would you like to add this vehicle to your profile?`,
     } finally {
       setIsSubmitting(false);
     }
+  }, [selectedService, description, user, selectedVehicle, urgency, photos, currentLocation, vinNumber, aiDiagnosis, selectedParts, addServiceRequest, addQuote, updateServiceRequest, router]);
+
+  useEffect(() => {
+    getCurrentLocation();
+  }, [getCurrentLocation]);
+
+  useEffect(() => {
+    // Set selected vehicle from params or default to first vehicle
+    if (params.vehicleId) {
+      const vehicle = vehicles.find(v => v.id === params.vehicleId);
+      if (vehicle) {
+        setSelectedVehicle(vehicle);
+        setSelectedVehicleType(vehicle.vehicleType);
+      }
+    } else if (vehicles.length > 0 && !selectedVehicle) {
+      setSelectedVehicle(vehicles[0]);
+      setSelectedVehicleType(vehicles[0].vehicleType);
+    }
+  }, [vehicles, params.vehicleId, selectedVehicle]);
+
+  useEffect(() => {
+    // Auto-generate quote if requested
+    if (params.autoQuote === 'true' && selectedService && description && selectedVehicle) {
+      // Small delay to ensure UI is ready
+      setTimeout(() => {
+        handleSubmit();
+      }, 500);
+    }
+  }, [params.autoQuote, selectedService, description, selectedVehicle, handleSubmit]);
+
+  const handleVinScanned = (vinData: { vin: string; vehicleType: VehicleType; make?: string; model?: string; year?: number; trim?: string; engine?: string }) => {
+    setVinNumber(vinData.vin);
+    setSelectedVehicleType(vinData.vehicleType);
+    setShowVinScanner(false);
+    
+    // Production logging
+    logProductionEvent('vin_scanned', {
+      vin: vinData.vin,
+      make: vinData.make,
+      model: vinData.model,
+      year: vinData.year,
+      vehicleType: vinData.vehicleType
+    });
+    
+    // Auto-create vehicle if it doesn't exist
+    const existingVehicle = vehicles.find(v => v.vin === vinData.vin);
+    if (!existingVehicle) {
+      Alert.alert(
+        'Vehicle Decoded',
+        `${vinData.year} ${vinData.make} ${vinData.model} (${vinData.vehicleType})
+VIN: ${vinData.vin}
+
+Would you like to add this vehicle to your profile?`,
+        [
+          { text: 'Skip', style: 'cancel' },
+          { 
+            text: 'Add Vehicle', 
+            onPress: () => {
+              const newVehicle: Vehicle = {
+                id: Date.now().toString(),
+                customerId: user?.id || Date.now().toString(),
+                make: vinData.make || 'Unknown',
+                model: vinData.model || 'Unknown',
+                year: vinData.year || new Date().getFullYear(),
+                vehicleType: vinData.vehicleType,
+                vin: vinData.vin,
+                trim: vinData.trim,
+                engine: vinData.engine,
+                mileage: 0, // User can update this later
+                createdAt: new Date(),
+              };
+              addVehicle(newVehicle);
+              setSelectedVehicle(newVehicle);
+              setSelectedVehicleType(newVehicle.vehicleType);
+              Alert.alert('Vehicle Added', 'Vehicle has been added to your profile.');
+            }
+          }
+        ]
+      );
+    } else {
+      setSelectedVehicle(existingVehicle);
+      setSelectedVehicleType(existingVehicle.vehicleType);
+      Alert.alert('Vehicle Found', 'This vehicle is already in your profile.');
+    }
+  };
+
+  const handleAIDiagnosis = (diagnosis: DiagnosticResult) => {
+    setAiDiagnosis(diagnosis);
+    
+    // Production logging
+    logProductionEvent('ai_diagnosis_completed', {
+      diagnosisId: diagnosis.id,
+      confidence: diagnosis.confidence,
+      urgencyLevel: diagnosis.urgencyLevel,
+      vehicleMake: selectedVehicle?.make,
+      vehicleModel: selectedVehicle?.model,
+      vehicleType: selectedVehicleType
+    });
+    
+    // Auto-fill description if empty
+    if (!description.trim() && diagnosis.likelyCauses.length > 0) {
+      setDescription(`AI Analysis suggests: ${diagnosis.likelyCauses[0]}. ${diagnosis.diagnosticSteps[0] || ''}`);
+    }
+    
+    // Set urgency based on AI recommendation
+    setUrgency(diagnosis.urgencyLevel);
+    
+    // Try to match AI services to our service types
+    const matchedService = matchAIServiceToType(diagnosis.matchedServices, selectedVehicleType);
+    if (matchedService && !selectedService) {
+      setSelectedService(matchedService);
+    }
+  };
+
+  const matchAIServiceToType = (aiServices: string[], vehicleType: VehicleType): ServiceType | null => {
+    const serviceMap: Record<string, ServiceType[]> = {
+      'oil': vehicleType === 'motorcycle' ? ['motorcycle_oil_change'] : 
+             vehicleType === 'scooter' ? ['scooter_oil_change'] : ['oil_change'],
+      'brake': vehicleType === 'motorcycle' ? ['motorcycle_brake_inspection'] : 
+               vehicleType === 'scooter' ? ['scooter_brake_inspection'] : ['brake_service'],
+      'tire': vehicleType === 'motorcycle' ? ['motorcycle_tire_replacement'] : 
+              vehicleType === 'scooter' ? ['scooter_tire_replacement'] : ['tire_service'],
+      'battery': vehicleType === 'motorcycle' ? ['motorcycle_battery_service'] : 
+                 vehicleType === 'scooter' ? ['scooter_battery_service'] : ['battery_service'],
+      'engine': vehicleType === 'motorcycle' ? ['motorcycle_diagnostic'] : 
+                vehicleType === 'scooter' ? ['scooter_diagnostic'] : ['engine_diagnostic'],
+      'transmission': ['transmission'],
+      'air conditioning': ['ac_service'],
+      'a/c': ['ac_service'],
+      'diagnostic': vehicleType === 'motorcycle' ? ['motorcycle_diagnostic'] : 
+                    vehicleType === 'scooter' ? ['scooter_diagnostic'] : ['engine_diagnostic'],
+      'chain': ['motorcycle_chain_service'],
+      'carburetor': ['scooter_carburetor_clean'],
+    };
+
+    for (const aiService of aiServices) {
+      const lowerService = aiService.toLowerCase();
+      for (const [keyword, serviceTypes] of Object.entries(serviceMap)) {
+        if (lowerService.includes(keyword)) {
+          return serviceTypes[0];
+        }
+      }
+    }
+    
+    // Default fallback if no service matches
+    return vehicleType === 'motorcycle' ? 'motorcycle_diagnostic' :
+           vehicleType === 'scooter' ? 'scooter_diagnostic' : 'general_repair';
   };
 
   const selectedServiceData = selectedService ? 
@@ -374,8 +378,9 @@ Would you like to add this vehicle to your profile?`,
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.content}>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
         {/* Production Environment Indicator */}
         {ENV_CONFIG?.isProduction && (
           <View style={styles.productionBanner}>
@@ -390,12 +395,22 @@ Would you like to add this vehicle to your profile?`,
           {vehicles.length > 0 ? (
             <View style={styles.vehicleSelector}>
               {vehicles.map((vehicle) => {
-                const getVehicleIcon = (type: VehicleType) => {
+                const getVehicleIcon = (type: VehicleType): typeof Car | typeof Truck | typeof Bike => {
                   switch (type) {
-                    case 'car': return Car;
-                    case 'truck': return Truck;
-                    case 'motorcycle': return Bike;
-                    default: return Car;
+                    case 'car':
+                      return Car;
+                    case 'truck':
+                      return Truck;
+                    case 'suv':
+                      return Car;
+                    case 'van':
+                      return Truck;
+                    case 'motorcycle':
+                      return Bike;
+                    case 'scooter':
+                      return Bike;
+                    default:
+                      return Car;
                   }
                 };
                 const IconComponent = getVehicleIcon(vehicle.vehicleType);
@@ -727,11 +742,16 @@ ${option.desc}`}
           onClose={() => setShowVinScanner(false)}
         />
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.background,
