@@ -157,14 +157,60 @@ payment.post('/webhook', async (c) => {
       );
     }
 
-    // TODO: Implement webhook signature verification and event handling
-    // This would handle events like:
-    // - payment_intent.succeeded
-    // - payment_intent.payment_failed
-    // - customer.created
-    // etc.
+    // Verify webhook signature
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      throw new Error('STRIPE_WEBHOOK_SECRET environment variable is not set');
+    }
 
-    console.log('Stripe webhook received:', { signature });
+    const stripe = (await import('stripe')).default;
+    const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY || '', {
+      apiVersion: '2025-10-29.clover',
+    });
+
+    let event: stripe.Event;
+
+    try {
+      const rawBody = await c.req.text();
+      event = stripeInstance.webhooks.constructEvent(
+        rawBody,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err);
+      return c.json(
+        {
+          success: false,
+          error: 'Webhook signature verification failed',
+        },
+        400
+      );
+    }
+
+    // Handle the event
+    console.log('Stripe webhook event:', event.type);
+
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object;
+        console.log('PaymentIntent succeeded:', paymentIntent.id);
+        // TODO: Update job/quote status in database
+        break;
+
+      case 'payment_intent.payment_failed':
+        const failedPayment = event.data.object;
+        console.log('PaymentIntent failed:', failedPayment.id);
+        // TODO: Notify customer of failed payment
+        break;
+
+      case 'customer.created':
+        const customer = event.data.object;
+        console.log('Customer created:', customer.id);
+        break;
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
 
     return c.json({
       success: true,

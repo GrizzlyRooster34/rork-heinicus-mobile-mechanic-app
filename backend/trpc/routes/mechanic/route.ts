@@ -17,11 +17,14 @@ async function getUserFromRequest(req: Request): Promise<{ id: string; role: 'me
     }
     
     const token = authHeader.substring(7);
-    
+
     // Verify JWT token
+    if (!process.env.NEXTAUTH_SECRET) {
+      throw new Error('NEXTAUTH_SECRET environment variable is not set');
+    }
     const decoded = jwt.verify(
       token,
-      process.env.NEXTAUTH_SECRET || 'default-secret'
+      process.env.NEXTAUTH_SECRET
     ) as { userId: string; email: string; role: string };
     
     // Find user in database

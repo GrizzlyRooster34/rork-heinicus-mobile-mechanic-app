@@ -19,16 +19,20 @@ model User {
   email     String   @unique
   phone     String?
   address   String?
+  isActive  Boolean  @default(true)
   joinedAt  DateTime @default(now())
 
   // Relations
-  vehicles          Vehicle[]
-  quotes            Quote[]
-  jobsAsCustomer    Job[]             @relation("CustomerJobs")
-  jobsAsMechanic    Job[]             @relation("MechanicJobs")
-  notificationPrefs NotificationPref?
-  pricingProfile    PricingProfile?
-  availability      Availability?
+  vehicles              Vehicle[]
+  quotes                Quote[]
+  jobsAsCustomer        Job[]                 @relation("CustomerJobs")
+  jobsAsMechanic        Job[]                 @relation("MechanicJobs")
+  notificationPrefs     NotificationPref?
+  pricingProfile        PricingProfile?
+  availability          Availability?
+  mechanicProfile       MechanicProfile?
+  mechanicVerification  MechanicVerification?
+  notifications         Notification[]
 }
 
 model Vehicle {
@@ -150,6 +154,53 @@ model AnalyticsSnapshot {
   topServices Json?
 }
 
+model MechanicProfile {
+  id                String   @id @default(cuid())
+  mechanicId        String   @unique
+  mechanic          User     @relation(fields: [mechanicId], references: [id])
+  bio               String?
+  specialties       String[]
+  yearsExperience   Int?
+  certifications    String[]
+  insuranceProvider String?
+  insurancePolicyNo String?
+  businessLicense   String?
+  rating            Float?   @default(0.0)
+  totalJobs         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model MechanicVerification {
+  id                String   @id @default(cuid())
+  mechanicId        String   @unique
+  mechanic          User     @relation(fields: [mechanicId], references: [id])
+  status            VerificationStatus @default(PENDING)
+  driversLicense    Boolean  @default(false)
+  insurance         Boolean  @default(false)
+  backgroundCheck   Boolean  @default(false)
+  certifications    Boolean  @default(false)
+  verifiedAt        DateTime?
+  verifiedBy        String?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  type        NotificationType
+  title       String
+  message     String
+  data        Json?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, read])
+}
+
 // --- Enums ---
 
 enum UserRole {
@@ -176,5 +227,22 @@ enum UrgencyLevel {
   LOW
   MEDIUM
   HIGH
+  EMERGENCY
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_PROGRESS
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  JOB_ASSIGNED
+  JOB_UPDATE
+  QUOTE_RECEIVED
+  PAYMENT_RECEIVED
+  REVIEW_RECEIVED
+  SYSTEM
   EMERGENCY
 }
