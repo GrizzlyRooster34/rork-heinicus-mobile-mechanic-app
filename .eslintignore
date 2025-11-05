@@ -1,8 +1,0 @@
-node_modules/
-.expo/
-dist/
-.next/
-build/
-*.config.js
-*.config.ts
-bun.lock
