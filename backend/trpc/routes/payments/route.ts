@@ -96,18 +96,19 @@ export const paymentsRouter = router({
           confirm: input.paymentMethodId ? true : false,
           metadata: {
             quoteId: quote.id,
-            jobId: quote.jobId,
+            jobId: quote.job?.id || '',
             customerId: user.id,
-            mechanicId: quote.job.mechanicId || '',
+            mechanicId: quote.job?.mechanicId || '',
           },
-          description: `Payment for job: ${quote.job.title}`,
+          description: `Payment for job: ${quote.job?.title || 'Service'}`,
         });
 
         // Create payment record
         const payment = await prisma.payment.create({
           data: {
             userId: user.id,
-            jobId: quote.jobId,
+            jobId: quote.job?.id,
+            quoteId: quote.id,
             amount: quote.totalCost,
             currency: 'USD',
             status: 'PENDING',
@@ -170,9 +171,12 @@ export const paymentsRouter = router({
           });
 
           // If payment succeeded, update quote and job status
-          if (paymentIntent.status === 'succeeded') {
+          if (paymentIntent.status === 'succeeded' && payment.jobId) {
             const quote = await prisma.quote.findFirst({
-              where: { jobId: payment.jobId, status: 'PENDING' }
+              where: {
+                job: { id: payment.jobId },
+                status: 'PENDING'
+              }
             });
 
             if (quote) {
@@ -190,7 +194,7 @@ export const paymentsRouter = router({
               await prisma.jobTimeline.create({
                 data: {
                   jobId: payment.jobId,
-                  event: 'QUOTE_ACCEPTED',
+                  eventType: 'QUOTE_ACCEPTED',
                   description: 'Payment processed and quote accepted',
                   metadata: { paymentId: payment.id }
                 }
@@ -313,19 +317,21 @@ export const paymentsRouter = router({
           }
         });
 
-        // Create timeline entry
-        await prisma.jobTimeline.create({
-          data: {
-            jobId: payment.jobId,
-            event: 'JOB_CANCELLED',
-            description: `Refund processed: $${refundAmount.toFixed(2)}`,
-            metadata: {
-              refundId: refund.id,
-              refundAmount: refundAmount,
-              refundReason: input.reason
+        // Create timeline entry if job exists
+        if (payment.jobId) {
+          await prisma.jobTimeline.create({
+            data: {
+              jobId: payment.jobId,
+              eventType: 'JOB_CANCELLED',
+              description: `Refund processed: $${refundAmount.toFixed(2)}`,
+              metadata: {
+                refundId: refund.id,
+                refundAmount: refundAmount,
+                refundReason: input.reason
+              }
             }
-          }
-        });
+          });
+        }
 
         return {
           success: true,
@@ -416,10 +422,7 @@ export const paymentsRouter = router({
               include: {
                 customer: true,
                 mechanic: true,
-                quotes: {
-                  where: { status: 'ACCEPTED' },
-                  include: { parts: true }
-                }
+                quote: true
               }
             }
           }
@@ -429,11 +432,15 @@ export const paymentsRouter = router({
           throw new Error('Payment not found');
         }
 
+        if (!payment.job) {
+          throw new Error('Job not found for payment');
+        }
+
         if (payment.userId !== user.id && user.role !== 'ADMIN') {
           throw new Error('Unauthorized');
         }
 
-        const quote = payment.job.quotes[0];
+        const quote = payment.job.quote;
 
         return {
           invoice: {
@@ -458,8 +465,7 @@ export const paymentsRouter = router({
 
             // Job details
             job: {
-              title: payment.job.title,
-              description: payment.job.description,
+              title: payment.job.title || 'Service',
               category: payment.job.category,
               location: payment.job.location,
             },
@@ -472,12 +478,12 @@ export const paymentsRouter = router({
                 unitPrice: quote?.laborCost || 0,
                 total: quote?.laborCost || 0,
               },
-              ...(quote?.parts.map(part => ({
-                description: part.partName,
-                quantity: part.quantity,
-                unitPrice: part.unitPrice,
-                total: part.totalPrice,
-              })) || [])
+              ...(quote?.parts ? (Array.isArray(quote.parts) ? quote.parts : []).map((part: any) => ({
+                description: part.name || part.partName || 'Part',
+                quantity: part.qty || part.quantity || 1,
+                unitPrice: part.cost || part.unitPrice || 0,
+                total: (part.cost || part.unitPrice || 0) * (part.qty || part.quantity || 1),
+              })) : [])
             ],
 
             // Totals

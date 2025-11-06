@@ -93,11 +93,29 @@ io.on('connection', (socket) => {
     attachments?: string[];
   }) => {
     try {
+      // Get job to determine receiver
+      const job = await prisma.job.findUnique({
+        where: { id: data.jobId },
+        select: { customerId: true, mechanicId: true }
+      });
+
+      if (!job) {
+        throw new Error('Job not found');
+      }
+
+      // Determine receiver based on sender role
+      const receiverId = user.id === job.customerId ? job.mechanicId : job.customerId;
+
+      if (!receiverId) {
+        throw new Error('Receiver not found');
+      }
+
       // Save message to database
       const chatMessage = await prisma.chatMessage.create({
         data: {
           jobId: data.jobId,
           senderId: user.id,
+          receiverId: receiverId,
           message: data.message,
           messageType: data.messageType || 'TEXT',
           attachments: data.attachments || []
@@ -148,12 +166,15 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Update job with mechanic location
+      // Update job with mechanic location in the location JSON field
       await prisma.job.update({
         where: { id: data.jobId },
         data: {
-          latitude: data.latitude,
-          longitude: data.longitude
+          location: {
+            lat: data.latitude,
+            lng: data.longitude,
+            timestamp: new Date().toISOString()
+          }
         }
       });
 
@@ -195,7 +216,7 @@ io.on('connection', (socket) => {
       await prisma.jobTimeline.create({
         data: {
           jobId: data.jobId,
-          event: getTimelineEvent(data.status),
+          eventType: getTimelineEvent(data.status),
           description: `Job status updated to ${data.status}`,
           metadata: { notes: data.notes }
         }
@@ -240,28 +261,30 @@ io.on('connection', (socket) => {
       const validUntil = new Date();
       validUntil.setDate(validUntil.getDate() + 7); // Quote valid for 7 days
 
-      // Create quote
-      const quote = await prisma.quote.create({
+      // Get job details to create quote
+      const job = await prisma.job.findUnique({
+        where: { id: data.jobId },
+        include: { quote: true }
+      });
+
+      if (!job || !job.quote) {
+        socket.emit('error', { message: 'Job or quote not found' });
+        return;
+      }
+
+      // Update existing quote with mechanic's pricing
+      const quote = await prisma.quote.update({
+        where: { id: job.quote.id },
         data: {
-          jobId: data.jobId,
           laborCost: data.laborCost,
           partsCost: data.partsCost,
           totalCost: totalCost,
+          total: totalCost,
           estimatedDuration: data.estimatedDuration,
           validUntil: validUntil,
           notes: data.notes,
-          parts: {
-            create: data.parts.map(part => ({
-              partName: part.partName,
-              quantity: part.quantity,
-              unitPrice: part.unitPrice,
-              totalPrice: part.quantity * part.unitPrice,
-              description: part.description
-            }))
-          }
-        },
-        include: {
-          parts: true
+          parts: data.parts, // Store as JSON
+          status: 'PENDING'
         }
       });
 

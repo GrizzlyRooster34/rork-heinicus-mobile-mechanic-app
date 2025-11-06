@@ -14,14 +14,14 @@ const createPaymentIntentSchema = z.object({
   paymentType: z.enum(['deposit', 'full', 'completion']),
   customerEmail: z.string().email().optional(),
   customerName: z.string().optional(),
-  metadata: z.record(z.string()).optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
 });
 
 // Schema for creating customer
 const createCustomerSchema = z.object({
   email: z.string().email(),
   name: z.string(),
-  metadata: z.record(z.string()).optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
 });
 
 // Create payment intent
@@ -39,7 +39,7 @@ payment.post(
         const customer = await createStripeCustomer(
           data.customerEmail,
           data.customerName,
-          data.metadata
+          data.metadata as Record<string, string> | undefined
         );
         customerId = customer.id;
       }
@@ -50,7 +50,7 @@ payment.post(
         customerId,
         quoteId: data.quoteId,
         paymentType: data.paymentType,
-        metadata: data.metadata,
+        metadata: data.metadata as Record<string, string> | undefined,
       });
 
       return c.json({
@@ -79,7 +79,7 @@ payment.post(
     try {
       const { email, name, metadata } = c.req.valid('json');
 
-      const customer = await createStripeCustomer(email, name, metadata);
+      const customer = await createStripeCustomer(email, name, metadata as Record<string, string> | undefined);
 
       return c.json({
         success: true,
@@ -162,12 +162,12 @@ payment.post('/webhook', async (c) => {
       throw new Error('STRIPE_WEBHOOK_SECRET environment variable is not set');
     }
 
-    const Stripe = (await import('stripe')).default;
+    const { default: Stripe } = await import('stripe');
     const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
       apiVersion: '2025-10-29.clover',
     });
 
-    let event: Stripe.Event;
+    let event: import('stripe').Stripe.Event;
 
     try {
       const rawBody = await c.req.text();

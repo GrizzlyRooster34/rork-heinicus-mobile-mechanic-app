@@ -29,6 +29,8 @@ model User {
   jobsAsMechanic        Job[]                 @relation("MechanicJobs")
   reviewsWritten        Review[]              @relation("ReviewsWritten")
   reviewsReceived       Review[]              @relation("ReviewsReceived")
+  messagesSent          ChatMessage[]         @relation("SentMessages")
+  messagesReceived      ChatMessage[]         @relation("ReceivedMessages")
   notificationPrefs     NotificationPref?
   pricingProfile        PricingProfile?
   availability          Availability?
@@ -169,6 +171,7 @@ model Payment {
   status            String   // succeeded, pending, failed, etc.
   paymentMethod     String?  // card, apple_pay, google_pay
   refundAmount      Float?   // Amount refunded (if applicable)
+  refundReason      String?  // Reason for refund
   metadata          Json?    // Additional payment metadata
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -197,8 +200,12 @@ model ChatMessage {
   id          String   @id @default(cuid())
   jobId       String?
   senderId    String
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
   receiverId  String
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
   message     String
+  messageType String?  @default("text") // text, image, file, etc.
+  attachments Json?    // Array of attachment URLs/metadata
   isRead      Boolean  @default(false)
   metadata    Json?    // Additional message metadata
   createdAt   DateTime @default(now())

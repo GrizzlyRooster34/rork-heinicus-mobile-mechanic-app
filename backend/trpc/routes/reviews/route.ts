@@ -545,7 +545,7 @@ async function updateMechanicRating(mechanicId: string) {
   });
 
   await prisma.mechanicProfile.update({
-    where: { userId: mechanicId },
+    where: { mechanicId: mechanicId },
     data: {
       averageRating: ratingStats._avg.rating || 0,
       totalReviews: ratingStats._count.rating || 0,
