@@ -12,7 +12,7 @@ interface AuthStore extends AuthState {
   signup: (email: string, password: string, firstName: string, lastName: string, phone?: string, role?: 'customer' | 'mechanic') => Promise<boolean>;
   logout: () => void;
   setUser: (user: User) => void;
-  updateUserRole: (userId: string, role: 'customer' | 'mechanic' | 'admin') => Promise<boolean>;
+  updateUserRole: (userId: string, role: 'CUSTOMER' | 'MECHANIC' | 'ADMIN') => Promise<boolean>;
   getAllUsers: () => User[];
 }
 
@@ -266,11 +266,11 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
 
-      updateUserRole: async (userId: string, role: 'customer' | 'mechanic' | 'admin') => {
+      updateUserRole: async (userId: string, role: 'CUSTOMER' | 'MECHANIC' | 'ADMIN') => {
         const currentUser = get().user;
         
         // Only admin can update roles
-        if (currentUser?.role !== 'admin') {
+        if (currentUser?.role !== 'ADMIN') {
           console.warn('Unauthorized role update attempt:', { 
             currentUserId: currentUser?.id,
             currentUserRole: currentUser?.role,

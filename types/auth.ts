@@ -1,11 +1,11 @@
-export type UserRole = 'customer' | 'mechanic' | 'admin' | 'CUSTOMER' | 'MECHANIC' | 'ADMIN';
+export type UserRole = 'CUSTOMER' | 'MECHANIC' | 'ADMIN';
 
 export interface User {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: 'customer' | 'mechanic' | 'admin';
+  role: UserRole;
   phone?: string | null; // Allow null for backend compatibility
   createdAt: Date;
   isActive?: boolean; // Make optional to avoid backend compatibility issues
@@ -26,5 +26,5 @@ export interface SignupData extends LoginCredentials {
   firstName: string;
   lastName: string;
   phone?: string;
-  role?: 'customer' | 'mechanic';
+  role?: 'CUSTOMER' | 'MECHANIC';
 }
