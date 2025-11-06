@@ -260,7 +260,7 @@ describe('User-Vehicle Workflow Integration', () => {
         year: 2022,
         vehicleType: 'truck',
         isPrimary: true,
-      });
+      } as any);
 
       const customer2Vehicle = await mobileDB.addVehicle({
         customerId: customer2!.id,
@@ -269,7 +269,7 @@ describe('User-Vehicle Workflow Integration', () => {
         year: 2023,
         vehicleType: 'car',
         isPrimary: true,
-      });
+      } as any);
 
       // Mock stored vehicles
       const storedVehicles = [

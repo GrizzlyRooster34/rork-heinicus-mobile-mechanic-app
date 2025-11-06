@@ -250,7 +250,7 @@ describe('Admin Management Workflow Integration', () => {
       // Confirm role change
       const confirmButton = mockAlert.mock.calls[0]?.[2]?.[1];
       act(() => {
-        confirmButton?.onPress();
+        confirmButton?.onPress?.();
       });
 
       expect(mockAuthStore.updateUserRole).toHaveBeenCalledWith('customer-1', 'mechanic');
@@ -276,7 +276,7 @@ describe('Admin Management Workflow Integration', () => {
 
       const confirmDeactivate = mockAlert.mock.calls[0]?.[2]?.[1];
       act(() => {
-        confirmDeactivate?.onPress();
+        confirmDeactivate?.onPress?.();
       });
 
       expect(mockAppStore.updateUser).toHaveBeenCalledWith('customer-1', {

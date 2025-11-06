@@ -112,8 +112,8 @@ export class SevenModelManager {
         };
         
         // A model is deployment ready if it's verified and larger than 100MB
-        model.deployment_ready = model.verification_status === 'verified' && 
-                                model.file_size_mb > 100;
+        model.deployment_ready = model.verification_status === 'verified' &&
+                                (model.file_size_mb || 0) > 100;
         
         models.push(model);
       }

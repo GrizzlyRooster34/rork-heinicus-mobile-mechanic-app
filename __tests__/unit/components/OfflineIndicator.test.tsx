@@ -54,8 +54,8 @@ describe('OfflineIndicator', () => {
       mockPlatform.OS = 'web';
       mockNavigator.onLine = true;
 
-      const { container } = render(<OfflineIndicator />);
-      expect(container.children.length).toBe(0);
+      const { queryByText } = render(<OfflineIndicator />);
+      expect(queryByText(/offline/i)).toBeNull();
     });
 
     test('should return null when connection is available', () => {

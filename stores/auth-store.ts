@@ -65,7 +65,7 @@ export const useAuthStore = create<AuthStore>()(
         
         try {
           // Use TRPC client for signup
-          const result = await trpcClient.auth.signup.mutate({
+          const result = await trpcClient.auth.register.mutate({
             email,
             password,
             firstName,
@@ -151,7 +151,7 @@ export const useAuthStore = create<AuthStore>()(
           
           // Try TRPC client for login, but fallback to dev mode if it fails
           try {
-            const result = await trpcClient.auth.signin.mutate({
+            const result = await trpcClient.auth.login.mutate({
               email,
               password,
             });

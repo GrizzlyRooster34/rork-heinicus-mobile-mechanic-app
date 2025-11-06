@@ -37,7 +37,7 @@ export default function AdminQuotesScreen() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Create',
-          onPress: (totalCost) => {
+          onPress: (totalCost: any) => {
             if (!totalCost || isNaN(Number(totalCost))) {
               Alert.alert('Error', 'Please enter a valid amount');
               return;

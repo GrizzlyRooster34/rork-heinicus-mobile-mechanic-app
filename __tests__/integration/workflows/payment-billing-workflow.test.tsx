@@ -500,7 +500,7 @@ describe('Payment and Billing Workflow Integration', () => {
       // Confirm acceptance - should trigger payment modal
       const confirmAccept = mockAlert.mock.calls[0]?.[2]?.[1];
       act(() => {
-        confirmAccept?.onPress();
+        confirmAccept?.onPress?.();
       });
 
       // Payment modal should be triggered (in real implementation)
@@ -518,7 +518,7 @@ describe('Payment and Billing Workflow Integration', () => {
 
       const confirmAccept = mockAlert.mock.calls[0]?.[2]?.[1];
       act(() => {
-        confirmAccept?.onPress();
+        confirmAccept?.onPress?.();
       });
 
       // Quote should remain in pending state after failed payment

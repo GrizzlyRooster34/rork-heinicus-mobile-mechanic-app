@@ -28,11 +28,11 @@ export function withErrorBoundary<P extends object>(
   const WrappedComponent = React.forwardRef<any, P>((props, ref) => {
     if (level === 'screen') {
       return (
-        <ScreenErrorBoundary 
-          screenName={screenName} 
+        <ScreenErrorBoundary
+          screenName={screenName}
           fallbackRoute={fallbackRoute}
         >
-          <Component {...props} ref={ref} />
+          <Component {...(props as any)} ref={ref} />
         </ScreenErrorBoundary>
       );
     }
@@ -40,17 +40,17 @@ export function withErrorBoundary<P extends object>(
     if (enableAsyncRetry) {
       return (
         <AsyncErrorBoundary onRetry={onRetry}>
-          <Component {...props} ref={ref} />
+          <Component {...(props as any)} ref={ref} />
         </AsyncErrorBoundary>
       );
     }
 
     return (
-      <ErrorBoundary 
-        level={level} 
+      <ErrorBoundary
+        level={level}
         onError={onError}
       >
-        <Component {...props} ref={ref} />
+        <Component {...(props as any)} ref={ref} />
       </ErrorBoundary>
     );
   });

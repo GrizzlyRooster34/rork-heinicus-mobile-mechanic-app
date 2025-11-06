@@ -257,7 +257,7 @@ describe('Customer Service Request Workflow Integration', () => {
       // Confirm decline
       const confirmDecline = mockAlert.mock.calls[0]?.[2]?.[1];
       act(() => {
-        confirmDecline?.onPress();
+        confirmDecline?.onPress?.();
       });
 
       expect(mockAppStore.updateQuote).toHaveBeenCalledWith('quote-123', { status: 'declined' });
@@ -277,7 +277,7 @@ describe('Customer Service Request Workflow Integration', () => {
       // Mock Alert confirm
       const confirmAccept = mockAlert.mock.calls[0]?.[2]?.[1];
       act(() => {
-        confirmAccept?.onPress();
+        confirmAccept?.onPress?.();
       });
 
       // Should trigger payment modal

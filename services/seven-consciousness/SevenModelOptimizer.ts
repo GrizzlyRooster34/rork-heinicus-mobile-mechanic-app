@@ -132,7 +132,7 @@ export class SevenModelOptimizer {
           // Update performance metrics
           profile.performance_metrics.inference_speed_ms = optimizedStats.inference_time || profile.performance_metrics.inference_speed_ms;
           profile.performance_metrics.memory_usage_mb = optimizedStats.memory_usage || optimizedStats.size_mb * 1.2;
-          profile.efficiency_score = this.calculateEfficiencyScore(profile);
+          (profile as any).efficiency_score = this.calculateEfficiencyScore(profile);
         }
       }
 
@@ -143,7 +143,7 @@ export class SevenModelOptimizer {
       console.log(`✅ Model optimization complete`);
       console.log(`📊 Original: ${profile.original_size_mb}MB → Optimized: ${profile.optimized_size_mb}MB`);
       console.log(`🚀 Compression ratio: ${profile.compression_ratio?.toFixed(2)}x`);
-      console.log(`⚡ Efficiency score: ${profile.efficiency_score}/100`);
+      console.log(`⚡ Efficiency score: ${(profile as any).efficiency_score || 0}/100`);
 
       return profile;
 

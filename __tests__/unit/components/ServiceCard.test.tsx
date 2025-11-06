@@ -19,9 +19,8 @@ describe('ServiceCard', () => {
     basePrice: 49.99,
     estimatedTime: '30-45 min',
     icon: 'Wrench',
-    category: 'maintenance',
     services: [],
-  };
+  } as any;
 
   const mockOnPress = jest.fn();
 
@@ -49,9 +48,8 @@ describe('ServiceCard', () => {
         basePrice: 199.99,
         estimatedTime: '2-3 hours',
         icon: 'Car',
-        category: 'repair',
         services: [],
-      };
+      } as any;
 
       const { getByText } = render(
         <ServiceCard service={differentService} onPress={mockOnPress} />
@@ -71,9 +69,8 @@ describe('ServiceCard', () => {
         basePrice: 0,
         estimatedTime: '',
         icon: 'Wrench',
-        category: 'maintenance',
         services: [],
-      };
+      } as any;
 
       const { getByText } = render(
         <ServiceCard service={minimalService} onPress={mockOnPress} />

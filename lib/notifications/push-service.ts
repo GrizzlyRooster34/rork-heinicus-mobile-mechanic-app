@@ -102,13 +102,13 @@ class PushNotificationService {
         tokens: tokens,
       };
 
-      const response = await messaging.sendMulticast(message);
+      const response = await messaging.sendEachForMulticast(message);
 
       // Log results
       console.log(`Push notification sent: ${response.successCount} successful, ${response.failureCount} failed`);
 
       if (response.failureCount > 0) {
-        response.responses.forEach((resp, idx) => {
+        response.responses.forEach((resp: any, idx: number) => {
           if (!resp.success) {
             console.error(`Failed to send to token ${tokens[idx]}:`, resp.error);
           }

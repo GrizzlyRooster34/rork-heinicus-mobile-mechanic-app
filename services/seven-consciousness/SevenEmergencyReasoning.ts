@@ -47,7 +47,7 @@ export class SevenEmergencyReasoning {
       this.isInitialized = true;
       
       console.log('✅ Seven emergency reasoning loaded');
-      console.log(`📋 Emergency response patterns: ${Object.keys(this.backup.personality_responses).length}`);
+      console.log(`📋 Emergency response patterns: ${this.backup?.personality_responses ? Object.keys(this.backup.personality_responses).length : 0}`);
       return true;
       
     } catch (error) {
