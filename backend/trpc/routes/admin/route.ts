@@ -585,7 +585,7 @@ export const adminRouter = router({
   updateSetting: publicProcedure
     .input(z.object({
       key: z.string(),
-      value: z.union([z.string(), z.boolean(), z.number(), z.null()]),
+      value: z.union([z.string(), z.boolean(), z.number(), z.null(), z.object({}).passthrough()]),
     }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -598,14 +598,36 @@ export const adminRouter = router({
           });
         }
 
-        // TODO: Implement system settings table
-        // For now, just log the setting change
+        // Determine type
+        const type = typeof input.value === 'boolean' ? 'boolean' :
+                    typeof input.value === 'number' ? 'number' :
+                    typeof input.value === 'string' ? 'string' : 'object';
+
+        // Upsert the setting
+        const setting = await prisma.systemSettings.upsert({
+          where: { key: input.key },
+          update: {
+            value: input.value === null ? null : input.value,
+            type,
+            updatedBy: user.id,
+          },
+          create: {
+            key: input.key,
+            value: input.value === null ? null : input.value,
+            type,
+            category: 'general',
+            label: input.key,
+            updatedBy: user.id,
+          },
+        });
+
         console.log('System setting updated:', input.key, input.value);
 
         return {
           success: true,
           key: input.key,
           value: input.value,
+          setting,
           message: `Setting ${input.key} updated successfully`,
         };
       } catch (error) {
@@ -626,7 +648,7 @@ export const adminRouter = router({
   updateConfig: publicProcedure
     .input(z.object({
       key: z.string(),
-      value: z.union([z.string(), z.boolean(), z.number(), z.null()]),
+      value: z.union([z.string(), z.boolean(), z.number(), z.null(), z.object({}).passthrough()]),
     }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -639,13 +661,36 @@ export const adminRouter = router({
           });
         }
 
-        // TODO: Implement system config table
+        // Determine type
+        const type = typeof input.value === 'boolean' ? 'boolean' :
+                    typeof input.value === 'number' ? 'number' :
+                    typeof input.value === 'string' ? 'string' : 'object';
+
+        // Upsert the setting
+        const setting = await prisma.systemSettings.upsert({
+          where: { key: input.key },
+          update: {
+            value: input.value === null ? null : input.value,
+            type,
+            updatedBy: user.id,
+          },
+          create: {
+            key: input.key,
+            value: input.value === null ? null : input.value,
+            type,
+            category: 'general',
+            label: input.key,
+            updatedBy: user.id,
+          },
+        });
+
         console.log('System config updated:', input.key, input.value);
 
         return {
           success: true,
           key: input.key,
           value: input.value,
+          setting,
           message: `Config ${input.key} updated successfully`,
         };
       } catch (error) {
