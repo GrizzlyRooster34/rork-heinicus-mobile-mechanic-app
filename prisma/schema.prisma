@@ -27,6 +27,8 @@ model User {
   quotes                Quote[]
   jobsAsCustomer        Job[]                 @relation("CustomerJobs")
   jobsAsMechanic        Job[]                 @relation("MechanicJobs")
+  reviewsWritten        Review[]              @relation("ReviewsWritten")
+  reviewsReceived       Review[]              @relation("ReviewsReceived")
   notificationPrefs     NotificationPref?
   pricingProfile        PricingProfile?
   availability          Availability?
@@ -73,6 +75,8 @@ model Quote {
   lineItems       Json     // Store as JSON: [{ label: string, amount: number }]
   laborRate       Float
   estHours        Float
+  laborCost       Float?   // Labor cost calculation
+  partsCost       Float?   // Parts cost calculation
   travelFee       Float
   discountsApplied Json    // Store as JSON: [{ type: string, pct: number, amount: number }]
   status          QuoteStatus @default(PENDING)
@@ -81,6 +85,9 @@ model Quote {
   total           Float
   totalCost       Float    // Total cost for the quote
   validUntil      DateTime? // Quote expiration date
+  estimatedDuration Float? // Estimated duration in hours
+  notes           String?  // Notes for the quote
+  parts           Json?    // Store as JSON: [{ name: string, cost: number, qty: number }]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -119,33 +126,49 @@ model Job {
 }
 
 model Review {
-  id          String   @id @default(cuid())
-  jobId       String?
-  job         Job?     @relation(fields: [jobId], references: [id])
-  quoteId     String?
-  quote       Quote?   @relation(fields: [quoteId], references: [id])
-  reviewerId  String
-  rating      Float    // 1-5 stars
-  comment     String?
-  response    String?  // Mechanic's response to review
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  jobId                String?
+  job                  Job?     @relation(fields: [jobId], references: [id])
+  quoteId              String?
+  quote                Quote?   @relation(fields: [quoteId], references: [id])
+  reviewerId           String
+  reviewer             User     @relation("ReviewsWritten", fields: [reviewerId], references: [id])
+  revieweeId           String
+  reviewee             User     @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+  rating               Float    // Overall rating 1-5 stars
+  punctualityRating    Float?   // 1-5 stars
+  qualityRating        Float?   // 1-5 stars
+  communicationRating  Float?   // 1-5 stars
+  valueRating          Float?   // 1-5 stars
+  comment              String?
+  photos               String[] // Array of photo URIs
+  response             String?  // Mechanic's response to review
+  isVerified           Boolean  @default(false)
+  reportCount          Int      @default(0)
+  isHidden             Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@index([jobId])
   @@index([quoteId])
+  @@index([reviewerId])
+  @@index([revieweeId])
 }
 
 model Payment {
   id                String   @id @default(cuid())
+  userId            String?  // User who made the payment
   jobId             String?
   job               Job?     @relation(fields: [jobId], references: [id])
   quoteId           String?
   quote             Quote?   @relation(fields: [quoteId], references: [id])
   stripePaymentId   String   @unique // Stripe Payment Intent ID
+  stripeIntentId    String?  // Alternative field name for Stripe Payment Intent ID
   amount            Float
   currency          String   @default("usd")
   status            String   // succeeded, pending, failed, etc.
   paymentMethod     String?  // card, apple_pay, google_pay
+  refundAmount      Float?   // Amount refunded (if applicable)
   metadata          Json?    // Additional payment metadata
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -153,6 +176,7 @@ model Payment {
   @@index([jobId])
   @@index([quoteId])
   @@index([stripePaymentId])
+  @@index([userId])
 }
 
 model JobTimeline {
@@ -167,6 +191,22 @@ model JobTimeline {
 
   @@index([jobId])
   @@index([eventType])
+}
+
+model ChatMessage {
+  id          String   @id @default(cuid())
+  jobId       String?
+  senderId    String
+  receiverId  String
+  message     String
+  isRead      Boolean  @default(false)
+  metadata    Json?    // Additional message metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([jobId])
+  @@index([senderId])
+  @@index([receiverId])
 }
 
 // --- Supporting Models ---
@@ -288,12 +328,15 @@ enum UserRole {
 enum QuoteStatus {
   PENDING
   APPROVED
+  ACCEPTED
   REJECTED
   EXPIRED
 }
 
 enum JobStatus {
   PENDING
+  QUOTED
+  ACCEPTED
   ACTIVE
   COMPLETED
   CANCELED
@@ -318,8 +361,10 @@ enum NotificationType {
   JOB_UPDATE
   QUOTE_RECEIVED
   PAYMENT_RECEIVED
+  PAYMENT_UPDATE
   REVIEW_RECEIVED
   REVIEW_REQUEST
+  CHAT_MESSAGE
   SYSTEM
   SYSTEM_ALERT
   EMERGENCY
