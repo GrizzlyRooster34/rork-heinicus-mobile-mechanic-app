@@ -9,7 +9,7 @@ import { withAsyncErrorHandling, withErrorHandling, logStoreAction } from './sto
 interface AuthStore extends AuthState {
   token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, firstName: string, lastName: string, phone?: string, role?: 'customer' | 'mechanic') => Promise<boolean>;
+  signup: (email: string, password: string, firstName: string, lastName: string, phone?: string, role?: 'CUSTOMER' | 'MECHANIC') => Promise<boolean>;
   logout: () => void;
   setUser: (user: User) => void;
   updateUserRole: (userId: string, role: 'CUSTOMER' | 'MECHANIC' | 'ADMIN') => Promise<boolean>;
@@ -23,7 +23,7 @@ const PRODUCTION_USERS = {
     email: 'matthew.heinen.2014@gmail.com',
     firstName: 'Cody',
     lastName: 'Owner',
-    role: 'admin' as const,
+    role: 'ADMIN' as const,
     phone: '(555) 987-6543',
     createdAt: new Date(),
   },
@@ -32,7 +32,7 @@ const PRODUCTION_USERS = {
     email: 'cody@heinicus.com',
     firstName: 'Cody',
     lastName: 'Mechanic',
-    role: 'mechanic' as const,
+    role: 'MECHANIC' as const,
     phone: '(555) 987-6543',
     createdAt: new Date(),
   }
@@ -46,7 +46,7 @@ let registeredCustomers: User[] = [
     email: 'customer@example.com',
     firstName: 'Demo',
     lastName: 'Customer',
-    role: 'customer',
+    role: 'CUSTOMER',
     phone: '(555) 123-4567',
     createdAt: new Date(),
   }
@@ -60,7 +60,7 @@ export const useAuthStore = create<AuthStore>()(
       isLoading: false,
       isAuthenticated: false,
 
-      signup: async (email: string, password: string, firstName: string, lastName: string, phone?: string, role: 'customer' | 'mechanic' = 'customer') => {
+      signup: async (email: string, password: string, firstName: string, lastName: string, phone?: string, role: 'CUSTOMER' | 'MECHANIC' = 'CUSTOMER') => {
         set({ isLoading: true });
         
         try {
@@ -85,7 +85,7 @@ export const useAuthStore = create<AuthStore>()(
             // Use the user object as returned from the backend
             const completeUser: User = {
               ...result.user,
-              role: result.user.role as 'customer' | 'mechanic' | 'admin',
+              role: result.user.role as UserRole,
               createdAt: new Date(result.user.createdAt)
             };
             
@@ -166,7 +166,7 @@ export const useAuthStore = create<AuthStore>()(
               // Use the user object as returned from the backend
               const completeUser: User = {
                 ...result.user,
-                role: result.user.role as 'customer' | 'mechanic' | 'admin',
+                role: result.user.role as UserRole,
                 createdAt: new Date(result.user.createdAt)
               };
               
@@ -234,7 +234,7 @@ export const useAuthStore = create<AuthStore>()(
 
       setUser: (user: User) => {
         // Production security: Validate user role
-        if (user.role === 'mechanic' && user.id !== 'mechanic-cody') {
+        if (user.role === 'MECHANIC' && user.id !== 'mechanic-cody') {
           console.warn('Unauthorized mechanic access attempt:', { 
             userId: user.id, 
             environment: 'production',
@@ -243,7 +243,7 @@ export const useAuthStore = create<AuthStore>()(
           return;
         }
         
-        if (user.role === 'admin' && user.id !== 'admin-cody') {
+        if (user.role === 'ADMIN' && user.id !== 'admin-cody') {
           console.warn('Unauthorized admin access attempt:', { 
             userId: user.id, 
             environment: 'production',
@@ -309,7 +309,7 @@ export const useAuthStore = create<AuthStore>()(
         const currentUser = get().user;
         
         // Only admin can view all users
-        if (currentUser?.role !== 'admin') {
+        if (currentUser?.role !== 'ADMIN') {
           console.warn('Unauthorized user list access attempt:', { 
             userId: currentUser?.id,
             role: currentUser?.role,
