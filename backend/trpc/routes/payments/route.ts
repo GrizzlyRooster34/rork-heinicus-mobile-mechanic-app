@@ -5,7 +5,7 @@ import Stripe from 'stripe';
 import * as jwt from 'jsonwebtoken';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
+  apiVersion: '2025-10-29.clover',
 });
 
 // Helper function to get user from request
@@ -70,13 +70,17 @@ export const paymentsRouter = router({
           throw new Error('Quote not found');
         }
 
+        if (!quote.job) {
+          throw new Error('Job not found for quote');
+        }
+
         // Verify user is the customer
         if (quote.job.customerId !== user.id) {
           throw new Error('Unauthorized');
         }
 
         // Check if quote is still valid
-        if (new Date() > quote.validUntil) {
+        if (quote.validUntil && new Date() > quote.validUntil) {
           throw new Error('Quote has expired');
         }
 

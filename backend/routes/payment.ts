@@ -162,12 +162,12 @@ payment.post('/webhook', async (c) => {
       throw new Error('STRIPE_WEBHOOK_SECRET environment variable is not set');
     }
 
-    const stripe = (await import('stripe')).default;
-    const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY || '', {
+    const Stripe = (await import('stripe')).default;
+    const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
       apiVersion: '2025-10-29.clover',
     });
 
-    let event: stripe.Event;
+    let event: Stripe.Event;
 
     try {
       const rawBody = await c.req.text();

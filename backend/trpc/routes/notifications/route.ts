@@ -52,7 +52,7 @@ export const notificationsRouter = router({
 
         const whereClause: any = { userId: user.id };
         if (input.unreadOnly) {
-          whereClause.isRead = false;
+          whereClause.read = false;
         }
 
         const notifications = await prisma.notification.findMany({
@@ -69,7 +69,7 @@ export const notificationsRouter = router({
         const unreadCount = await prisma.notification.count({
           where: {
             userId: user.id,
-            isRead: false,
+            read: false,
           }
         });
 
@@ -80,7 +80,7 @@ export const notificationsRouter = router({
             title: notification.title,
             message: notification.message,
             data: notification.data,
-            isRead: notification.isRead,
+            isRead: notification.read,
             isDelivered: notification.isDelivered,
             createdAt: notification.createdAt,
           })),
@@ -113,7 +113,7 @@ export const notificationsRouter = router({
             userId: user.id, // Ensure user owns this notification
           },
           data: {
-            isRead: true,
+            read: true,
           }
         });
 
@@ -137,10 +137,10 @@ export const notificationsRouter = router({
         await prisma.notification.updateMany({
           where: {
             userId: user.id,
-            isRead: false,
+            read: false,
           },
           data: {
-            isRead: true,
+            read: true,
           }
         });
 

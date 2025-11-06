@@ -68,7 +68,7 @@ export const mechanicRouter = router({
 
         // Get mechanic profile
         const mechanicProfile = await prisma.mechanicProfile.findUnique({
-          where: { userId: user.id }
+          where: { mechanicId: user.id }
         });
 
         if (!mechanicProfile) {
@@ -133,7 +133,7 @@ export const mechanicRouter = router({
 
         // Get mechanic profile
         const mechanicProfile = await prisma.mechanicProfile.findUnique({
-          where: { userId: user.id }
+          where: { mechanicId: user.id }
         });
 
         if (!mechanicProfile) {
@@ -153,7 +153,7 @@ export const mechanicRouter = router({
         return {
           verified: latestSubmission.status === 'APPROVED',
           status: latestSubmission.status,
-          submittedAt: latestSubmission.submittedAt.toISOString(),
+          submittedAt: latestSubmission.submittedAt?.toISOString() || null,
           reviewedAt: latestSubmission.reviewedAt?.toISOString(),
           reviewNotes: latestSubmission.reviewNotes,
         };
@@ -181,15 +181,11 @@ export const mechanicRouter = router({
         const verifications = await prisma.mechanicVerification.findMany({
           include: {
             mechanic: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    email: true,
-                  }
-                }
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
               }
             }
           },
@@ -198,16 +194,16 @@ export const mechanicRouter = router({
 
         return verifications.map(verification => ({
           id: verification.id,
-          userId: verification.mechanic.user.id,
+          userId: verification.mechanic.id,
           fullName: verification.fullName,
           status: verification.status,
           submittedAt: verification.submittedAt,
           reviewedAt: verification.reviewedAt,
           reviewedBy: verification.reviewedBy,
           mechanicInfo: {
-            firstName: verification.mechanic.user.firstName,
-            lastName: verification.mechanic.user.lastName,
-            email: verification.mechanic.user.email,
+            firstName: verification.mechanic.firstName,
+            lastName: verification.mechanic.lastName,
+            email: verification.mechanic.email,
           }
         }));
       } catch (error) {
@@ -283,15 +279,11 @@ export const mechanicRouter = router({
           where: { id: input.verificationId },
           include: {
             mechanic: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    email: true,
-                  }
-                }
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
               }
             }
           }
@@ -311,7 +303,7 @@ export const mechanicRouter = router({
           reviewedAt: verification.reviewedAt,
           reviewedBy: verification.reviewedBy,
           reviewNotes: verification.reviewNotes,
-          mechanic: verification.mechanic.user,
+          mechanic: verification.mechanic,
         };
       } catch (error) {
         console.error('Error in getVerificationDetails:', error);
