@@ -79,9 +79,15 @@ model Quote {
   subtotal        Float
   taxes           Float?
   total           Float
+  totalCost       Float    // Total cost for the quote
+  validUntil      DateTime? // Quote expiration date
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
-  job Job?
+  job     Job?
+  reviews Review[]
+  payments Payment[]
 }
 
 model Job {
@@ -94,6 +100,8 @@ model Job {
   mechanic    User?    @relation("MechanicJobs", fields: [mechanicId], references: [id])
   status      JobStatus @default(PENDING)
   urgency     UrgencyLevel
+  title       String?  // Job title/description
+  category    String?  // Job category
   schedule    Json?    // Store as JSON: { start: datetime, end?: datetime }
   location    Json     // Store as JSON: { lat: number, lng: number, address?: string }
   photos      String[]
@@ -101,6 +109,64 @@ model Job {
   timers      Json     // Store as JSON: [{ start: datetime, end?: datetime }]
   totals      Json     // Store as JSON: { labor: number, parts: number, fees: number, discounts: number, grand_total: number }
   rating      Json?    // Store as JSON: { stars: number, review?: string }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  reviews      Review[]
+  payments     Payment[]
+  timelines    JobTimeline[]
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  jobId       String?
+  job         Job?     @relation(fields: [jobId], references: [id])
+  quoteId     String?
+  quote       Quote?   @relation(fields: [quoteId], references: [id])
+  reviewerId  String
+  rating      Float    // 1-5 stars
+  comment     String?
+  response    String?  // Mechanic's response to review
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([jobId])
+  @@index([quoteId])
+}
+
+model Payment {
+  id                String   @id @default(cuid())
+  jobId             String?
+  job               Job?     @relation(fields: [jobId], references: [id])
+  quoteId           String?
+  quote             Quote?   @relation(fields: [quoteId], references: [id])
+  stripePaymentId   String   @unique // Stripe Payment Intent ID
+  amount            Float
+  currency          String   @default("usd")
+  status            String   // succeeded, pending, failed, etc.
+  paymentMethod     String?  // card, apple_pay, google_pay
+  metadata          Json?    // Additional payment metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([jobId])
+  @@index([quoteId])
+  @@index([stripePaymentId])
+}
+
+model JobTimeline {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id])
+  eventType   String   // CREATED, ACCEPTED, IN_PROGRESS, COMPLETED, CANCELED, etc.
+  description String
+  actorId     String?  // User who performed the action
+  metadata    Json?    // Additional event metadata
+  createdAt   DateTime @default(now())
+
+  @@index([jobId])
+  @@index([eventType])
 }
 
 // --- Supporting Models ---
@@ -167,6 +233,8 @@ model MechanicProfile {
   businessLicense   String?
   rating            Float?   @default(0.0)
   totalJobs         Int      @default(0)
+  averageRating     Float?   @default(0.0)
+  totalReviews      Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -176,13 +244,20 @@ model MechanicVerification {
   mechanicId        String   @unique
   mechanic          User     @relation(fields: [mechanicId], references: [id])
   status            VerificationStatus @default(PENDING)
+  fullName          String?
+  photoUri          String?
+  idUri             String?
   driversLicense    Boolean  @default(false)
   insurance         Boolean  @default(false)
   backgroundCheck   Boolean  @default(false)
   certifications    Boolean  @default(false)
+  submittedAt       DateTime?
   verifiedAt        DateTime?
   verifiedBy        String?
+  reviewedAt        DateTime?
+  reviewedBy        String?
   notes             String?
+  reviewNotes       String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -243,6 +318,8 @@ enum NotificationType {
   QUOTE_RECEIVED
   PAYMENT_RECEIVED
   REVIEW_RECEIVED
+  REVIEW_REQUEST
   SYSTEM
+  SYSTEM_ALERT
   EMERGENCY
 }
