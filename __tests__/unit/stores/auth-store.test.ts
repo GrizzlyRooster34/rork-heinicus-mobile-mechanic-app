@@ -70,7 +70,7 @@ describe('AuthStore', () => {
         email: 'test@example.com',
         firstName: 'Test',
         lastName: 'User',
-        role: 'customer' as const,
+        role: 'CUSTOMER' as const,
         createdAt: new Date().toISOString(),
       };
 
@@ -162,7 +162,7 @@ describe('AuthStore', () => {
         email: 'new@example.com',
         firstName: 'New',
         lastName: 'User',
-        role: 'customer' as const,
+        role: 'CUSTOMER' as const,
         createdAt: new Date().toISOString(),
       };
 
@@ -200,7 +200,7 @@ describe('AuthStore', () => {
         email: 'mechanic@example.com',
         firstName: 'New',
         lastName: 'Mechanic',
-        role: 'mechanic' as const,
+        role: 'MECHANIC' as const,
         phone: '(555) 123-4567',
         createdAt: new Date().toISOString(),
       };
@@ -221,7 +221,7 @@ describe('AuthStore', () => {
           'New',
           'Mechanic',
           '(555) 123-4567',
-          'mechanic'
+          'MECHANIC'
         );
         expect(success).toBe(true);
       });
@@ -232,7 +232,7 @@ describe('AuthStore', () => {
         firstName: 'New',
         lastName: 'Mechanic',
         phone: '(555) 123-4567',
-        role: 'mechanic',
+        role: 'MECHANIC',
       });
     });
 
@@ -276,7 +276,7 @@ describe('AuthStore', () => {
         firstName: 'Test',
         lastName: 'User',
         phone: undefined,
-        role: 'customer',
+        role: 'CUSTOMER',
       });
     });
   });
@@ -292,7 +292,7 @@ describe('AuthStore', () => {
           email: 'test@example.com',
           firstName: 'Test',
           lastName: 'User',
-          role: 'customer',
+          role: 'CUSTOMER',
           createdAt: new Date(),
         });
       });
@@ -319,7 +319,7 @@ describe('AuthStore', () => {
         email: 'test@example.com',
         firstName: 'Test',
         lastName: 'User',
-        role: 'customer' as const,
+        role: 'CUSTOMER' as const,
         createdAt: new Date(),
       };
 
@@ -342,7 +342,7 @@ describe('AuthStore', () => {
       
       // Since implementation is not fully shown, we test that it doesn't crash
       await act(async () => {
-        const success = await result.current.updateUserRole('user-123', 'mechanic');
+        const success = await result.current.updateUserRole('user-123', 'MECHANIC');
         // The actual implementation would determine the return value
         expect(typeof success).toBe('boolean');
       });
@@ -367,7 +367,7 @@ describe('AuthStore', () => {
         email: 'persistent@example.com',
         firstName: 'Persistent',
         lastName: 'User',
-        role: 'customer' as const,
+        role: 'CUSTOMER' as const,
         createdAt: new Date(),
       };
 
@@ -410,7 +410,7 @@ describe('AuthStore', () => {
             email: 'test@example.com',
             firstName: 'Test',
             lastName: 'User',
-            role: 'customer',
+            role: 'CUSTOMER',
             createdAt: new Date(),
           });
         });
@@ -482,7 +482,7 @@ describe('AuthStore', () => {
 
       // Complete login
       await act(async () => {
-        resolveLogin!({ success: true, user: { id: '1', email: 'test@example.com', firstName: 'Test', lastName: 'User', role: 'customer', createdAt: new Date().toISOString() }});
+        resolveLogin!({ success: true, user: { id: '1', email: 'test@example.com', firstName: 'Test', lastName: 'User', role: 'CUSTOMER', createdAt: new Date().toISOString() }});
         await loginPromise;
       });
 

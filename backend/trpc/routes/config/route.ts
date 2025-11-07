@@ -103,11 +103,11 @@ export const configRouter = router({
         // Determine type if not provided
         const type = input.type || inferType(input.value);
 
-        // Upsert the setting
+        // Upsert the setting (cast value to any to satisfy Prisma's InputJsonValue type)
         const setting = await prisma.systemSettings.upsert({
           where: { key: input.key },
           update: {
-            value: input.value,
+            value: input.value as any,
             type,
             category: input.category,
             label: input.label,
@@ -116,7 +116,7 @@ export const configRouter = router({
           },
           create: {
             key: input.key,
-            value: input.value,
+            value: input.value as any,
             type,
             category: input.category || 'general',
             label: input.label || input.key,

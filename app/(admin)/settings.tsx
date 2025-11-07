@@ -31,10 +31,10 @@ export default function AdminSettingsScreen() {
 
   const config = useConfigStore();
   const updateConfigMutation = trpc.admin.updateConfig.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       logger.info('Config updated successfully', 'AdminSettings', data);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       logger.error('Failed to update config', 'AdminSettings', error);
       Alert.alert('Error', 'Failed to update setting. Please try again.');
     },

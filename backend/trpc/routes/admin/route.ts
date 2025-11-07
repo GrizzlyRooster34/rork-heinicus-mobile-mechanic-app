@@ -603,17 +603,17 @@ export const adminRouter = router({
                     typeof input.value === 'number' ? 'number' :
                     typeof input.value === 'string' ? 'string' : 'object';
 
-        // Upsert the setting
+        // Upsert the setting (cast value to any to satisfy Prisma's InputJsonValue type)
         const setting = await prisma.systemSettings.upsert({
           where: { key: input.key },
           update: {
-            value: input.value === null ? null : input.value,
+            value: (input.value === null ? null : input.value) as any,
             type,
             updatedBy: user.id,
           },
           create: {
             key: input.key,
-            value: input.value === null ? null : input.value,
+            value: (input.value === null ? null : input.value) as any,
             type,
             category: 'general',
             label: input.key,
@@ -666,17 +666,17 @@ export const adminRouter = router({
                     typeof input.value === 'number' ? 'number' :
                     typeof input.value === 'string' ? 'string' : 'object';
 
-        // Upsert the setting
+        // Upsert the setting (cast value to any to satisfy Prisma's InputJsonValue type)
         const setting = await prisma.systemSettings.upsert({
           where: { key: input.key },
           update: {
-            value: input.value === null ? null : input.value,
+            value: (input.value === null ? null : input.value) as any,
             type,
             updatedBy: user.id,
           },
           create: {
             key: input.key,
-            value: input.value === null ? null : input.value,
+            value: (input.value === null ? null : input.value) as any,
             type,
             category: 'general',
             label: input.key,

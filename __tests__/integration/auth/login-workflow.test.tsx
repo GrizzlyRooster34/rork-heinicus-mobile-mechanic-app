@@ -40,7 +40,7 @@ describe('Login Workflow Integration', () => {
         email: 'customer@test.com',
         firstName: 'Test',
         lastName: 'Customer',
-        role: 'customer' as const,
+        role: 'CUSTOMER' as const,
         createdAt: new Date(),
       };
 
@@ -102,7 +102,7 @@ describe('Login Workflow Integration', () => {
         email: 'mechanic@test.com',
         firstName: 'Test',
         lastName: 'Mechanic',
-        role: 'mechanic' as const,
+        role: 'MECHANIC' as const,
         createdAt: new Date(),
       };
 
@@ -138,7 +138,7 @@ describe('Login Workflow Integration', () => {
         email: 'admin@test.com',
         firstName: 'Test',
         lastName: 'Admin',
-        role: 'admin' as const,
+        role: 'ADMIN' as const,
         createdAt: new Date(),
       };
 
@@ -248,7 +248,7 @@ describe('Login Workflow Integration', () => {
         email: 'newcustomer@test.com',
         firstName: 'New',
         lastName: 'Customer',
-        role: 'customer' as const,
+        role: 'CUSTOMER' as const,
         createdAt: new Date(),
       };
 
@@ -280,7 +280,7 @@ describe('Login Workflow Integration', () => {
           firstName: 'New',
           lastName: 'Customer',
           phone: undefined,
-          role: 'customer',
+          role: 'CUSTOMER',
           isActive: true,
         });
       });

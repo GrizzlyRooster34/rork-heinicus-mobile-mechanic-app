@@ -55,7 +55,7 @@ export function StoreIntegrationTest() {
         email: 'test@example.com',
         firstName: 'Test',
         lastName: 'User',
-        role: 'customer' as const,
+        role: 'CUSTOMER' as const,
         createdAt: new Date()
       };
       

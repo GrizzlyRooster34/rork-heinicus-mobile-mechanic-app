@@ -56,13 +56,13 @@ describe('User-Vehicle Workflow Integration', () => {
         firstName: 'Workflow',
         lastName: 'Customer',
         phone: '(555) 123-4567',
-        role: 'customer',
+        role: 'CUSTOMER',
         isActive: true,
       });
 
       expect(newCustomer).toBeTruthy();
       expect(newCustomer?.email).toBe('customer@workflow.test');
-      expect(newCustomer?.role).toBe('customer');
+      expect(newCustomer?.role).toBe('CUSTOMER');
       expect(newCustomer).not.toHaveProperty('password');
 
       // Mock the user being stored
@@ -74,7 +74,7 @@ describe('User-Vehicle Workflow Integration', () => {
           firstName: 'Workflow',
           lastName: 'Customer',
           phone: '(555) 123-4567',
-          role: 'customer',
+          role: 'CUSTOMER',
           isActive: true,
           createdAt: newCustomer!.createdAt.toISOString(),
         }
@@ -212,7 +212,7 @@ describe('User-Vehicle Workflow Integration', () => {
         password: 'password123',
         firstName: 'Customer',
         lastName: 'One',
-        role: 'customer',
+        role: 'CUSTOMER',
         isActive: true,
       });
 
@@ -221,7 +221,7 @@ describe('User-Vehicle Workflow Integration', () => {
         password: 'password123',
         firstName: 'Customer',
         lastName: 'Two',
-        role: 'customer',
+        role: 'CUSTOMER',
         isActive: true,
       });
 
@@ -236,17 +236,17 @@ describe('User-Vehicle Workflow Integration', () => {
           password: 'password123',
           firstName: 'Customer',
           lastName: 'One',
-          role: 'customer',
+          role: 'CUSTOMER',
           isActive: true,
           createdAt: customer1!.createdAt.toISOString(),
         },
         {
           id: customer2!.id,
-          email: 'customer2@test.com', 
+          email: 'customer2@test.com',
           password: 'password123',
           firstName: 'Customer',
           lastName: 'Two',
-          role: 'customer',
+          role: 'CUSTOMER',
           isActive: true,
           createdAt: customer2!.createdAt.toISOString(),
         }
@@ -333,7 +333,7 @@ describe('User-Vehicle Workflow Integration', () => {
         password: 'password123',
         firstName: 'Test',
         lastName: 'User',
-        role: 'customer',
+        role: 'CUSTOMER',
         isActive: true,
       });
 

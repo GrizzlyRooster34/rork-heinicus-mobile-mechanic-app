@@ -142,7 +142,7 @@ describe('MobileDatabase', () => {
         password: 'password123',
         firstName: 'New',
         lastName: 'User',
-        role: 'customer' as const,
+        role: 'CUSTOMER' as const,
         isActive: true,
       };
 
@@ -164,7 +164,7 @@ describe('MobileDatabase', () => {
         password: 'password123',
         firstName: 'Duplicate',
         lastName: 'User',
-        role: 'customer' as const,
+        role: 'CUSTOMER' as const,
         isActive: true,
       };
 
