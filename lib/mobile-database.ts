@@ -147,7 +147,7 @@ export class MobileDatabase {
         const { password: _, ...userWithoutPassword } = user;
         return {
           ...userWithoutPassword,
-          role: userWithoutPassword.role as 'customer' | 'mechanic' | 'admin'
+          role: userWithoutPassword.role as 'CUSTOMER' | 'MECHANIC' | 'ADMIN'
         };
       }
 
@@ -205,7 +205,7 @@ export class MobileDatabase {
       return {
         ...userWithoutPassword,
         createdAt: new Date(userWithoutPassword.createdAt),
-        role: userWithoutPassword.role as 'customer' | 'mechanic' | 'admin'
+        role: userWithoutPassword.role as 'CUSTOMER' | 'MECHANIC' | 'ADMIN'
       };
     } catch (error) {
       console.error('Error creating user:', error);

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User, AuthState } from '@/types/auth';
+import { User, AuthState, UserRole } from '@/types/auth';
 import { trpcClient } from '@/lib/trpc';
 import { devMode, isDevCredentials, getDevUser } from '@/utils/dev';
 import { withAsyncErrorHandling, withErrorHandling, logStoreAction } from './store-utils';

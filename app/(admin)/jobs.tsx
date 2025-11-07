@@ -54,7 +54,7 @@ export default function AdminJobsScreen() {
     }
   };
 
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'ADMIN') {
     return (
       <View style={styles.unauthorizedContainer}>
         <Icons.Shield size={64} color={Colors.error} />

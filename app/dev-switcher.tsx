@@ -9,16 +9,16 @@ import * as Icons from 'lucide-react-native';
 export default function DevSwitcherScreen() {
   const { login, logout, user, isAuthenticated } = useAuthStore();
 
-  const handleQuickLogin = async (role: 'admin' | 'mechanic' | 'customer') => {
+  const handleQuickLogin = async (role: 'ADMIN' | 'MECHANIC' | 'CUSTOMER') => {
     const credentials = DEV_CREDENTIALS[role];
     const success = await login(credentials.email, credentials.password);
-    
+
     if (success) {
       Alert.alert('Success', `Logged in as ${role}`);
       // Navigate to appropriate screen
-      if (role === 'admin') {
+      if (role === 'ADMIN') {
         router.replace('/(admin)');
-      } else if (role === 'mechanic') {
+      } else if (role === 'MECHANIC') {
         router.replace('/(mechanic)');
       } else {
         router.replace('/(customer)');
@@ -58,7 +58,7 @@ export default function DevSwitcherScreen() {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.roleButton, styles.adminButton]}
-          onPress={() => handleQuickLogin('admin')}
+          onPress={() => handleQuickLogin('ADMIN')}
         >
           <Icons.Shield size={24} color={Colors.white} />
           <Text style={styles.roleButtonText}>Login as Admin</Text>
@@ -67,7 +67,7 @@ export default function DevSwitcherScreen() {
 
         <TouchableOpacity
           style={[styles.roleButton, styles.mechanicButton]}
-          onPress={() => handleQuickLogin('mechanic')}
+          onPress={() => handleQuickLogin('MECHANIC')}
         >
           <Icons.Wrench size={24} color={Colors.white} />
           <Text style={styles.roleButtonText}>Login as Mechanic</Text>
@@ -76,7 +76,7 @@ export default function DevSwitcherScreen() {
 
         <TouchableOpacity
           style={[styles.roleButton, styles.customerButton]}
-          onPress={() => handleQuickLogin('customer')}
+          onPress={() => handleQuickLogin('CUSTOMER')}
         >
           <Icons.User size={24} color={Colors.white} />
           <Text style={styles.roleButtonText}>Login as Customer</Text>

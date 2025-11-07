@@ -12,7 +12,7 @@ export default function AdminUsersScreen() {
 
   const allUsers = getAllUsers();
 
-  const handleRoleChange = async (userId: string, newRole: 'customer' | 'mechanic' | 'admin') => {
+  const handleRoleChange = async (userId: string, newRole: 'CUSTOMER' | 'MECHANIC' | 'ADMIN') => {
     const success = await updateUserRole(userId, newRole);
     if (success) {
       Alert.alert('Success', 'User role updated successfully');
@@ -25,23 +25,23 @@ export default function AdminUsersScreen() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin': return Colors.error;
-      case 'mechanic': return Colors.mechanic;
-      case 'customer': return Colors.primary;
+      case 'ADMIN': return Colors.error;
+      case 'MECHANIC': return Colors.mechanic;
+      case 'CUSTOMER': return Colors.primary;
       default: return Colors.textMuted;
     }
   };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'admin': return <Icons.Shield size={16} color={getRoleColor(role)} />;
-      case 'mechanic': return <Icons.Wrench size={16} color={getRoleColor(role)} />;
-      case 'customer': return <Icons.User size={16} color={getRoleColor(role)} />;
+      case 'ADMIN': return <Icons.Shield size={16} color={getRoleColor(role)} />;
+      case 'MECHANIC': return <Icons.Wrench size={16} color={getRoleColor(role)} />;
+      case 'CUSTOMER': return <Icons.User size={16} color={getRoleColor(role)} />;
       default: return <Icons.User size={16} color={getRoleColor(role)} />;
     }
   };
 
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'ADMIN') {
     return (
       <View style={styles.unauthorizedContainer}>
         <Icons.Shield size={64} color={Colors.error} />
@@ -143,9 +143,9 @@ export default function AdminUsersScreen() {
               </View>
 
               <Text style={styles.roleSelectionTitle}>Select new role:</Text>
-              
+
               <View style={styles.roleOptions}>
-                {['customer', 'mechanic', 'admin'].map((role) => (
+                {['CUSTOMER', 'MECHANIC', 'ADMIN'].map((role) => (
                   <TouchableOpacity
                     key={role}
                     style={[

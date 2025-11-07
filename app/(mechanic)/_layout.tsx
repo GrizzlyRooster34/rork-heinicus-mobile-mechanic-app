@@ -23,7 +23,7 @@ export default function MechanicTabLayout() {
   const { user, isAuthenticated } = useAuthStore();
 
   // Production security: Only allow Cody as mechanic
-  if (!isAuthenticated || !user || user.role !== 'mechanic' || user.id !== 'mechanic-cody') {
+  if (!isAuthenticated || !user || user.role !== 'MECHANIC' || user.id !== 'mechanic-cody') {
     logger.warn(
       'Unauthorized mechanic access attempt',
       'MechanicLayout',

@@ -22,7 +22,7 @@ export default function CustomerTabLayout() {
   const { user, isAuthenticated } = useAuthStore();
 
   // Redirect to auth if not authenticated or not a customer
-  if (!isAuthenticated || !user || user.role !== 'customer') {
+  if (!isAuthenticated || !user || user.role !== 'CUSTOMER') {
     return <Redirect href="/auth" />;
   }
 

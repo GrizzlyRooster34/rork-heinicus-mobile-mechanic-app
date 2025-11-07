@@ -10,8 +10,8 @@ export default function AdminDashboardScreen() {
   const { serviceRequests, quotes } = useAppStore();
 
   const allUsers = getAllUsers();
-  const totalCustomers = allUsers.filter(u => u.role === 'customer').length;
-  const totalMechanics = allUsers.filter(u => u.role === 'mechanic').length;
+  const totalCustomers = allUsers.filter(u => u.role === 'CUSTOMER').length;
+  const totalMechanics = allUsers.filter(u => u.role === 'MECHANIC').length;
   const totalQuotes = quotes.length;
   const totalJobs = serviceRequests.length;
   const completedJobs = serviceRequests.filter(r => r.status === 'completed').length;
@@ -36,7 +36,7 @@ export default function AdminDashboardScreen() {
     }))
   ].sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 10);
 
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'ADMIN') {
     return (
       <View style={styles.unauthorizedContainer}>
         <Icons.Shield size={64} color={Colors.error} />

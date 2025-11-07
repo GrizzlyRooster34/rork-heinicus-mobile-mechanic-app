@@ -13,7 +13,7 @@ import AdminDualLoginToggle from '@/components/AdminDualLoginToggle';
 
 export default function AuthScreen() {
   const { login, signup, isLoading, isAuthenticated, user } = useAuthStore();
-  const [role, setRole] = useState<'customer' | 'mechanic'>('customer');
+  const [role, setRole] = useState<'CUSTOMER' | 'MECHANIC'>('CUSTOMER');
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [isOfflineMode, setIsOfflineMode] = useState(
     process.env.EXPO_PUBLIC_API_URL === 'disabled'
@@ -25,11 +25,11 @@ export default function AuthScreen() {
       console.log('User authenticated:', { userId: user.id, role: user.role, timestamp: new Date() });
       
       // Redirect based on role
-      if (user.role === 'customer') {
+      if (user.role === 'CUSTOMER') {
         router.replace('/(customer)');
-      } else if (user.role === 'mechanic') {
+      } else if (user.role === 'MECHANIC') {
         router.replace('/(mechanic)');
-      } else if (user.role === 'admin') {
+      } else if (user.role === 'ADMIN') {
         router.replace('/(admin)');
       } else {
         // Invalid role
@@ -124,7 +124,7 @@ export default function AuthScreen() {
 
   const switchMode = () => {
     setIsLoginMode(!isLoginMode);
-    setRole('customer');
+    setRole('CUSTOMER');
   };
 
   return (
@@ -215,14 +215,14 @@ export default function AuthScreen() {
                       <TouchableOpacity
                         style={[
                           styles.roleOption,
-                          role === 'customer' && styles.roleOptionActive
+                          role === 'CUSTOMER' && styles.roleOptionActive
                         ]}
-                        onPress={() => setRole('customer')}
+                        onPress={() => setRole('CUSTOMER')}
                       >
-                        <Icons.User size={20} color={role === 'customer' ? Colors.white : Colors.textSecondary} />
+                        <Icons.User size={20} color={role === 'CUSTOMER' ? Colors.white : Colors.textSecondary} />
                         <Text style={[
                           styles.roleOptionText,
-                          role === 'customer' && styles.roleOptionTextActive
+                          role === 'CUSTOMER' && styles.roleOptionTextActive
                         ]}>
                           Customer
                         </Text>
@@ -230,14 +230,14 @@ export default function AuthScreen() {
                       <TouchableOpacity
                         style={[
                           styles.roleOption,
-                          role === 'mechanic' && styles.roleOptionActive
+                          role === 'MECHANIC' && styles.roleOptionActive
                         ]}
-                        onPress={() => setRole('mechanic')}
+                        onPress={() => setRole('MECHANIC')}
                       >
-                        <Icons.Wrench size={20} color={role === 'mechanic' ? Colors.white : Colors.textSecondary} />
+                        <Icons.Wrench size={20} color={role === 'MECHANIC' ? Colors.white : Colors.textSecondary} />
                         <Text style={[
                           styles.roleOptionText,
-                          role === 'mechanic' && styles.roleOptionTextActive
+                          role === 'MECHANIC' && styles.roleOptionTextActive
                         ]}>
                           Mechanic
                         </Text>
