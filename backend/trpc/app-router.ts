@@ -11,13 +11,14 @@ import { mechanicRouter } from './routes/mechanic/route';
 import { paymentsRouter } from './routes/payments/route';
 import { reviewsRouter } from './routes/reviews/route';
 import { notificationsRouter } from './routes/notifications/route';
+import { analyticsRouter } from './routes/analytics/route';
 
 export const appRouter = router({
   // Example routes
   example: router({
     hi: hiProcedure,
   }),
-  
+
   // Main app routes
   auth: authRouter,
   admin: adminRouter,
@@ -30,6 +31,7 @@ export const appRouter = router({
   payments: paymentsRouter,
   reviews: reviewsRouter,
   notifications: notificationsRouter,
+  analytics: analyticsRouter,
 });
 
 export type AppRouter = typeof appRouter;
