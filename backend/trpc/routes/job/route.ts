@@ -682,4 +682,81 @@ export const jobRouter = router({
         });
       }
     }),
+
+  /**
+   * Update parts approval status for a job
+   * Allows customers to pre-approve parts cost to streamline the service process
+   */
+  updatePartsApproval: publicProcedure
+    .input(z.object({
+      jobId: z.string(),
+      partsApproved: z.boolean(),
+      estimatedPartsCost: z.number().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const job = await prisma.job.findUnique({
+          where: { id: input.jobId },
+          include: {
+            customer: true,
+          }
+        });
+
+        if (!job) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Job not found',
+          });
+        }
+
+        // Update job with parts approval status
+        const updatedJob = await prisma.job.update({
+          where: { id: input.jobId },
+          data: {
+            partsApproved: input.partsApproved,
+            estimatedPartsCost: input.estimatedPartsCost,
+            updatedAt: new Date(),
+          },
+          include: {
+            customer: true,
+            mechanic: true,
+            quote: {
+              include: {
+                service: true,
+                vehicle: true,
+              }
+            },
+          }
+        });
+
+        // Create timeline event
+        await prisma.jobTimeline.create({
+          data: {
+            jobId: job.id,
+            eventType: 'IN_PROGRESS',
+            description: input.partsApproved
+              ? `Parts pre-approved${input.estimatedPartsCost ? ` (Est. $${input.estimatedPartsCost.toFixed(2)})` : ''}`
+              : 'Parts pre-approval removed',
+            actorId: job.customerId,
+            metadata: {
+              partsApproved: input.partsApproved,
+              estimatedPartsCost: input.estimatedPartsCost,
+            }
+          }
+        });
+
+        console.log('Parts approval updated:', input.jobId, input.partsApproved);
+
+        return { success: true, job: updatedJob };
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        console.error('Error updating parts approval:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update parts approval',
+        });
+      }
+    }),
 });
