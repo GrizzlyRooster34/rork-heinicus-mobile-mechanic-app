@@ -10,6 +10,7 @@ import { VinScanner } from '@/components/VinScanner';
 import { AIAssistant } from '@/components/AIAssistant';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
+import { useAdminSettingsStore } from '@/stores/admin-settings-store';
 import { ServiceRequest, ServiceType, DiagnosticResult, Vehicle, VehicleType } from '@/types/service';
 import { generateSmartQuote } from '@/utils/quote-generator';
 import { ENV_CONFIG, logProductionEvent } from '@/utils/firebase-config';
@@ -22,6 +23,7 @@ export default function CustomerRequestScreen() {
   const params = useLocalSearchParams();
   const { addServiceRequest, addQuote, vehicles, currentLocation, setCurrentLocation, updateServiceRequest, addVehicle } = useAppStore();
   const { user } = useAuthStore();
+  const { system } = useAdminSettingsStore();
   
   const [selectedService, setSelectedService] = useState<ServiceType | null>(
     params.serviceType as ServiceType || null
@@ -482,50 +484,52 @@ Would you like to add this vehicle to your profile?`,
           )}
         </View>
 
-        {/* AI Assistant */}
-        <View style={styles.section}>
-          <View style={styles.aiHeader}>
-            <Text style={styles.sectionTitle}>Get AI-Powered Diagnosis</Text>
-            <Button
-              title={showAIAssistant ? 'Hide AI Assistant' : 'Use AI Assistant'}
-              variant="outline"
-              size="small"
-              onPress={() => setShowAIAssistant(!showAIAssistant)}
-              style={styles.toggleButton}
-            />
-          </View>
-          
-          {showAIAssistant && (
-            <AIAssistant
-              vehicle={selectedVehicle || undefined}
-              onDiagnosisComplete={handleAIDiagnosis}
-              initialSymptoms={description}
-            />
-          )}
-
-          {aiDiagnosis && !showAIAssistant && (
-            <View style={styles.diagnosisPreview}>
-              <View style={styles.diagnosisHeader}>
-                <Brain size={16} color={Colors.primary} />
-                <Text style={styles.diagnosisTitle}>AI Diagnosis Complete</Text>
-                <Button
-                  title="View Details"
-                  variant="outline"
-                  size="small"
-                  onPress={() => setShowAIAssistant(true)}
-                />
-              </View>
-              <Text style={styles.diagnosisPreviewText}>
-                {aiDiagnosis.likelyCauses[0]} • {aiDiagnosis.urgencyLevel.toUpperCase()} priority
-              </Text>
-              {aiDiagnosis.estimatedCost && (
-                <Text style={styles.diagnosisCostText}>
-                  Estimated cost: ${aiDiagnosis.estimatedCost.min} - ${aiDiagnosis.estimatedCost.max}
-                </Text>
-              )}
+        {/* AI Assistant - Only shown if enabled in admin settings */}
+        {system.enableAIDiagnostics && (
+          <View style={styles.section}>
+            <View style={styles.aiHeader}>
+              <Text style={styles.sectionTitle}>Get AI-Powered Diagnosis</Text>
+              <Button
+                title={showAIAssistant ? 'Hide AI Assistant' : 'Use AI Assistant'}
+                variant="outline"
+                size="small"
+                onPress={() => setShowAIAssistant(!showAIAssistant)}
+                style={styles.toggleButton}
+              />
             </View>
-          )}
-        </View>
+
+            {showAIAssistant && (
+              <AIAssistant
+                vehicle={selectedVehicle || undefined}
+                onDiagnosisComplete={handleAIDiagnosis}
+                initialSymptoms={description}
+              />
+            )}
+
+            {aiDiagnosis && !showAIAssistant && (
+              <View style={styles.diagnosisPreview}>
+                <View style={styles.diagnosisHeader}>
+                  <Brain size={16} color={Colors.primary} />
+                  <Text style={styles.diagnosisTitle}>AI Diagnosis Complete</Text>
+                  <Button
+                    title="View Details"
+                    variant="outline"
+                    size="small"
+                    onPress={() => setShowAIAssistant(true)}
+                  />
+                </View>
+                <Text style={styles.diagnosisPreviewText}>
+                  {aiDiagnosis.likelyCauses[0]} • {aiDiagnosis.urgencyLevel.toUpperCase()} priority
+                </Text>
+                {aiDiagnosis.estimatedCost && (
+                  <Text style={styles.diagnosisCostText}>
+                    Estimated cost: ${aiDiagnosis.estimatedCost.min} - ${aiDiagnosis.estimatedCost.max}
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Service Selection */}
         <View style={styles.section}>

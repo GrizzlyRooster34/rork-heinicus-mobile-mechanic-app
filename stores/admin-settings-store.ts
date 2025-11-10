@@ -9,6 +9,7 @@ interface SystemSettings {
   maintenanceMode: boolean;
   maxConcurrentJobs: number;
   sessionTimeout: number; // minutes
+  enableAIDiagnostics: boolean;
 }
 
 interface NotificationSettings {
@@ -79,6 +80,7 @@ const defaultSystemSettings: SystemSettings = {
   maintenanceMode: false,
   maxConcurrentJobs: 10,
   sessionTimeout: 60,
+  enableAIDiagnostics: false, // Disabled by default until ML model is integrated
 };
 
 const defaultNotificationSettings: NotificationSettings = {
