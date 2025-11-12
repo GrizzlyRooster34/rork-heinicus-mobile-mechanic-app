@@ -10,6 +10,7 @@ import { vinRouter } from './routes/vin/route';
 import { mechanicRouter } from './routes/mechanic/route';
 import { twoFactorRouter } from './routes/two-factor/route';
 import { passwordResetRouter } from './routes/password-reset/route';
+import { locationRouter } from './routes/location/route';
 
 export const appRouter = router({
   example: router({
@@ -25,6 +26,7 @@ export const appRouter = router({
   mechanic: mechanicRouter,
   twoFactor: twoFactorRouter,
   passwordReset: passwordResetRouter,
+  location: locationRouter,
 });
 
 export type AppRouter = typeof appRouter;
