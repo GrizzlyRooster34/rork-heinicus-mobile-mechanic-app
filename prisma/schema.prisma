@@ -65,6 +65,10 @@ model User {
   pricingProfiles    PricingProfile[]
   analyticsSnapshots AnalyticsSnapshot[]
 
+  // Push Notifications (Phase 2)
+  pushTokens         PushToken[]      @relation("UserPushTokens")
+  notifications      Notification[]   @relation("UserNotifications")
+
   @@index([email])
   @@index([role])
   @@index([status])
@@ -421,4 +425,63 @@ model AnalyticsSnapshot {
   @@index([mechanicId])
   @@index([periodStart])
   @@index([periodEnd])
+}
+
+// ==========================================
+// Push Notifications (Phase 2)
+// ==========================================
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserPushTokens", fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String   // 'ios' | 'android' | 'web'
+  deviceId  String?  // Optional device identifier
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([token])
+}
+
+enum NotificationType {
+  JOB_UPDATE        // Job status changed
+  NEW_MESSAGE       // New chat message
+  QUOTE_RECEIVED    // Quote received from mechanic
+  QUOTE_ACCEPTED    // Quote accepted by customer
+  PAYMENT_RECEIVED  // Payment completed
+  JOB_COMPLETED     // Job marked as complete
+  MECHANIC_ASSIGNED // Mechanic assigned to job
+  MECHANIC_EN_ROUTE // Mechanic is on the way
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Notification Content
+  title     String
+  body      String
+  data      Json?            // Additional structured data
+
+  // Type and Status
+  type      NotificationType
+  read      Boolean          @default(false)
+
+  // Related Entity IDs (optional)
+  jobId     String?
+  messageId String?
+  quoteId   String?
+
+  // Timestamps
+  createdAt DateTime         @default(now())
+  readAt    DateTime?
+
+  @@index([userId])
+  @@index([type])
+  @@index([read])
+  @@index([createdAt])
+  @@index([jobId])
 }
