@@ -13,7 +13,14 @@ interface AuthStore extends AuthState {
   setUser: (user: User) => void;
   updateUserRole: (userId: string, role: 'customer' | 'mechanic' | 'admin') => Promise<boolean>;
   getAllUsers: () => User[];
-  
+
+  // JWT Token Management
+  token: string | null;
+  refreshToken: string | null;
+  setTokens: (accessToken: string, refreshToken: string) => void;
+  clearTokens: () => void;
+  verifyToken: () => Promise<boolean>;
+
   // Verification status
   verificationStatus: MechanicVerificationStatus | null;
   setVerificationStatus: (status: MechanicVerificationStatus | null) => void;
@@ -62,6 +69,8 @@ export const useAuthStore = create<AuthStore>()(
       isLoading: false,
       isAuthenticated: false,
       verificationStatus: null,
+      token: null,
+      refreshToken: null,
 
       signup: async (email: string, password: string, firstName: string, lastName: string, phone?: string, role: 'customer' | 'mechanic' = 'customer') => {
         set({ isLoading: true });
@@ -78,23 +87,29 @@ export const useAuthStore = create<AuthStore>()(
           });
           
           if (result.success && result.user) {
-            console.log('Signup successful via TRPC:', { 
-              userId: result.user.id, 
+            console.log('Signup successful via TRPC:', {
+              userId: result.user.id,
               email: result.user.email,
               role: result.user.role,
-              timestamp: new Date().toISOString() 
+              timestamp: new Date().toISOString()
             });
-            
+
             // Use the user object as returned from the backend
             const completeUser: User = result.user;
-            
+
+            // Store JWT tokens if provided
+            const accessToken = result.token || null;
+            const refreshToken = null; // Backend doesn't return refresh token yet, will be added later
+
             // Auto-login after successful signup
-            set({ 
-              user: completeUser, 
-              isAuthenticated: true, 
-              isLoading: false 
+            set({
+              user: completeUser,
+              isAuthenticated: true,
+              isLoading: false,
+              token: accessToken,
+              refreshToken: refreshToken,
             });
-            
+
             return true;
           } else {
             console.log('Signup failed via TRPC:', result.error);
@@ -155,21 +170,27 @@ export const useAuthStore = create<AuthStore>()(
             });
             
             if (result.success && result.user) {
-              console.log('Login successful via TRPC:', { 
-                userId: result.user.id, 
-                role: result.user.role, 
-                timestamp: new Date().toISOString() 
+              console.log('Login successful via TRPC:', {
+                userId: result.user.id,
+                role: result.user.role,
+                timestamp: new Date().toISOString()
               });
-              
+
               // Use the user object as returned from the backend
               const completeUser: User = result.user;
-              
-              set({ 
-                user: completeUser, 
-                isAuthenticated: true, 
-                isLoading: false 
+
+              // Store JWT tokens if provided
+              const accessToken = result.token || null;
+              const refreshToken = null; // Backend doesn't return refresh token yet
+
+              set({
+                user: completeUser,
+                isAuthenticated: true,
+                isLoading: false,
+                token: accessToken,
+                refreshToken: refreshToken,
               });
-              
+
               return true;
             } else {
               console.log('Login failed via TRPC:', result.error);
@@ -209,19 +230,21 @@ export const useAuthStore = create<AuthStore>()(
 
       logout: () => {
         const currentUser = get().user;
-        
+
         // Production logging
-        console.log('User logout:', { 
-          userId: currentUser?.id, 
+        console.log('User logout:', {
+          userId: currentUser?.id,
           role: currentUser?.role,
           environment: 'production',
-          timestamp: new Date().toISOString() 
+          timestamp: new Date().toISOString()
         });
-        
-        set({ 
-          user: null, 
+
+        set({
+          user: null,
           isAuthenticated: false,
           verificationStatus: null,
+          token: null,
+          refreshToken: null,
         });
       },
 
@@ -318,6 +341,58 @@ export const useAuthStore = create<AuthStore>()(
         ];
       },
 
+      // JWT Token Management Methods
+      setTokens: (accessToken: string, refreshToken: string) => {
+        set({
+          token: accessToken,
+          refreshToken: refreshToken,
+        });
+      },
+
+      clearTokens: () => {
+        set({
+          token: null,
+          refreshToken: null,
+        });
+      },
+
+      verifyToken: async () => {
+        const currentToken = get().token;
+
+        if (!currentToken) {
+          return false;
+        }
+
+        try {
+          const result = await trpcClient.auth.verifyToken.query({
+            token: currentToken,
+          });
+
+          if (result.valid && result.user) {
+            // Token is valid, optionally update user data
+            return true;
+          } else {
+            // Token is invalid, clear auth state
+            set({
+              user: null,
+              isAuthenticated: false,
+              token: null,
+              refreshToken: null,
+            });
+            return false;
+          }
+        } catch (error) {
+          console.error('Token verification error:', error);
+          set({
+            user: null,
+            isAuthenticated: false,
+            token: null,
+            refreshToken: null,
+          });
+          return false;
+        }
+      },
+
       setVerificationStatus: (status: MechanicVerificationStatus | null) => {
         set({ verificationStatus: status });
       },
@@ -329,6 +404,8 @@ export const useAuthStore = create<AuthStore>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
         verificationStatus: state.verificationStatus,
+        token: state.token,
+        refreshToken: state.refreshToken,
       }),
     }
   )
