@@ -1,0 +1,419 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// User Management & Authentication
+// ==========================================
+
+enum UserRole {
+  CUSTOMER
+  MECHANIC
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model User {
+  id        String     @id @default(cuid())
+  role      UserRole   @default(CUSTOMER)
+  status    UserStatus @default(ACTIVE)
+
+  // Profile Information
+  firstName String
+  lastName  String
+  email     String     @unique
+  phone     String?
+  address   String?
+
+  // Authentication & Security
+  passwordHash     String?
+  twoFactorEnabled Boolean  @default(false)
+  twoFactorSecret  String?  // Encrypted TOTP secret
+
+  // Timestamps
+  joinedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  backupCodes       TwoFactorBackupCode[]
+  passwordResets    PasswordReset[]
+
+  // Customer Relations
+  vehiclesOwned     Vehicle[]
+  jobsRequested     Job[]           @relation("CustomerJobs")
+  quotesReceived    Quote[]
+  notificationPrefs NotificationPref?
+
+  // Mechanic Relations
+  jobsAssigned       Job[]            @relation("MechanicJobs")
+  availability       Availability[]
+  tools              Tool[]
+  pricingProfiles    PricingProfile[]
+  analyticsSnapshots AnalyticsSnapshot[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+// ==========================================
+// Security Models
+// ==========================================
+
+model TwoFactorBackupCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String    // Hashed backup code
+  used      Boolean   @default(false)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([used])
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique // Hashed reset token
+  used      Boolean   @default(false)
+  usedAt    DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+// ==========================================
+// Vehicle Management
+// ==========================================
+
+model Vehicle {
+  id           String   @id @default(cuid())
+  customerId   String
+  customer     User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  // Vehicle Details
+  make         String
+  model        String
+  year         Int
+  vin          String?  @unique
+  licensePlate String?
+  color        String?
+
+  // Timestamps
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  jobs         Job[]
+
+  @@index([customerId])
+  @@index([vin])
+}
+
+// ==========================================
+// Job Management
+// ==========================================
+
+enum JobStatus {
+  PENDING
+  QUOTED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum JobPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Job {
+  id          String      @id @default(cuid())
+
+  // Job Details
+  title       String
+  description String
+  status      JobStatus   @default(PENDING)
+  priority    JobPriority @default(MEDIUM)
+
+  // Location
+  location    String
+  latitude    Float?
+  longitude   Float?
+
+  // Participants
+  customerId  String
+  customer    User        @relation("CustomerJobs", fields: [customerId], references: [id], onDelete: Cascade)
+
+  mechanicId  String?
+  mechanic    User?       @relation("MechanicJobs", fields: [mechanicId], references: [id])
+
+  vehicleId   String?
+  vehicle     Vehicle?    @relation(fields: [vehicleId], references: [id])
+
+  // Scheduling
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  // Timestamps
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  quotes      Quote[]
+  services    Service[]
+
+  @@index([customerId])
+  @@index([mechanicId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+// ==========================================
+// Quote Management
+// ==========================================
+
+enum QuoteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model Quote {
+  id          String      @id @default(cuid())
+
+  // Quote Details
+  jobId       String
+  job         Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  customerId  String
+  customer    User        @relation(fields: [customerId], references: [id])
+
+  // Pricing
+  amount      Float
+  currency    String      @default("USD")
+  description String?
+
+  // Status
+  status      QuoteStatus @default(PENDING)
+
+  // Timestamps
+  validUntil  DateTime
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([jobId])
+  @@index([customerId])
+  @@index([status])
+}
+
+// ==========================================
+// Service Catalog
+// ==========================================
+
+enum ServiceCategory {
+  DIAGNOSTIC
+  MAINTENANCE
+  REPAIR
+  INSPECTION
+  EMERGENCY
+}
+
+model Service {
+  id               String          @id @default(cuid())
+
+  // Service Details
+  name             String
+  description      String
+  category         ServiceCategory
+
+  // Pricing
+  basePrice        Float
+  estimatedTime    Int             // in minutes
+
+  // Status
+  isActive         Boolean         @default(true)
+
+  // Timestamps
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  // Relations
+  jobs             Job[]
+  pricingProfiles  PricingProfile[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+// ==========================================
+// Mechanic Tools & Availability
+// ==========================================
+
+model Tool {
+  id          String   @id @default(cuid())
+
+  // Tool Details
+  mechanicId  String
+  mechanic    User     @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  category    String?
+
+  // Status
+  isAvailable Boolean  @default(true)
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([mechanicId])
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model Availability {
+  id         String    @id @default(cuid())
+
+  // Mechanic
+  mechanicId String
+  mechanic   User      @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
+
+  // Schedule
+  dayOfWeek  DayOfWeek
+  startTime  String    // Format: "HH:MM"
+  endTime    String    // Format: "HH:MM"
+
+  // Status
+  isActive   Boolean   @default(true)
+
+  // Timestamps
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([mechanicId])
+  @@index([dayOfWeek])
+}
+
+// ==========================================
+// Pricing & Business Logic
+// ==========================================
+
+model PricingProfile {
+  id              String   @id @default(cuid())
+
+  // Mechanic
+  mechanicId      String
+  mechanic        User     @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
+
+  // Service
+  serviceId       String
+  service         Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  // Custom Pricing
+  customPrice     Float
+  discountPercent Float?   @default(0)
+
+  // Status
+  isActive        Boolean  @default(true)
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([mechanicId, serviceId])
+  @@index([mechanicId])
+  @@index([serviceId])
+}
+
+// ==========================================
+// Notifications
+// ==========================================
+
+model NotificationPref {
+  id               String   @id @default(cuid())
+
+  // User
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Preferences
+  emailEnabled     Boolean  @default(true)
+  smsEnabled       Boolean  @default(true)
+  pushEnabled      Boolean  @default(true)
+
+  // Notification Types
+  jobUpdates       Boolean  @default(true)
+  quoteAlerts      Boolean  @default(true)
+  promotions       Boolean  @default(false)
+  systemAlerts     Boolean  @default(true)
+
+  // Timestamps
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// ==========================================
+// Analytics
+// ==========================================
+
+model AnalyticsSnapshot {
+  id              String   @id @default(cuid())
+
+  // Mechanic (optional - can be system-wide)
+  mechanicId      String?
+  mechanic        User?    @relation(fields: [mechanicId], references: [id])
+
+  // Metrics
+  totalJobs       Int      @default(0)
+  completedJobs   Int      @default(0)
+  cancelledJobs   Int      @default(0)
+  totalRevenue    Float    @default(0)
+  averageRating   Float?
+
+  // Time Period
+  periodStart     DateTime
+  periodEnd       DateTime
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+
+  @@index([mechanicId])
+  @@index([periodStart])
+  @@index([periodEnd])
+}

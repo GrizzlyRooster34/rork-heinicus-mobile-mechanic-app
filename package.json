@@ -33,6 +33,10 @@
     "@trpc/client": "^11.4.1",
     "@trpc/react-query": "^11.4.1",
     "@trpc/server": "^11.4.1",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.2.3",
     "expo": "^53.0.4",
     "expo-application": "~6.1.5",
     "expo-blur": "~14.1.4",
@@ -54,6 +58,7 @@
     "expo-system-ui": "~5.0.6",
     "expo-web-browser": "~14.1.6",
     "hono": "^4.7.11",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react-native": "^0.475.0",
     "nativewind": "^4.1.23",
     "react": "19.0.0",
@@ -72,7 +77,11 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@expo/ngrok": "^4.1.0",
+    "@prisma/client": "^6.19.0",
     "@types/react": "~19.0.10",
+    "prisma": "^6.19.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "~5.8.3"
   },
   "private": true
