@@ -37,3 +37,4 @@ yarn-error.*
 .vercel
 
 /lib/generated/prisma
+.env
