@@ -6,6 +6,7 @@
     "start": "bunx rork start -p g0jj0g95sgl0ixkxuef89 --tunnel",
     "start-web": "bunx rork start -p g0jj0g95sgl0ixkxuef89 --web --tunnel",
     "start-web-dev": "DEBUG=expo* bunx rork start -p g0jj0g95sgl0ixkxuef89 --web --tunnel",
+    "websocket": "npx tsx backend/websocket/index.ts",
     "android": "bunx rork start --android",
     "ios": "bunx rork start --ios",
     "web": "bunx rork start --web",
@@ -73,6 +74,8 @@
     "react-native-screens": "~4.10.0",
     "react-native-svg": "15.11.2",
     "react-native-web": "^0.20.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "superjson": "^2.2.2",
     "zod": "^3.25.64",
     "zustand": "^5.0.2"

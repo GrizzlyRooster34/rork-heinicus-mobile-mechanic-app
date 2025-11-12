@@ -164,6 +164,11 @@ model Job {
   latitude    Float?
   longitude   Float?
 
+  // Real-Time Tracking (Phase 2)
+  currentLatitude  Float?      // Mechanic's current location during job
+  currentLongitude Float?      // Updated in real-time via WebSocket
+  eta              DateTime?   // Estimated time of arrival
+
   // Participants
   customerId  String
   customer    User        @relation("CustomerJobs", fields: [customerId], references: [id], onDelete: Cascade)
