@@ -12,6 +12,7 @@ import { twoFactorRouter } from './routes/two-factor/route';
 import { passwordResetRouter } from './routes/password-reset/route';
 import { locationRouter } from './routes/location/route';
 import { notificationsRouter } from './routes/notifications/route';
+import { messagesRouter } from './routes/messages/route';
 
 export const appRouter = router({
   example: router({
@@ -29,6 +30,7 @@ export const appRouter = router({
   passwordReset: passwordResetRouter,
   location: locationRouter,
   notifications: notificationsRouter,
+  messages: messagesRouter,
 });
 
 export type AppRouter = typeof appRouter;

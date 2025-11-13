@@ -69,6 +69,9 @@ model User {
   pushTokens         PushToken[]      @relation("UserPushTokens")
   notifications      Notification[]   @relation("UserNotifications")
 
+  // In-App Messaging (Phase 2)
+  sentMessages       Message[]        @relation("UserSentMessages")
+
   @@index([email])
   @@index([role])
   @@index([status])
@@ -195,6 +198,7 @@ model Job {
   // Relations
   quotes      Quote[]
   services    Service[]
+  messages    Message[]   @relation("JobMessages")
 
   @@index([customerId])
   @@index([mechanicId])
@@ -484,4 +488,42 @@ model Notification {
   @@index([read])
   @@index([createdAt])
   @@index([jobId])
+}
+
+// ==========================================
+// In-App Messaging (Phase 2)
+// ==========================================
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM  // System-generated messages
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  jobId     String
+  job       Job         @relation("JobMessages", fields: [jobId], references: [id], onDelete: Cascade)
+
+  senderId  String
+  sender    User        @relation("UserSentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  // Message Content
+  content   String
+  type      MessageType @default(TEXT)
+  mediaUrl  String?     // URL for image/file messages
+
+  // Status
+  read      Boolean     @default(false)
+  readAt    DateTime?
+
+  // Timestamps
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([jobId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@index([read])
 }
