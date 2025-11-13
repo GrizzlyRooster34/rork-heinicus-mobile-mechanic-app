@@ -74,6 +74,7 @@ model User {
 
   // Photo Uploads (Phase 2)
   uploadedPhotos     JobPhoto[]       @relation("UserUploadedPhotos")
+  payments           Payment[]        @relation("CustomerPayments")
 
   @@index([email])
   @@index([role])
@@ -203,6 +204,7 @@ model Job {
   services    Service[]
   messages    Message[]   @relation("JobMessages")
   photos      JobPhoto[]  @relation("JobPhotos")
+  payments    Payment[]   @relation("JobPayments")
 
   @@index([customerId])
   @@index([mechanicId])
@@ -570,4 +572,36 @@ model JobPhoto {
   @@index([uploaderId])
   @@index([type])
   @@index([createdAt])
+}
+
+// ==========================================
+// Payment Integration (Phase 2)
+// ==========================================
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  jobId           String
+  job             Job           @relation("JobPayments", fields: [jobId], references: [id], onDelete: Cascade)
+  customerId      String
+  customer        User          @relation("CustomerPayments", fields: [customerId], references: [id])
+
+  stripePaymentId String        @unique
+  amount          Float
+  currency        String        @default("usd")
+  status          PaymentStatus @default(PENDING)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([jobId])
+  @@index([customerId])
+  @@index([status])
 }

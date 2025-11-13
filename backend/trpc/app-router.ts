@@ -14,6 +14,7 @@ import { locationRouter } from './routes/location/route';
 import { notificationsRouter } from './routes/notifications/route';
 import { messagesRouter } from './routes/messages/route';
 import { photosRouter } from './routes/photos/route';
+import { paymentRouter } from './routes/payment/route';
 
 export const appRouter = router({
   example: router({
@@ -33,6 +34,7 @@ export const appRouter = router({
   notifications: notificationsRouter,
   messages: messagesRouter,
   photos: photosRouter,
+  payment: paymentRouter,
 });
 
 export type AppRouter = typeof appRouter;
