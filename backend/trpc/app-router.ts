@@ -13,6 +13,7 @@ import { passwordResetRouter } from './routes/password-reset/route';
 import { locationRouter } from './routes/location/route';
 import { notificationsRouter } from './routes/notifications/route';
 import { messagesRouter } from './routes/messages/route';
+import { photosRouter } from './routes/photos/route';
 
 export const appRouter = router({
   example: router({
@@ -31,6 +32,7 @@ export const appRouter = router({
   location: locationRouter,
   notifications: notificationsRouter,
   messages: messagesRouter,
+  photos: photosRouter,
 });
 
 export type AppRouter = typeof appRouter;
