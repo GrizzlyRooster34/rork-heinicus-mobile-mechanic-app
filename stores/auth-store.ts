@@ -12,48 +12,15 @@ interface AuthStore extends AuthState {
   logout: () => void;
   setUser: (user: User) => void;
   updateUserRole: (userId: string, role: 'customer' | 'mechanic' | 'admin') => Promise<boolean>;
-  getAllUsers: () => User[];
-  
+  getAllUsers: () => Promise<User[]>;
+
   // Verification status
   verificationStatus: MechanicVerificationStatus | null;
   setVerificationStatus: (status: MechanicVerificationStatus | null) => void;
 }
 
-// Production configuration - Admin and Mechanic users
-const PRODUCTION_USERS = {
-  admin: {
-    id: 'admin-cody',
-    email: 'matthew.heinen.2014@gmail.com',
-    firstName: 'Cody',
-    lastName: 'Owner',
-    role: 'admin' as const,
-    phone: '(555) 987-6543',
-    createdAt: new Date(),
-  },
-  mechanic: {
-    id: 'mechanic-cody',
-    email: 'cody@heinicus.com',
-    firstName: 'Cody',
-    lastName: 'Mechanic',
-    role: 'mechanic' as const,
-    phone: '(555) 987-6543',
-    createdAt: new Date(),
-  }
-};
-
-// Store for registered customers (in production, this would be in a database)
-let registeredCustomers: User[] = [
-  // Demo customer for testing
-  {
-    id: 'customer-demo',
-    email: 'customer@example.com',
-    firstName: 'Demo',
-    lastName: 'Customer',
-    role: 'customer',
-    phone: '(555) 123-4567',
-    createdAt: new Date(),
-  }
-];
+// All user data is now stored in PostgreSQL via Prisma
+// No more in-memory user arrays
 
 export const useAuthStore = create<AuthStore>()(
   persist(
@@ -226,36 +193,17 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       setUser: (user: User) => {
-        // Production security: Validate user role
-        if (user.role === 'mechanic' && user.id !== 'mechanic-cody') {
-          console.warn('Unauthorized mechanic access attempt:', { 
-            userId: user.id, 
-            environment: 'production',
-            timestamp: new Date().toISOString() 
-          });
-          return;
-        }
-        
-        if (user.role === 'admin' && user.id !== 'admin-cody') {
-          console.warn('Unauthorized admin access attempt:', { 
-            userId: user.id, 
-            environment: 'production',
-            timestamp: new Date().toISOString() 
-          });
-          return;
-        }
-        
         // Production logging
-        console.log('User set:', { 
-          userId: user.id, 
-          role: user.role, 
+        console.log('User set:', {
+          userId: user.id,
+          role: user.role,
           environment: 'production',
-          timestamp: new Date().toISOString() 
+          timestamp: new Date().toISOString()
         });
-        
-        set({ 
-          user, 
-          isAuthenticated: true 
+
+        set({
+          user,
+          isAuthenticated: true
         });
       },
 
@@ -298,24 +246,27 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      getAllUsers: () => {
+      getAllUsers: async () => {
         const currentUser = get().user;
-        
+
         // Only admin can view all users
         if (currentUser?.role !== 'admin') {
-          console.warn('Unauthorized user list access attempt:', { 
+          console.warn('Unauthorized user list access attempt:', {
             userId: currentUser?.id,
             role: currentUser?.role,
-            timestamp: new Date().toISOString() 
+            timestamp: new Date().toISOString()
           });
           return [];
         }
 
-        return [
-          PRODUCTION_USERS.admin,
-          PRODUCTION_USERS.mechanic,
-          ...registeredCustomers
-        ];
+        try {
+          // Fetch users from database via TRPC
+          const result = await trpcClient.admin.getAllUsers.query();
+          return result.users;
+        } catch (error) {
+          console.error('Error fetching users:', error);
+          return [];
+        }
       },
 
       setVerificationStatus: (status: MechanicVerificationStatus | null) => {
