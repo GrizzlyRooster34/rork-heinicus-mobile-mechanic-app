@@ -1,0 +1,93 @@
+# Gitleaks Configuration for Heinicus Mobile Mechanic App
+# HEI-130: Prevent credential leaks
+
+title = "Gitleaks Configuration"
+
+[extend]
+# Use default gitleaks rules as a base
+useDefault = true
+
+# Custom rules for this project
+[[rules]]
+id = "generic-password"
+description = "Detect generic password keywords"
+regex = '''(?i)(password|passwd|pwd)\s*[:=]\s*["']?[^\s"']{8,}["']?'''
+tags = ["password", "security"]
+
+[[rules]]
+id = "email-matthew-heinen"
+description = "Prevent matthew.heinen email addresses from being committed"
+regex = '''matthew\.heinen[.\w]*@[\w.-]+'''
+tags = ["email", "pii", "security"]
+
+[[rules]]
+id = "secret-keyword"
+description = "Detect 'secret' keyword assignments"
+regex = '''(?i)(secret|api_key|apikey|api-key)\s*[:=]\s*["'][^"']{8,}["']'''
+tags = ["secret", "api-key", "security"]
+
+[[rules]]
+id = "firebase-api-key"
+description = "Firebase API keys"
+regex = '''AIza[0-9A-Za-z-_]{35}'''
+tags = ["firebase", "api-key", "security"]
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key ID"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["aws", "access-key", "security"]
+
+[[rules]]
+id = "private-key"
+description = "Private key files"
+regex = '''-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----'''
+tags = ["private-key", "security"]
+
+[[rules]]
+id = "jwt-token"
+description = "JWT tokens (excluding obvious test/mock tokens)"
+regex = '''eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'''
+tags = ["jwt", "token", "security"]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API key patterns"
+regex = '''(?i)api[_-]?key\s*[:=]\s*["'][a-zA-Z0-9_-]{20,}["']'''
+tags = ["api-key", "security"]
+
+[[rules]]
+id = "database-url"
+description = "Database connection URLs with credentials"
+regex = '''(?i)(postgres|mysql|mongodb)://[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+@'''
+tags = ["database", "credentials", "security"]
+
+# Allowlist for known false positives
+[allowlist]
+description = "Global allowlist"
+paths = [
+  '''.git-tools/''',
+  '''node_modules/''',
+  '''.*\.md$''',  # Allow markdown files (documentation)
+  '''package-lock\.json$''',
+  '''yarn\.lock$''',
+]
+
+# Allow specific mock/test credentials
+regexes = [
+  '''mock-jwt-token''',  # Our test JWT token
+  '''DevAdminPass123!@''',  # New dev credentials
+  '''DevMechanicPass123!@''',  # New dev credentials
+  '''DevCustomerPass123!@''',  # New dev credentials
+  '''admin@dev\.local''',  # New dev emails
+  '''mechanic@dev\.local''',  # New dev emails
+  '''customer@dev\.local''',  # New dev emails
+]
+
+# Stop words to reduce false positives
+stopwords = [
+  '''example''',
+  '''test''',
+  '''demo''',
+  '''sample''',
+]

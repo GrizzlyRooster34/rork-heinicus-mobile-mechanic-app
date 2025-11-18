@@ -275,8 +275,8 @@ export default function AuthScreen() {
               <TouchableOpacity
                 style={styles.quickAccessButton}
                 onPress={() => {
-                  setEmail('customer@example.com');
-                  setPassword('password');
+                  setEmail('customer@dev.local');
+                  setPassword('DevCustomerPass123!@');
                   setIsLoginMode(true);
                 }}
               >
@@ -285,22 +285,22 @@ export default function AuthScreen() {
               <TouchableOpacity
                 style={styles.quickAccessButton}
                 onPress={() => {
-                  setEmail('matthew.heinen.2014@gmail.com');
-                  setPassword('RoosTer669072!@');
+                  setEmail('admin@dev.local');
+                  setPassword('DevAdminPass123!@');
                   setIsLoginMode(true);
                 }}
               >
-                <Text style={styles.quickAccessText}>Admin (Cody)</Text>
+                <Text style={styles.quickAccessText}>Admin</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.quickAccessButton}
                 onPress={() => {
-                  setEmail('cody@heinicus.com');
-                  setPassword('RoosTer669072!@');
+                  setEmail('mechanic@dev.local');
+                  setPassword('DevMechanicPass123!@');
                   setIsLoginMode(true);
                 }}
               >
-                <Text style={styles.quickAccessText}>Mechanic (Cody)</Text>
+                <Text style={styles.quickAccessText}>Mechanic</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -22,9 +22,9 @@ export const authRouter = createTRPCRouter({
       
       // Check if user already exists (mock check)
       const existingUsers = [
-        'matthew.heinen.2014@gmail.com',
-        'cody@heinicus.com',
-        'customer@example.com'
+        'admin@dev.local',
+        'mechanic@dev.local',
+        'customer@dev.local'
       ];
       
       if (existingUsers.includes(input.email)) {
@@ -73,14 +73,14 @@ export const authRouter = createTRPCRouter({
       });
       
       // Mock authentication logic
-      if (input.email === 'matthew.heinen.2014@gmail.com' && input.password === 'RoosTer669072!@') {
+      if (input.email === 'admin@dev.local' && input.password === 'DevAdminPass123!@') {
         return {
           success: true,
           user: {
-            id: 'admin-cody',
+            id: 'admin-dev',
             email: input.email,
-            firstName: 'Cody',
-            lastName: 'Owner',
+            firstName: 'Dev',
+            lastName: 'Admin',
             role: 'admin' as const,
             createdAt: new Date(),
             isActive: true,
@@ -88,14 +88,14 @@ export const authRouter = createTRPCRouter({
           token: 'mock-jwt-token'
         };
       }
-      
-      if (input.email === 'cody@heinicus.com' && input.password === 'RoosTer669072!@') {
+
+      if (input.email === 'mechanic@dev.local' && input.password === 'DevMechanicPass123!@') {
         return {
           success: true,
           user: {
-            id: 'mechanic-cody',
+            id: 'mechanic-dev',
             email: input.email,
-            firstName: 'Cody',
+            firstName: 'Dev',
             lastName: 'Mechanic',
             role: 'mechanic' as const,
             createdAt: new Date(),
@@ -104,9 +104,9 @@ export const authRouter = createTRPCRouter({
           token: 'mock-jwt-token'
         };
       }
-      
+
       // Mock customer login
-      if (input.email === 'customer@example.com') {
+      if (input.email === 'customer@dev.local' && input.password === 'DevCustomerPass123!@') {
         return {
           success: true,
           user: {

@@ -13,11 +13,11 @@ export default function AdminDualLoginToggle() {
   }
 
   const handleAdminLogin = async () => {
-    await login('matthew.heinen.2014@gmail.com', 'RoosTer669072!@');
+    await login('admin@dev.local', 'DevAdminPass123!@');
   };
 
   const handleMechanicLogin = async () => {
-    await login('cody@heinicus.com', 'RoosTer669072!@');
+    await login('mechanic@dev.local', 'DevMechanicPass123!@');
   };
 
   return (

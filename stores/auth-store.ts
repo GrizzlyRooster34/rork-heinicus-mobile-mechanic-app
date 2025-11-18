@@ -22,18 +22,18 @@ interface AuthStore extends AuthState {
 // Production configuration - Admin and Mechanic users
 const PRODUCTION_USERS = {
   admin: {
-    id: 'admin-cody',
-    email: 'matthew.heinen.2014@gmail.com',
-    firstName: 'Cody',
-    lastName: 'Owner',
+    id: 'admin-dev',
+    email: 'admin@dev.local',
+    firstName: 'Dev',
+    lastName: 'Admin',
     role: 'admin' as const,
     phone: '(555) 987-6543',
     createdAt: new Date(),
   },
   mechanic: {
-    id: 'mechanic-cody',
-    email: 'cody@heinicus.com',
-    firstName: 'Cody',
+    id: 'mechanic-dev',
+    email: 'mechanic@dev.local',
+    firstName: 'Dev',
     lastName: 'Mechanic',
     role: 'mechanic' as const,
     phone: '(555) 987-6543',
@@ -45,9 +45,9 @@ const PRODUCTION_USERS = {
 let registeredCustomers: User[] = [
   // Demo customer for testing
   {
-    id: 'customer-demo',
-    email: 'customer@example.com',
-    firstName: 'Demo',
+    id: 'customer-dev',
+    email: 'customer@dev.local',
+    firstName: 'Dev',
     lastName: 'Customer',
     role: 'customer',
     phone: '(555) 123-4567',
@@ -227,20 +227,20 @@ export const useAuthStore = create<AuthStore>()(
 
       setUser: (user: User) => {
         // Production security: Validate user role
-        if (user.role === 'mechanic' && user.id !== 'mechanic-cody') {
-          console.warn('Unauthorized mechanic access attempt:', { 
-            userId: user.id, 
+        if (user.role === 'mechanic' && user.id !== 'mechanic-dev') {
+          console.warn('Unauthorized mechanic access attempt:', {
+            userId: user.id,
             environment: 'production',
-            timestamp: new Date().toISOString() 
+            timestamp: new Date().toISOString()
           });
           return;
         }
-        
-        if (user.role === 'admin' && user.id !== 'admin-cody') {
-          console.warn('Unauthorized admin access attempt:', { 
-            userId: user.id, 
+
+        if (user.role === 'admin' && user.id !== 'admin-dev') {
+          console.warn('Unauthorized admin access attempt:', {
+            userId: user.id,
             environment: 'production',
-            timestamp: new Date().toISOString() 
+            timestamp: new Date().toISOString()
           });
           return;
         }

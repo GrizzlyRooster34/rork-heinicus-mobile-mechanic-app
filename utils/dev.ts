@@ -4,16 +4,16 @@ export const devMode = true; // Set to false for production
 
 export const DEV_CREDENTIALS = {
   admin: {
-    email: 'matthew.heinen.2014@gmail.com',
-    password: 'RoosTer669072!@',
+    email: 'admin@dev.local',
+    password: 'DevAdminPass123!@',
   },
   mechanic: {
-    email: 'cody@heinicus.com',
-    password: 'RoosTer669072!@',
+    email: 'mechanic@dev.local',
+    password: 'DevMechanicPass123!@',
   },
   customer: {
-    email: 'customer@example.com',
-    password: 'password',
+    email: 'customer@dev.local',
+    password: 'DevCustomerPass123!@',
   },
 };
 
