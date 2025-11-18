@@ -6,14 +6,19 @@ import { MechanicVerificationStatus } from '@/types/service';
 import { trpcClient } from '@/lib/trpc';
 import { devMode, isDevCredentials, getDevUser } from '@/utils/dev';
 
+// AsyncStorage key for JWT token
+const TOKEN_STORAGE_KEY = 'heinicus-auth-token';
+
 interface AuthStore extends AuthState {
+  token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, firstName: string, lastName: string, phone?: string, role?: 'customer' | 'mechanic') => Promise<boolean>;
   logout: () => void;
   setUser: (user: User) => void;
   updateUserRole: (userId: string, role: 'customer' | 'mechanic' | 'admin') => Promise<boolean>;
   getAllUsers: () => User[];
-  
+  initializeAuth: () => Promise<void>;
+
   // Verification status
   verificationStatus: MechanicVerificationStatus | null;
   setVerificationStatus: (status: MechanicVerificationStatus | null) => void;
@@ -59,9 +64,43 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       user: null,
+      token: null,
       isLoading: false,
       isAuthenticated: false,
       verificationStatus: null,
+
+      initializeAuth: async () => {
+        try {
+          const token = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+          if (token) {
+            // Verify the token is still valid
+            const result = await trpcClient.auth.verifyToken.query({ token });
+            if (result.valid && result.user) {
+              set({
+                token,
+                user: {
+                  id: result.user.id,
+                  email: result.user.email,
+                  role: result.user.role,
+                  firstName: '',
+                  lastName: '',
+                  createdAt: new Date(),
+                } as User,
+                isAuthenticated: true,
+              });
+            } else {
+              // Token is invalid, clear it
+              await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+              set({ token: null, user: null, isAuthenticated: false });
+            }
+          }
+        } catch (error) {
+          console.error('Auth initialization error:', error);
+          // Clear invalid token
+          await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+          set({ token: null, user: null, isAuthenticated: false });
+        }
+      },
 
       signup: async (email: string, password: string, firstName: string, lastName: string, phone?: string, role: 'customer' | 'mechanic' = 'customer') => {
         set({ isLoading: true });
@@ -77,24 +116,28 @@ export const useAuthStore = create<AuthStore>()(
             role,
           });
           
-          if (result.success && result.user) {
-            console.log('Signup successful via TRPC:', { 
-              userId: result.user.id, 
+          if (result.success && result.user && result.token) {
+            console.log('Signup successful via TRPC:', {
+              userId: result.user.id,
               email: result.user.email,
               role: result.user.role,
-              timestamp: new Date().toISOString() 
+              timestamp: new Date().toISOString()
             });
-            
+
+            // Store the JWT token in AsyncStorage
+            await AsyncStorage.setItem(TOKEN_STORAGE_KEY, result.token);
+
             // Use the user object as returned from the backend
             const completeUser: User = result.user;
-            
+
             // Auto-login after successful signup
-            set({ 
-              user: completeUser, 
-              isAuthenticated: true, 
-              isLoading: false 
+            set({
+              user: completeUser,
+              token: result.token,
+              isAuthenticated: true,
+              isLoading: false
             });
-            
+
             return true;
           } else {
             console.log('Signup failed via TRPC:', result.error);
@@ -154,22 +197,26 @@ export const useAuthStore = create<AuthStore>()(
               password,
             });
             
-            if (result.success && result.user) {
-              console.log('Login successful via TRPC:', { 
-                userId: result.user.id, 
-                role: result.user.role, 
-                timestamp: new Date().toISOString() 
+            if (result.success && result.user && result.token) {
+              console.log('Login successful via TRPC:', {
+                userId: result.user.id,
+                role: result.user.role,
+                timestamp: new Date().toISOString()
               });
-              
+
+              // Store the JWT token in AsyncStorage
+              await AsyncStorage.setItem(TOKEN_STORAGE_KEY, result.token);
+
               // Use the user object as returned from the backend
               const completeUser: User = result.user;
-              
-              set({ 
-                user: completeUser, 
-                isAuthenticated: true, 
-                isLoading: false 
+
+              set({
+                user: completeUser,
+                token: result.token,
+                isAuthenticated: true,
+                isLoading: false
               });
-              
+
               return true;
             } else {
               console.log('Login failed via TRPC:', result.error);
@@ -207,19 +254,23 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      logout: () => {
+      logout: async () => {
         const currentUser = get().user;
-        
+
         // Production logging
-        console.log('User logout:', { 
-          userId: currentUser?.id, 
+        console.log('User logout:', {
+          userId: currentUser?.id,
           role: currentUser?.role,
           environment: 'production',
-          timestamp: new Date().toISOString() 
+          timestamp: new Date().toISOString()
         });
-        
-        set({ 
-          user: null, 
+
+        // Clear JWT token from AsyncStorage
+        await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+
+        set({
+          user: null,
+          token: null,
           isAuthenticated: false,
           verificationStatus: null,
         });
@@ -327,6 +378,7 @@ export const useAuthStore = create<AuthStore>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         user: state.user,
+        token: state.token,
         isAuthenticated: state.isAuthenticated,
         verificationStatus: state.verificationStatus,
       }),

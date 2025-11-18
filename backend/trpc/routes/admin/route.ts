@@ -1,10 +1,18 @@
 import { z } from 'zod';
-import { publicProcedure, createTRPCRouter } from '../../create-context';
+import { publicProcedure, protectedProcedure, createTRPCRouter } from '../../create-context';
+import { TRPCError } from '@trpc/server';
 
 export const adminRouter = createTRPCRouter({
-  getAllUsers: publicProcedure
-    .query(async () => {
-      // In a real app, this would fetch from database with admin auth check
+  getAllUsers: protectedProcedure
+    .query(async ({ ctx }) => {
+      // Check if user is admin
+      if (ctx.user.role !== 'admin') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only admins can access this resource',
+        });
+      }
+
       console.log('Admin: Getting all users');
       
       // Mock users data
@@ -41,13 +49,20 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  updateUserRole: publicProcedure
+  updateUserRole: protectedProcedure
     .input(z.object({
       userId: z.string(),
       role: z.enum(['customer', 'mechanic', 'admin']),
     }))
-    .mutation(async ({ input }) => {
-      // In a real app, this would update database with admin auth check
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      if (ctx.user.role !== 'admin') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only admins can update user roles',
+        });
+      }
+
       console.log('Admin: Updating user role:', input);
       
       return {
@@ -56,9 +71,16 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  getSystemStats: publicProcedure
-    .query(async () => {
-      // In a real app, this would fetch real stats from database
+  getSystemStats: protectedProcedure
+    .query(async ({ ctx }) => {
+      // Check if user is admin
+      if (ctx.user.role !== 'admin') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only admins can access system stats',
+        });
+      }
+
       console.log('Admin: Getting system stats');
       
       return {
@@ -73,7 +95,7 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  createUser: publicProcedure
+  createUser: protectedProcedure
     .input(z.object({
       email: z.string().email(),
       firstName: z.string(),
@@ -81,8 +103,15 @@ export const adminRouter = createTRPCRouter({
       role: z.enum(['customer', 'mechanic', 'admin']),
       phone: z.string().optional(),
     }))
-    .mutation(async ({ input }) => {
-      // In a real app, this would create user in database with admin auth check
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      if (ctx.user.role !== 'admin') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only admins can create users',
+        });
+      }
+
       console.log('Admin: Creating user:', input);
       
       return {
@@ -96,13 +125,20 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  updateSetting: publicProcedure
+  updateSetting: protectedProcedure
     .input(z.object({
       key: z.string(),
       value: z.union([z.string(), z.boolean(), z.number(), z.null()]),
     }))
-    .mutation(async ({ input }) => {
-      // In a real app, this would persist to database with admin auth check
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      if (ctx.user.role !== 'admin') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only admins can update settings',
+        });
+      }
+
       console.log('Admin: Updating setting:', input);
       
       // For now, just return success
@@ -121,13 +157,20 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  updateConfig: publicProcedure
+  updateConfig: protectedProcedure
     .input(z.object({
       key: z.string(),
       value: z.union([z.string(), z.boolean(), z.number(), z.null()]),
     }))
-    .mutation(async ({ input }) => {
-      // In a real app, this would persist to database with admin auth check
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is admin
+      if (ctx.user.role !== 'admin') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only admins can update config',
+        });
+      }
+
       console.log('Admin: Updating config:', input);
       
       return {

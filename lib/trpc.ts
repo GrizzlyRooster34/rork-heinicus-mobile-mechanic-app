@@ -3,6 +3,10 @@ import { httpLink } from "@trpc/client";
 import superjson from "superjson";
 import type { AppRouter } from "@/backend/trpc/app-router";
 import { Platform } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// AsyncStorage key for JWT token (must match auth-store.ts)
+const TOKEN_STORAGE_KEY = 'heinicus-auth-token';
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -40,13 +44,26 @@ export const trpcClient = trpc.createClient({
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
-      headers: () => {
+      headers: async () => {
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
         };
 
-        if (process.env.EXPO_PUBLIC_API_KEY) {
-          headers['Authorization'] = `Bearer ${process.env.EXPO_PUBLIC_API_KEY}`;
+        // Try to get JWT token from AsyncStorage
+        try {
+          const token = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          } else if (process.env.EXPO_PUBLIC_API_KEY) {
+            // Fallback to API key if no JWT token
+            headers['Authorization'] = `Bearer ${process.env.EXPO_PUBLIC_API_KEY}`;
+          }
+        } catch (error) {
+          console.error('Error reading token from AsyncStorage:', error);
+          // Fallback to API key if token read fails
+          if (process.env.EXPO_PUBLIC_API_KEY) {
+            headers['Authorization'] = `Bearer ${process.env.EXPO_PUBLIC_API_KEY}`;
+          }
         }
 
         headers['X-Environment'] = __DEV__ ? 'development' : 'production';

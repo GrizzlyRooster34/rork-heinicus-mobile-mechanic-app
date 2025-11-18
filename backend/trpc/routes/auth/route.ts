@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import { publicProcedure, createTRPCRouter } from '../../create-context';
+import jwt from 'jsonwebtoken';
+
+// JWT secret - in production, this should come from environment variables
+const JWT_SECRET = process.env.JWT_SECRET || 'heinicus-mobile-mechanic-secret-key-change-in-production';
+const JWT_EXPIRATION = '7d'; // 7 days
 
 export const authRouter = createTRPCRouter({
   signup: publicProcedure
@@ -46,17 +51,28 @@ export const authRouter = createTRPCRouter({
         isActive: true,
       };
       
-      console.log('Signup successful:', { 
-        userId: newUser.id, 
+      console.log('Signup successful:', {
+        userId: newUser.id,
         email: newUser.email,
         role: newUser.role,
         timestamp: new Date().toISOString()
       });
-      
+
+      // Generate JWT token
+      const token = jwt.sign(
+        {
+          userId: newUser.id,
+          email: newUser.email,
+          role: newUser.role,
+        },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRATION }
+      );
+
       return {
         success: true,
         user: newUser,
-        token: 'mock-jwt-token'
+        token
       };
     }),
 
@@ -74,51 +90,87 @@ export const authRouter = createTRPCRouter({
       
       // Mock authentication logic
       if (input.email === 'matthew.heinen.2014@gmail.com' && input.password === 'RoosTer669072!@') {
+        const user = {
+          id: 'admin-cody',
+          email: input.email,
+          firstName: 'Cody',
+          lastName: 'Owner',
+          role: 'admin' as const,
+          createdAt: new Date(),
+          isActive: true,
+        };
+
+        const token = jwt.sign(
+          {
+            userId: user.id,
+            email: user.email,
+            role: user.role,
+          },
+          JWT_SECRET,
+          { expiresIn: JWT_EXPIRATION }
+        );
+
         return {
           success: true,
-          user: {
-            id: 'admin-cody',
-            email: input.email,
-            firstName: 'Cody',
-            lastName: 'Owner',
-            role: 'admin' as const,
-            createdAt: new Date(),
-            isActive: true,
-          },
-          token: 'mock-jwt-token'
+          user,
+          token
         };
       }
-      
+
       if (input.email === 'cody@heinicus.com' && input.password === 'RoosTer669072!@') {
+        const user = {
+          id: 'mechanic-cody',
+          email: input.email,
+          firstName: 'Cody',
+          lastName: 'Mechanic',
+          role: 'mechanic' as const,
+          createdAt: new Date(),
+          isActive: true,
+        };
+
+        const token = jwt.sign(
+          {
+            userId: user.id,
+            email: user.email,
+            role: user.role,
+          },
+          JWT_SECRET,
+          { expiresIn: JWT_EXPIRATION }
+        );
+
         return {
           success: true,
-          user: {
-            id: 'mechanic-cody',
-            email: input.email,
-            firstName: 'Cody',
-            lastName: 'Mechanic',
-            role: 'mechanic' as const,
-            createdAt: new Date(),
-            isActive: true,
-          },
-          token: 'mock-jwt-token'
+          user,
+          token
         };
       }
-      
+
       // Mock customer login
       if (input.email === 'customer@example.com') {
+        const user = {
+          id: 'customer-demo',
+          email: input.email,
+          firstName: 'Demo',
+          lastName: 'Customer',
+          role: 'customer' as const,
+          createdAt: new Date(),
+          isActive: true,
+        };
+
+        const token = jwt.sign(
+          {
+            userId: user.id,
+            email: user.email,
+            role: user.role,
+          },
+          JWT_SECRET,
+          { expiresIn: JWT_EXPIRATION }
+        );
+
         return {
           success: true,
-          user: {
-            id: 'customer-demo',
-            email: input.email,
-            firstName: 'Demo',
-            lastName: 'Customer',
-            role: 'customer' as const,
-            createdAt: new Date(),
-            isActive: true,
-          },
-          token: 'mock-jwt-token'
+          user,
+          token
         };
       }
       
@@ -133,27 +185,32 @@ export const authRouter = createTRPCRouter({
       token: z.string(),
     }))
     .query(async ({ input }) => {
-      // In a real app, this would verify JWT token
-      console.log('Token verification:', { 
-        token: input.token,
+      console.log('Token verification:', {
         timestamp: new Date().toISOString()
       });
-      
-      // Mock token verification
-      if (input.token === 'mock-jwt-token') {
+
+      try {
+        // Verify JWT token
+        const decoded = jwt.verify(input.token, JWT_SECRET) as {
+          userId: string;
+          email: string;
+          role: 'customer' | 'mechanic' | 'admin';
+        };
+
         return {
           valid: true,
           user: {
-            id: 'user-1',
-            email: 'user@example.com',
-            role: 'customer' as const,
+            id: decoded.userId,
+            email: decoded.email,
+            role: decoded.role,
           }
         };
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        return {
+          valid: false,
+          error: error instanceof Error ? error.message : 'Invalid token'
+        };
       }
-      
-      return {
-        valid: false,
-        error: 'Invalid token'
-      };
     }),
 });
