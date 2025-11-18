@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { SERVICE_CATEGORIES, SERVICE_TOOLS } from '@/constants/services';
 import { ServiceRequest, ServiceStatus, JobPhoto } from '@/types/service';
 import { ChatComponent } from '@/components/ChatComponent';
-import { WorkTimer } from '@/components/WorkTimer';
+import WorkTimer from '@/components/WorkTimer';
 import { SignatureCapture } from '@/components/SignatureCapture';
 import { PaymentModal } from '@/components/PaymentModal';
 import { JobPhotoUpload } from '@/components/JobPhotoUpload';
@@ -344,7 +344,6 @@ export default function MechanicJobsScreen() {
         </View>
         <WorkTimer
           jobId={selectedRequestForTimer}
-          jobTitle={job ? getServiceTitle(job.type) : 'Service'}
           onWorkComplete={handleWorkComplete}
         />
       </View>

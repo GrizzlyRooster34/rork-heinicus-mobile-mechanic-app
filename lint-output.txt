@@ -1,0 +1,599 @@
+
+> heinicus-mobile-mechanic-app@1.0.0 lint
+> eslint . --ext .js,.jsx,.ts,.tsx
+
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/(admin)/settings.tsx
+  48:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/(admin)/users.tsx
+  164:88  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/(customer)/_layout.tsx
+  8:31  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  8:40  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/(customer)/request.tsx
+   23:121  warning  'logEvent' is assigned a value but never used                                                                            @typescript-eslint/no-unused-vars
+   36:10   warning  'locationError' is assigned a value but never used                                                                       @typescript-eslint/no-unused-vars
+   77:6    warning  React Hook useCallback has a missing dependency: 'setCurrentLocation'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  105:6    warning  React Hook useEffect has a missing dependency: 'handleSubmit'. Either include it or remove the dependency array          react-hooks/exhaustive-deps
+  326:14   warning  'error' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+  393:45   error    Unable to validate computed reference to imported namespace 'Icons'                                                      import/namespace
+  393:111  warning  Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+  668:57   warning  Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/(mechanic)/_layout.tsx
+   8:31  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+   8:40  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  17:5   warning  Unexpected console statement                                         no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/(mechanic)/customers.tsx
+   41:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   95:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  145:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/(mechanic)/index.tsx
+  12:28  warning  'quotes' is assigned a value but never used             @typescript-eslint/no-unused-vars
+  12:53  warning  'getQuotesByStatus' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  13:11  warning  'user' is assigned a value but never used               @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/(mechanic)/jobs.tsx
+     6:30  warning  'SERVICE_TOOLS' is defined but never used       @typescript-eslint/no-unused-vars
+    38:11  warning  'user' is assigned a value but never used       @typescript-eslint/no-unused-vars
+   232:55  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+   333:11  warning  'job' is assigned a value but never used        @typescript-eslint/no-unused-vars
+   379:11  warning  'job' is assigned a value but never used        @typescript-eslint/no-unused-vars
+   651:54  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+   740:34  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+   741:41  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+   743:35  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+   745:38  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  1141:10  warning  'reason' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  1141:18  warning  'setReason' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/(mechanic)/map.tsx
+   1:27  warning  'useEffect' is defined but never used       @typescript-eslint/no-unused-vars
+   9:9   warning  'width' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  53:7   warning  Unexpected console statement                no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/(mechanic)/profile.tsx
+   40:65  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  193:41  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  193:79  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/_layout.tsx
+  36:9  warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/auth/index.tsx
+   20:25  warning  'setIsOfflineMode' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   27:7   warning  Unexpected console statement                           no-console
+   38:9   warning  Unexpected console statement                           no-console
+   85:5   warning  Unexpected console statement                           no-console
+  107:7   warning  Unexpected console statement                           no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/app/dev-switcher.tsx
+  6:10  warning  'devMode' is defined but never used  @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/hono.ts
+  35:7  warning  Unexpected console statement  no-console
+  42:3  warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/trpc/routes/admin/route.ts
+    8:7  warning  Unexpected console statement  no-console
+   51:7  warning  Unexpected console statement  no-console
+   62:7  warning  Unexpected console statement  no-console
+   86:7  warning  Unexpected console statement  no-console
+  106:7  warning  Unexpected console statement  no-console
+  131:7  warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/trpc/routes/auth/route.ts
+   68:9  warning  Unexpected console statement  no-console
+   90:9  warning  Unexpected console statement  no-console
+  147:9  warning  Unexpected console statement  no-console
+  169:9  warning  Unexpected console statement  no-console
+  218:9  warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/trpc/routes/config/route.ts
+  25:7  warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/trpc/routes/diagnosis/route.ts
+  228:7  warning  Unexpected console statement  no-console
+  239:7  warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/trpc/routes/job/route.ts
+   43:7  warning  Unexpected console statement  no-console
+   81:7  warning  Unexpected console statement  no-console
+  104:7  warning  Unexpected console statement  no-console
+  155:7  warning  Unexpected console statement  no-console
+  187:7  warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/trpc/routes/mechanic/route.ts
+    3:15  warning  'Context' is defined but never used  @typescript-eslint/no-unused-vars
+   41:5   warning  Unexpected console statement         no-console
+   99:9   warning  Unexpected console statement         no-console
+  117:9   warning  Unexpected console statement         no-console
+  158:9   warning  Unexpected console statement         no-console
+  211:9   warning  Unexpected console statement         no-console
+  250:9   warning  Unexpected console statement         no-console
+  262:9   warning  Unexpected console statement         no-console
+  314:9   warning  Unexpected console statement         no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/trpc/routes/notifications/route.ts
+   30:12  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+   50:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   90:9   warning  Unexpected console statement              no-console
+  120:9   warning  Unexpected console statement              no-console
+  147:9   warning  Unexpected console statement              no-console
+  174:9   warning  Unexpected console statement              no-console
+  194:9   warning  Unexpected console statement              no-console
+  213:9   warning  Unexpected console statement              no-console
+  237:9   warning  Unexpected console statement              no-console
+  242:9   warning  Unexpected console statement              no-console
+  269:9   warning  Unexpected console statement              no-console
+  321:9   warning  Unexpected console statement              no-console
+  371:9   warning  Unexpected console statement              no-console
+  383:9   warning  Unexpected console statement              no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/trpc/routes/payments/route.ts
+   34:12  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  128:9   warning  Unexpected console statement       no-console
+  205:9   warning  Unexpected console statement       no-console
+  238:9   warning  Unexpected console statement       no-console
+  333:9   warning  Unexpected console statement       no-console
+  388:9   warning  Unexpected console statement       no-console
+  488:9   warning  Unexpected console statement       no-console
+  524:13  warning  Unexpected console statement       no-console
+  536:13  warning  Unexpected console statement       no-console
+  540:13  warning  Unexpected console statement       no-console
+  546:9   warning  Unexpected console statement       no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/trpc/routes/quote/route.ts
+  17:7  warning  Unexpected console statement  no-console
+  36:7  warning  Unexpected console statement  no-console
+  64:7  warning  Unexpected console statement  no-console
+  78:7  warning  Unexpected console statement  no-console
+  92:7  warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/trpc/routes/reviews/route.ts
+   29:12  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  167:9   warning  Unexpected console statement              no-console
+  183:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  277:9   warning  Unexpected console statement              no-console
+  363:9   warning  Unexpected console statement              no-console
+  418:9   warning  Unexpected console statement              no-console
+  480:9   warning  Unexpected console statement              no-console
+  523:9   warning  Unexpected console statement              no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/trpc/routes/vin/route.ts
+  21:7  warning  Unexpected console statement  no-console
+  30:7  warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/trpc/test.ts
+  1:10  warning  'ServiceType' is defined but never used  @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/backend/websocket/server.ts
+   51:12  warning  'error' is defined but never used                            @typescript-eslint/no-unused-vars
+   59:3   warning  Unexpected console statement                                 no-console
+   77:5   warning  Unexpected console statement                                 no-console
+   82:5   warning  Unexpected console statement                                 no-console
+  131:7   warning  Unexpected console statement                                 no-console
+  166:7   warning  Unexpected console statement                                 no-console
+  179:13  warning  'updatedJob' is assigned a value but never used              @typescript-eslint/no-unused-vars
+  182:34  warning  Unexpected any. Specify a different type                     @typescript-eslint/no-explicit-any
+  216:7   warning  Unexpected console statement                                 no-console
+  228:12  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead  @typescript-eslint/array-type
+  291:7   warning  Unexpected console statement                                 no-console
+  298:5   warning  Unexpected console statement                                 no-console
+  308:9   warning  Unexpected any. Specify a different type                     @typescript-eslint/no-explicit-any
+  349:5   warning  Unexpected console statement                                 no-console
+  354:44  warning  Unexpected any. Specify a different type                     @typescript-eslint/no-explicit-any
+  355:34  warning  Unexpected any. Specify a different type                     @typescript-eslint/no-explicit-any
+  378:3   warning  Unexpected console statement                                 no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/AIAssistant.tsx
+  27:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  53:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/AvailabilitySettings.tsx
+  32:17  warning  'AvailabilitySettings' is already defined  @typescript-eslint/no-redeclare
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/BreadcrumbLogger.tsx
+   7:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  25:5   warning  Unexpected console statement              no-console
+  49:9   warning  Unexpected console statement              no-console
+  59:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  64:7   warning  Unexpected console statement              no-console
+  77:7   warning  Unexpected console statement              no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/ChatComponent.tsx
+  5:10  warning  'useAppStore' is defined but never used  @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/ErrorBoundary.tsx
+  26:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  27:5   warning  Unexpected console statement              no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/JobPaymentLogger.tsx
+  59:7  warning  Unexpected console statement  no-console
+  74:7  warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/JobPhotoUpload.tsx
+   72:14  warning  'error' is defined but never used                                    @typescript-eslint/no-unused-vars
+  117:14  warning  'error' is defined but never used                                    @typescript-eslint/no-unused-vars
+  197:39  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  197:83  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  268:43  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  268:87  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/JobTimeline.tsx
+  114:43  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  114:97  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/MaintenanceReminderEngine.tsx
+  38:6  warning  React Hook useEffect has a missing dependency: 'generateMaintenanceSchedule'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/MaintenanceReminders.tsx
+   11:45  warning  'maintenanceReminders' is assigned a value but never used    @typescript-eslint/no-unused-vars
+   14:22  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead  @typescript-eslint/array-type
+  141:35  warning  Unexpected any. Specify a different type                     @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/MaintenanceSuggestions.tsx
+  112:9   warning  Unexpected console statement                                         no-console
+  135:33  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/MechanicSelfSwitch.tsx
+  33:5   warning  Unexpected console statement                                         no-console
+  51:33  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  51:84  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  52:30  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  52:78  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/MechanicVerificationPanel.tsx
+  33:7   warning  Unexpected console statement       no-console
+  67:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  94:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/NotificationSettings.tsx
+   21:17  warning  'NotificationSettings' is already defined                            @typescript-eslint/no-redeclare
+   90:39  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+   90:75  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  117:39  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  117:75  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/PartsApprovalToggle.tsx
+    6:10  warning  'getPartEstimate' is defined but never used  @typescript-eslint/no-unused-vars
+   27:7   warning  Unexpected console statement                 no-console
+   30:7   warning  Unexpected console statement                 no-console
+   57:7   warning  Unexpected console statement                 no-console
+  116:54  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/PaymentMethodSelector.tsx
+  35:39  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  35:77  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/PaymentModal.tsx
+  113:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/PhotoUpload.tsx
+  53:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  91:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/PushNotificationConfig.tsx
+  35:7  warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/QuoteDispatcher.tsx
+  14:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  15:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  21:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  24:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  29:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  34:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/ReportsAnalytics.tsx
+  12:28  warning  'quotes' is assigned a value but never used             @typescript-eslint/no-unused-vars
+  12:62  warning  'getPaymentHistory' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/ScooterServiceSelector.tsx
+  118:33  error  Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/ServiceCard.tsx
+  13:31  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  13:70  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/ServicePricingSettings.tsx
+  207:39  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  207:78  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/ServiceTypeToggle.tsx
+  36:33  error  Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/SignatureCapture.tsx
+   2:67  warning  'Animated' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+  16:16  warning  'screenWidth' is assigned a value but never used                                                               @typescript-eslint/no-unused-vars
+  21:56  warning  Array type using 'Array<{ x: number; y: number }[]>' is forbidden. Use '{ x: number; y: number }[][]' instead  @typescript-eslint/array-type
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/StoreIntegrationTest.tsx
+  1:27  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/StripePayment.tsx
+  36:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/ToolsEquipmentSettings.tsx
+  171:41  error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  171:81  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/VINCheckerMotorcycle.tsx
+  130:7  warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/VinScanner.tsx
+   62:49   warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+   99:18   warning  'error' is defined but never used                                    @typescript-eslint/no-unused-vars
+  100:11   warning  Unexpected console statement                                         no-console
+  119:7    warning  Unexpected console statement                                         no-console
+  251:14   warning  'error' is defined but never used                                    @typescript-eslint/no-unused-vars
+  310:43   error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  310:94   warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  388:49   error    Unable to validate computed reference to imported namespace 'Icons'  import/namespace
+  388:119  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/WorkTimer.tsx
+   10:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   69:5   warning  Unexpected console statement              no-console
+   89:5   warning  Unexpected console statement              no-console
+  119:13  warning  Unexpected console statement              no-console
+  178:13  warning  Unexpected console statement              no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/chat/RealTimeChatWidget.tsx
+  55:20  warning  'setIsTyping' is assigned a value but never used                                                                             @typescript-eslint/no-unused-vars
+  67:6   warning  React Hook useEffect has missing dependencies: 'joinJob' and 'leaveJob'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/payments/StripePaymentWidget.tsx
+   37:10  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead  @typescript-eslint/array-type
+   62:10  warning  'loading' is assigned a value but never used                 @typescript-eslint/no-unused-vars
+   62:19  warning  'setLoading' is assigned a value but never used              @typescript-eslint/no-unused-vars
+  127:7   warning  Unexpected console statement                                 no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/components/reviews/ReviewSubmissionModal.tsx
+   99:7   warning  Unexpected console statement              no-console
+  162:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/hooks/use-firebase.ts
+    4:26  warning  'Quote' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+   64:6   warning  React Hook useEffect has a missing dependency: 'loadRequests'. Either include it or remove the dependency array     react-hooks/exhaustive-deps
+   71:7   warning  Unexpected console statement                                                                                        no-console
+  124:6   warning  React Hook useEffect has a missing dependency: 'firebaseService'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/hooks/useHydrateConfig.ts
+   4:11  warning  'ConfigItem' is defined but never used  @typescript-eslint/no-unused-vars
+  30:7   warning  Unexpected console statement            no-console
+  32:7   warning  Unexpected console statement            no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/hooks/usePushNotifications.ts
+   24:18  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  104:7   warning  Unexpected console statement                                                                                                    no-console
+  112:5   warning  Unexpected console statement                                                                                                    no-console
+  120:7   warning  Unexpected console statement                                                                                                    no-console
+  126:5   warning  Unexpected console statement                                                                                                    no-console
+  134:9   warning  Unexpected console statement                                                                                                    no-console
+  138:9   warning  Unexpected console statement                                                                                                    no-console
+  142:9   warning  Unexpected console statement                                                                                                    no-console
+  146:9   warning  Unexpected console statement                                                                                                    no-console
+  149:9   warning  Unexpected console statement                                                                                                    no-console
+  170:11  warning  Unexpected console statement                                                                                                    no-console
+  173:9   warning  Unexpected console statement                                                                                                    no-console
+  197:6   warning  React Hook useEffect has a missing dependency: 'registerDeviceTokenMutation'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  218:7   warning  Unexpected console statement                                                                                                    no-console
+  227:7   warning  Unexpected console statement                                                                                                    no-console
+  236:7   warning  Unexpected console statement                                                                                                    no-console
+  246:7   warning  Unexpected console statement                                                                                                    no-console
+  257:7   warning  Unexpected console statement                                                                                                    no-console
+  267:7   warning  Unexpected console statement                                                                                                    no-console
+  289:14  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  293:7   warning  Unexpected console statement                                                                                                    no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/hooks/useWebSocket.ts
+   34:10  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead  @typescript-eslint/array-type
+   83:7   warning  Unexpected console statement                                 no-console
+   89:7   warning  Unexpected console statement                                 no-console
+   94:7   warning  Unexpected console statement                                 no-console
+  189:12  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead  @typescript-eslint/array-type
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/jest.setup.js
+   1:8   error  Unable to resolve path to module 'jest-expo/mock-expo'  import/no-unresolved
+   5:1   error  'jest' is not defined                                   no-undef
+  12:1   error  'jest' is not defined                                   no-undef
+  14:11  error  'jest' is not defined                                   no-undef
+  15:14  error  'jest' is not defined                                   no-undef
+  16:11  error  'jest' is not defined                                   no-undef
+  17:16  error  'jest' is not defined                                   no-undef
+  26:1   error  'jest' is not defined                                   no-undef
+  35:1   error  'jest' is not defined                                   no-undef
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/lib/notifications/push-service.ts
+   41:9   warning  Unexpected console statement              no-console
+   47:7   warning  Unexpected console statement              no-console
+  108:7   warning  Unexpected console statement              no-console
+  113:13  warning  Unexpected console statement              no-console
+  125:7   warning  Unexpected console statement              no-console
+  165:7   warning  Unexpected console statement              no-console
+  169:7   warning  Unexpected console statement              no-console
+  178:7   warning  Unexpected console statement              no-console
+  181:7   warning  Unexpected console statement              no-console
+  190:7   warning  Unexpected console statement              no-console
+  193:7   warning  Unexpected console statement              no-console
+  203:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  325:7   warning  Unexpected console statement              no-console
+  348:7   warning  Unexpected console statement              no-console
+  375:7   warning  Unexpected console statement              no-console
+  396:7   warning  Unexpected console statement              no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/lib/trpc.ts
+    4:8   warning  'superjson' is defined but never used     @typescript-eslint/no-unused-vars
+   85:11  warning  Unexpected console statement              no-console
+  100:13  warning  Unexpected console statement              no-console
+  128:13  warning  Unexpected console statement              no-console
+  136:13  warning  Unexpected console statement              no-console
+  171:5   warning  Unexpected console statement              no-console
+  181:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/scripts/bumpVersion.js
+   4:31  error    '__dirname' is not defined    no-undef
+  13:3   warning  Unexpected console statement  no-console
+  14:3   warning  Unexpected console statement  no-console
+  15:3   warning  Unexpected console statement  no-console
+  17:3   warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/services/firebase-service.ts
+    4:10  warning  'firebaseConfig' is defined but never used  @typescript-eslint/no-unused-vars
+    4:26  warning  'COLLECTIONS' is defined but never used     @typescript-eslint/no-unused-vars
+   22:5   warning  Unexpected console statement                no-console
+   41:5   warning  Unexpected console statement                no-console
+   47:5   warning  Unexpected console statement                no-console
+   68:7   warning  Unexpected console statement                no-console
+   72:5   warning  Unexpected console statement                no-console
+   77:5   warning  Unexpected console statement                no-console
+   82:5   warning  Unexpected console statement                no-console
+   88:5   warning  Unexpected console statement                no-console
+   94:5   warning  Unexpected console statement                no-console
+  100:5   warning  Unexpected console statement                no-console
+  107:5   warning  Unexpected console statement                no-console
+  114:5   warning  Unexpected console statement                no-console
+  120:5   warning  Unexpected console statement                no-console
+  128:5   warning  Unexpected console statement                no-console
+  134:5   warning  Unexpected console statement                no-console
+  143:5   warning  Unexpected console statement                no-console
+  150:7   warning  Unexpected console statement                no-console
+  156:5   warning  Unexpected console statement                no-console
+  163:78  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  164:5   warning  Unexpected console statement                no-console
+  170:5   warning  Unexpected console statement                no-console
+  176:5   warning  Unexpected console statement                no-console
+  182:5   warning  Unexpected console statement                no-console
+  188:5   warning  Unexpected console statement                no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/stores/StoreProvider.tsx
+  17:17  warning  'setError' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  46:15  warning  Unexpected console statement                   no-console
+  51:13  warning  Unexpected console statement                   no-console
+  58:9   warning  Unexpected console statement                   no-console
+  62:9   warning  Unexpected console statement                   no-console
+  66:9   warning  Unexpected console statement                   no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/stores/admin-settings-store.ts
+    4:29  warning  'withAsyncErrorHandling' is defined but never used  @typescript-eslint/no-unused-vars
+  132:9   warning  Unexpected console statement                        no-console
+  140:9   warning  Unexpected console statement                        no-console
+  148:9   warning  Unexpected console statement                        no-console
+  156:9   warning  Unexpected console statement                        no-console
+  168:9   warning  Unexpected console statement                        no-console
+  172:11  warning  Unexpected console statement                        no-console
+  174:11  warning  Unexpected console statement                        no-console
+  179:9   warning  Unexpected console statement                        no-console
+  192:11  warning  Unexpected console statement                        no-console
+  195:11  warning  Unexpected console statement                        no-console
+  201:9   warning  Unexpected console statement                        no-console
+  213:11  warning  Unexpected console statement                        no-console
+  216:11  warning  Unexpected console statement                        no-console
+  229:9   warning  Unexpected console statement                        no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/stores/app-store.ts
+    4:99  warning  'ToolCheckItem' is defined but never used  @typescript-eslint/no-unused-vars
+   98:35  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  607:39  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  618:9   warning  Unexpected console statement               no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/stores/auth-store.ts
+    7:10  warning  'withAsyncErrorHandling' is defined but never used  @typescript-eslint/no-unused-vars
+    7:34  warning  'withErrorHandling' is defined but never used       @typescript-eslint/no-unused-vars
+    7:53  warning  'logStoreAction' is defined but never used          @typescript-eslint/no-unused-vars
+   78:13  warning  Unexpected console statement                        no-console
+  102:13  warning  Unexpected console statement                        no-console
+  107:11  warning  Unexpected console statement                        no-console
+  111:13  warning  Unexpected console statement                        no-console
+  119:15  warning  Unexpected console statement                        no-console
+  136:15  warning  Unexpected console statement                        no-console
+  160:15  warning  Unexpected console statement                        no-console
+  182:15  warning  Unexpected console statement                        no-console
+  185:13  warning  Unexpected console statement                        no-console
+  191:17  warning  Unexpected console statement                        no-console
+  211:11  warning  Unexpected console statement                        no-console
+  221:9   warning  Unexpected console statement                        no-console
+  238:11  warning  Unexpected console statement                        no-console
+  247:11  warning  Unexpected console statement                        no-console
+  256:9   warning  Unexpected console statement                        no-console
+  274:11  warning  Unexpected console statement                        no-console
+  291:13  warning  Unexpected console statement                        no-console
+  303:11  warning  Unexpected console statement                        no-console
+  313:11  warning  Unexpected console statement                        no-console
+  336:13  warning  Unexpected console statement                        no-console
+  344:13  warning  Unexpected console statement                        no-console
+  355:11  warning  Unexpected console statement                        no-console
+  358:11  warning  Unexpected console statement                        no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/stores/settings-store.ts
+  57:16  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead  @typescript-eslint/array-type
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/stores/store-utils.ts
+    9:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   15:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   31:5   warning  Unexpected console statement              no-console
+   43:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   52:7   warning  Unexpected console statement              no-console
+   62:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   71:7   warning  Unexpected console statement              no-console
+  108:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  118:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  150:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  165:74  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  169:5   warning  Unexpected console statement              no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/stores/store-validators.ts
+  110:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  122:9   warning  Unexpected console statement              no-console
+  126:5   warning  Unexpected console statement              no-console
+  131:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  140:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  153:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  167:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/types/rating.ts
+  147:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/types/service.ts
+    1:10  warning  'User' is defined but never used          @typescript-eslint/no-unused-vars
+  163:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/utils/firebase-config.ts
+  43:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  45:5   warning  Unexpected console statement              no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/utils/logger.ts
+   8:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  14:84  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  31:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  34:7   warning  Unexpected console statement              no-console
+  38:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:7   warning  Unexpected console statement              no-console
+  45:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  48:7   warning  Unexpected console statement              no-console
+  52:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  55:7   warning  Unexpected console statement              no-console
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/utils/misc.ts
+  10:7   warning  Unexpected console statement              no-console
+  13:5   warning  Unexpected console statement              no-console
+  44:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  44:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/utils/parts/getPartEstimate.ts
+  209:14  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead  @typescript-eslint/array-type
+
+/data/data/com.termux/files/home/downloads/rork-heinicus-mobile-mechanic-app/utils/quote-generator.ts
+  332:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 421 problems (30 errors, 391 warnings)
+  0 errors and 8 warnings potentially fixable with the `--fix` option.
+

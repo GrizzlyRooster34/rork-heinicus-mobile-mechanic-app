@@ -1,0 +1,129 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ Claude-finished, main, rork-model-by-claude ]
+  pull_request:
+    branches: [ Claude-finished, main ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 🏗 Setup repo
+      uses: actions/checkout@v4
+      
+    - name: 🏗 Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: npm
+        
+    - name: 🏗 Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: 🏗 Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: 📦 Install dependencies
+      run: npm ci --legacy-peer-deps
+      
+    - name: 🔢 Bump version
+      run: npm run bump
+      
+    - name: 🏗 Setup Expo
+      run: npm install -g @expo/cli@latest
+        
+    - name: 📱 Generate native code
+      run: npx expo prebuild --platform android --clean
+      
+    - name: 🔨 Build APK with Gradle
+      run: |
+        cd android
+        chmod +x ./gradlew
+        ./gradlew assembleDebug --no-daemon
+        
+    - name: 📱 Sign APK (if keystore provided)
+      if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+      run: |
+        cd android
+        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+        ./gradlew assembleRelease --no-daemon
+        
+    - name: 📋 Get APK info
+      id: apk_info
+      run: |
+        APK_PATH=$(find android/app/build/outputs/apk -name "*.apk" | head -1)
+        APK_SIZE=$(stat -c%s "$APK_PATH" | numfmt --to=iec)
+        echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+        echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
+        echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        echo "build_number=$(node -p "require('./app.json').expo.android.versionCode")" >> $GITHUB_OUTPUT
+        
+    - name: 📤 Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: heinicus-mechanic-v${{ steps.apk_info.outputs.version }}-build${{ steps.apk_info.outputs.build_number }}.apk
+        path: ${{ steps.apk_info.outputs.apk_path }}
+        retention-days: 30
+        
+    - name: 📝 Create Release (on main/Claude-finished)
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Claude-finished'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.apk_info.outputs.version }}-build${{ steps.apk_info.outputs.build_number }}
+        name: Heinicus Mechanic v${{ steps.apk_info.outputs.version }} (Build ${{ steps.apk_info.outputs.build_number }})
+        body: |
+          ## 📱 Heinicus Mobile Mechanic App
+          
+          **Version**: ${{ steps.apk_info.outputs.version }}  
+          **Build**: ${{ steps.apk_info.outputs.build_number }}  
+          **Size**: ${{ steps.apk_info.outputs.apk_size }}
+          
+          ### 🚀 Features Included:
+          - ✅ PostgreSQL Database with Prisma ORM
+          - ✅ Real-time WebSocket tracking system
+          - ✅ Complete Stripe payment processing
+          - ✅ Rating and review system
+          - ✅ Push notifications (FCM/APNS)
+          - ✅ JWT Authentication
+          - ✅ Role-based access control
+          
+          ### 📲 Installation:
+          1. Download the APK file below
+          2. Enable "Install from unknown sources" on your Android device
+          3. Install the APK
+          4. Grant required permissions
+          
+          **Target Device**: OnePlus 9 Pro (Android 11+)
+          **Package**: com.heinicus.mobilemechanic
+        files: ${{ steps.apk_info.outputs.apk_path }}
+        draft: false
+        prerelease: false
+        
+    - name: 📊 Build Summary
+      run: |
+        echo "## 🎉 Build Completed Successfully!" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version**: ${{ steps.apk_info.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Number**: ${{ steps.apk_info.outputs.build_number }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **APK Size**: ${{ steps.apk_info.outputs.apk_size }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **APK Path**: \`${{ steps.apk_info.outputs.apk_path }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📥 Download Options:" >> $GITHUB_STEP_SUMMARY
+        echo "1. **Artifacts**: Check the 'Artifacts' section above" >> $GITHUB_STEP_SUMMARY
+        echo "2. **Releases**: Visit the [Releases page](https://github.com/${{ github.repository }}/releases)" >> $GITHUB_STEP_SUMMARY

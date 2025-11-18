@@ -1,76 +1,48 @@
+// Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require('expo/metro-config');
-const { withNativeWind } = require('nativewind/metro');
 
+/** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
-// Enable Hermes for better Android performance
-config.transformer.hermesCommand = 'hermes';
+// Add support for TypeScript, JSX, and modern JS features
+config.resolver.assetExts.push('bin');
+config.resolver.sourceExts.push('sql');
 
-// Optimize for Android builds - prioritize Android platform
-config.resolver.platforms = ['android', 'native', 'ios', 'web'];
-
-// Add support for additional file extensions
-config.resolver.assetExts.push(
-  // Fonts
-  'ttf',
-  'otf',
-  'woff',
-  'woff2',
-  // Images
-  'svg',
-  'png',
-  'jpg',
-  'jpeg',
-  'gif',
-  'webp',
-  // Audio/Video
-  'mp3',
-  'mp4',
-  'mov',
-  'avi',
-  // Documents
-  'pdf'
-);
-
-// Configure source extensions
-config.resolver.sourceExts.push('jsx', 'js', 'ts', 'tsx', 'json', 'mjs');
-
-// Optimize bundle size for Android 11+
+// Configure transformer for better performance
 config.transformer.minifierConfig = {
   keep_fnames: true,
   mangle: {
     keep_fnames: true,
   },
-  output: {
-    ascii_only: true,
-    quote_keys: true,
-    wrap_iife: true,
-  },
-  sourceMap: {
-    includeSources: false,
-  },
-  toplevel: false,
-  compress: {
-    reduce_funcs: false,
-  },
 };
 
-// Android-specific performance optimizations
-config.cacheStores = [
-  {
-    name: 'filesystem',
-    options: {
-      cacheDirectory: './node_modules/.cache/metro',
-    },
-  },
+// Configure resolver for better module resolution
+config.resolver.platforms = ['ios', 'android', 'native', 'web'];
+
+// Add support for absolute imports
+config.resolver.alias = {
+  '@': '.',
+};
+
+// Enable experimental features for better performance
+config.transformer.unstable_allowRequireContext = true;
+
+
+// Reduce file watching to avoid ENOSPC errors in Termux
+config.watchFolders = [];
+config.resolver.blockList = [
+  /node_modules\/.*\/android\/.*/,
+  /node_modules\/.*\/ios\/.*/,
+  /node_modules\/.*\/gradle\/.*/,
+  /node_modules\/.*\/kotlin\/.*/,
+  /node_modules\/.*\/java\/.*/,
+  /backend\/.*/, // Exclude backend from mobile bundle
 ];
 
-// Optimize for Android builds
-config.serializer = {
-  ...config.serializer,
-  getModulesRunBeforeMainModule: () => [
-    require.resolve('react-native/Libraries/Core/InitializeCore'),
-  ],
+// Disable file watching for problematic directories
+config.watcher = {
+  ...config.watcher,
+  watchman: false,
 };
 
-module.exports = withNativeWind(config, { input: './global.css' });
+module.exports = config;

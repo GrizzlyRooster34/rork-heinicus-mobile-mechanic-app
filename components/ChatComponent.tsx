@@ -3,6 +3,8 @@ import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, Keyboa
 import { Colors } from '@/constants/colors';
 import { ChatMessage } from '@/types/service';
 import { useAppStore } from '@/stores/app-store';
+import { LoadingState } from '@/components/LoadingState';
+import { SkeletonList } from '@/components/LoadingSkeleton';
 import * as Icons from 'lucide-react-native';
 
 interface ChatComponentProps {
@@ -16,43 +18,55 @@ export function ChatComponent({ serviceRequestId, currentUserId, currentUserName
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Mock messages for demo - in real app this would come from Firestore
   useEffect(() => {
-    const mockMessages: ChatMessage[] = [
-      {
-        id: '1',
-        serviceRequestId,
-        senderId: 'mechanic-1',
-        senderName: 'Mike (Mechanic)',
-        senderType: 'mechanic',
-        message: 'Hi! I received your service request. I can be there within 2 hours. Does that work for you?',
-        timestamp: new Date(Date.now() - 3600000), // 1 hour ago
-        isRead: true,
-      },
-      {
-        id: '2',
-        serviceRequestId,
-        senderId: currentUserId,
-        senderName: currentUserName,
-        senderType: currentUserType,
-        message: 'Yes, that works perfectly! Thank you.',
-        timestamp: new Date(Date.now() - 3000000), // 50 minutes ago
-        isRead: true,
-      },
-      {
-        id: '3',
-        serviceRequestId,
-        senderId: 'mechanic-1',
-        senderName: 'Mike (Mechanic)',
-        senderType: 'mechanic',
-        message: 'Great! I am on my way. I will send you a message when I arrive.',
-        timestamp: new Date(Date.now() - 2400000), // 40 minutes ago
-        isRead: true,
-      },
-    ];
-    setMessages(mockMessages);
+    const loadMessages = async () => {
+      setIsLoadingMessages(true);
+      
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const mockMessages: ChatMessage[] = [
+        {
+          id: '1',
+          serviceRequestId,
+          senderId: 'mechanic-1',
+          senderName: 'Mike (Mechanic)',
+          senderType: 'mechanic',
+          message: 'Hi! I received your service request. I can be there within 2 hours. Does that work for you?',
+          timestamp: new Date(Date.now() - 3600000), // 1 hour ago
+          isRead: true,
+        },
+        {
+          id: '2',
+          serviceRequestId,
+          senderId: currentUserId,
+          senderName: currentUserName,
+          senderType: currentUserType,
+          message: 'Yes, that works perfectly! Thank you.',
+          timestamp: new Date(Date.now() - 3000000), // 50 minutes ago
+          isRead: true,
+        },
+        {
+          id: '3',
+          serviceRequestId,
+          senderId: 'mechanic-1',
+          senderName: 'Mike (Mechanic)',
+          senderType: 'mechanic',
+          message: 'Great! I am on my way. I will send you a message when I arrive.',
+          timestamp: new Date(Date.now() - 2400000), // 40 minutes ago
+          isRead: true,
+        },
+      ];
+      
+      setMessages(mockMessages);
+      setIsLoadingMessages(false);
+    };
+    
+    loadMessages();
   }, [serviceRequestId, currentUserId, currentUserName, currentUserType]);
 
   const sendMessage = async () => {
@@ -110,38 +124,54 @@ export function ChatComponent({ serviceRequestId, currentUserId, currentUserName
         showsVerticalScrollIndicator={false}
         onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
       >
-        {messages.map((message) => (
-          <View
-            key={message.id}
-            style={[
-              styles.messageWrapper,
-              isMyMessage(message) ? styles.myMessageWrapper : styles.otherMessageWrapper,
-            ]}
-          >
+        {isLoadingMessages ? (
+          <View style={styles.loadingContainer}>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <View key={index} style={styles.skeletonMessage}>
+                <View style={[
+                  styles.skeletonBubble,
+                  index % 2 === 0 ? styles.skeletonOther : styles.skeletonMy
+                ]}>
+                  <View style={styles.skeletonLine} />
+                  <View style={[styles.skeletonLine, { width: '70%' }]} />
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          messages.map((message) => (
             <View
+              key={message.id}
               style={[
-                styles.messageBubble,
-                isMyMessage(message) ? styles.myMessage : styles.otherMessage,
+                styles.messageWrapper,
+                isMyMessage(message) ? styles.myMessageWrapper : styles.otherMessageWrapper,
               ]}
             >
-              {!isMyMessage(message) && (
-                <Text style={styles.senderName}>{message.senderName}</Text>
-              )}
-              <Text style={[
-                styles.messageText,
-                isMyMessage(message) ? styles.myMessageText : styles.otherMessageText,
-              ]}>
-                {message.message}
-              </Text>
-              <Text style={[
-                styles.messageTime,
-                isMyMessage(message) ? styles.myMessageTime : styles.otherMessageTime,
-              ]}>
-                {formatTime(message.timestamp)}
-              </Text>
+              <View
+                style={[
+                  styles.messageBubble,
+                  isMyMessage(message) ? styles.myMessage : styles.otherMessage,
+                ]}
+              >
+                {!isMyMessage(message) && (
+                  <Text style={styles.senderName}>{message.senderName}</Text>
+                )}
+                <Text style={[
+                  styles.messageText,
+                  isMyMessage(message) ? styles.myMessageText : styles.otherMessageText,
+                ]}>
+                  {message.message}
+                </Text>
+                <Text style={[
+                  styles.messageTime,
+                  isMyMessage(message) ? styles.myMessageTime : styles.otherMessageTime,
+                ]}>
+                  {formatTime(message.timestamp)}
+                </Text>
+              </View>
             </View>
-          </View>
-        ))}
+          ))
+        )}
       </ScrollView>
 
       <View style={styles.inputContainer}>
@@ -269,5 +299,33 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: Colors.surface,
+  },
+  loadingContainer: {
+    padding: 16,
+    gap: 12,
+  },
+  skeletonMessage: {
+    marginBottom: 12,
+  },
+  skeletonBubble: {
+    padding: 12,
+    borderRadius: 16,
+    maxWidth: '80%',
+  },
+  skeletonOther: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.surface,
+    borderBottomLeftRadius: 4,
+  },
+  skeletonMy: {
+    alignSelf: 'flex-end',
+    backgroundColor: Colors.border,
+    borderBottomRightRadius: 4,
+  },
+  skeletonLine: {
+    height: 16,
+    backgroundColor: Colors.border,
+    borderRadius: 4,
+    marginBottom: 4,
   },
 });

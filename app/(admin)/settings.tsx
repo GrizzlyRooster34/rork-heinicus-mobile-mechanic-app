@@ -6,12 +6,13 @@ import { useAdminSettingsStore } from '@/stores/admin-settings-store';
 import { useConfigStore } from '@/lib/configStore';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/Button';
+import { logger } from '@/utils/logger';
 import * as Icons from 'lucide-react-native';
 
 type ConfigKey = 'isProduction' | 'showVINDebug' | 'enableChatbot' | 'defaultLaborRate' | 'showScooterSupport' | 'showMotorcycleSupport' | 'enableVINCheck';
 
 export default function AdminSettingsScreen() {
-  const { user, logout, getAllUsers, updateUserRole } = useAuthStore();
+  const { user, logout, getAllUsers } = useAuthStore();
   const {
     system,
     notifications,
@@ -30,11 +31,11 @@ export default function AdminSettingsScreen() {
 
   const config = useConfigStore();
   const updateConfigMutation = trpc.admin.updateConfig.useMutation({
-    onSuccess: (data) => {
-      console.log('Config updated successfully:', data);
+    onSuccess: (data: any) => {
+      logger.info('Config updated successfully', 'AdminSettings', data);
     },
-    onError: (error) => {
-      console.error('Failed to update config:', error);
+    onError: (error: any) => {
+      logger.error('Failed to update config', 'AdminSettings', error);
       Alert.alert('Error', 'Failed to update setting. Please try again.');
     },
   });
@@ -55,9 +56,9 @@ export default function AdminSettingsScreen() {
         value: value
       });
       
-      console.log(`Config updated: ${key} = ${value}`);
+      logger.info(`Config updated: ${key} = ${value}`, 'AdminSettings');
     } catch (error) {
-      console.error('Failed to update config:', error);
+      logger.error('Failed to update config', 'AdminSettings', error);
       
       // Revert local state on error
       config.updateSetting(key, !value);
@@ -139,7 +140,7 @@ export default function AdminSettingsScreen() {
     );
   };
 
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'ADMIN') {
     return (
       <View style={styles.unauthorizedContainer}>
         <Icons.Shield size={64} color={Colors.error} />

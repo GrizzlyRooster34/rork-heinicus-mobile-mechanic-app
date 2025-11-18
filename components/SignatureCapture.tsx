@@ -18,7 +18,7 @@ const { width: screenWidth } = Dimensions.get('window');
 export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCancel }: SignatureCaptureProps) {
   const [hasSignature, setHasSignature] = useState(false);
   const [customerName, setCustomerName] = useState('');
-  const [signaturePaths, setSignaturePaths] = useState<Array<{ x: number; y: number }[]>>([]);
+  const [signaturePaths, setSignaturePaths] = useState<{ x: number; y: number }[][]>([]);
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
   
   const canvasRef = useRef<View>(null);
@@ -123,7 +123,7 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
     }
 
     // Production validation
-    if (PRODUCTION_CONFIG.requireSignature && !hasSignature) {
+    if (PRODUCTION_CONFIG.isProduction && !hasSignature) {
       Alert.alert(
         'Signature Required',
         'Customer signature is required to complete this job in production mode.',
@@ -207,7 +207,7 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
       <View style={styles.header}>
         <Text style={styles.title}>Customer Signature</Text>
         <Text style={styles.subtitle}>{jobTitle}</Text>
-        {PRODUCTION_CONFIG.requireSignature && (
+        {PRODUCTION_CONFIG.isProduction && (
           <View style={styles.requiredBadge}>
             <Text style={styles.requiredText}>REQUIRED</Text>
           </View>
@@ -302,7 +302,7 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
       </View>
 
       {/* Production Requirements */}
-      {PRODUCTION_CONFIG.requireSignature && (
+      {PRODUCTION_CONFIG.isProduction && (
         <View style={styles.requirementsCard}>
           <Icons.AlertCircle size={16} color={Colors.error} />
           <Text style={styles.requirementsText}>
@@ -326,7 +326,7 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
           disabled={!hasSignature}
           style={[
             styles.completeButton,
-            !hasSignature && styles.completeButtonDisabled
+            ...(!hasSignature ? [styles.completeButtonDisabled] : [])
           ]}
         />
       </View>

@@ -3,9 +3,11 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'rea
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
 import { useAppStore } from '@/stores/app-store';
+import { useSettingsStore } from '@/stores/settings-store';
 import * as Icons from 'lucide-react-native';
 import { NotificationSettings } from '@/components/NotificationSettings';
 import { AvailabilitySettings } from '@/components/AvailabilitySettings';
+import { logger } from '@/utils/logger';
 import { ServicePricingSettings } from '@/components/ServicePricingSettings';
 import { ToolsEquipmentSettings } from '@/components/ToolsEquipmentSettings';
 import { VehicleType } from '@/types/service';
@@ -18,6 +20,7 @@ type SettingsScreen = 'main' | 'availability' | 'notifications' | 'pricing' | 't
 export default function MechanicProfileScreen() {
   const { user, logout } = useAuthStore();
   const { serviceRequests, quotes } = useAppStore();
+  const { updateAvailabilitySettings, updateNotificationSettings, updatePricingSettings, updateToolsSettings } = useSettingsStore();
   const [currentScreen, setCurrentScreen] = useState<SettingsScreen>('main');
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType>('car');
 
@@ -48,8 +51,25 @@ export default function MechanicProfileScreen() {
   };
 
   const handleSettingsChange = (settingsType: string, settings: any) => {
-    console.log(`${settingsType} settings updated:`, settings);
-    // Here you would typically save to your store or backend
+    logger.info(`${settingsType} settings updated`, 'MechanicProfile', settings);
+    
+    // Update appropriate store based on settings type
+    switch (settingsType) {
+      case 'availability':
+        updateAvailabilitySettings(settings);
+        break;
+      case 'notifications':
+        updateNotificationSettings(settings);
+        break;
+      case 'pricing':
+        updatePricingSettings(settings);
+        break;
+      case 'tools':
+        updateToolsSettings(settings);
+        break;
+      default:
+        logger.warn('Unknown settings type', 'MechanicProfile', { settingsType });
+    }
   };
 
   const handleVerificationSubmitted = () => {

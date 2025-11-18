@@ -1,29 +1,19 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User, AuthState } from '@/types/auth';
-import { MechanicVerificationStatus } from '@/types/service';
+import { User, AuthState, UserRole } from '@/types/auth';
 import { trpcClient } from '@/lib/trpc';
 import { devMode, isDevCredentials, getDevUser } from '@/utils/dev';
+import { withAsyncErrorHandling, withErrorHandling, logStoreAction } from './store-utils';
 
 interface AuthStore extends AuthState {
+  token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, firstName: string, lastName: string, phone?: string, role?: 'customer' | 'mechanic') => Promise<boolean>;
+  signup: (email: string, password: string, firstName: string, lastName: string, phone?: string, role?: 'CUSTOMER' | 'MECHANIC') => Promise<boolean>;
   logout: () => void;
   setUser: (user: User) => void;
-  updateUserRole: (userId: string, role: 'customer' | 'mechanic' | 'admin') => Promise<boolean>;
+  updateUserRole: (userId: string, role: 'CUSTOMER' | 'MECHANIC' | 'ADMIN') => Promise<boolean>;
   getAllUsers: () => User[];
-
-  // JWT Token Management
-  token: string | null;
-  refreshToken: string | null;
-  setTokens: (accessToken: string, refreshToken: string) => void;
-  clearTokens: () => void;
-  verifyToken: () => Promise<boolean>;
-
-  // Verification status
-  verificationStatus: MechanicVerificationStatus | null;
-  setVerificationStatus: (status: MechanicVerificationStatus | null) => void;
 }
 
 // Production configuration - Admin and Mechanic users
@@ -33,7 +23,7 @@ const PRODUCTION_USERS = {
     email: 'matthew.heinen.2014@gmail.com',
     firstName: 'Cody',
     lastName: 'Owner',
-    role: 'admin' as const,
+    role: 'ADMIN' as const,
     phone: '(555) 987-6543',
     createdAt: new Date(),
   },
@@ -42,7 +32,7 @@ const PRODUCTION_USERS = {
     email: 'cody@heinicus.com',
     firstName: 'Cody',
     lastName: 'Mechanic',
-    role: 'mechanic' as const,
+    role: 'MECHANIC' as const,
     phone: '(555) 987-6543',
     createdAt: new Date(),
   }
@@ -56,7 +46,7 @@ let registeredCustomers: User[] = [
     email: 'customer@example.com',
     firstName: 'Demo',
     lastName: 'Customer',
-    role: 'customer',
+    role: 'CUSTOMER',
     phone: '(555) 123-4567',
     createdAt: new Date(),
   }
@@ -66,18 +56,16 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       user: null,
+      token: null,
       isLoading: false,
       isAuthenticated: false,
-      verificationStatus: null,
-      token: null,
-      refreshToken: null,
 
-      signup: async (email: string, password: string, firstName: string, lastName: string, phone?: string, role: 'customer' | 'mechanic' = 'customer') => {
+      signup: async (email: string, password: string, firstName: string, lastName: string, phone?: string, role: 'CUSTOMER' | 'MECHANIC' = 'CUSTOMER') => {
         set({ isLoading: true });
         
         try {
           // Use TRPC client for signup
-          const result = await trpcClient.auth.signup.mutate({
+          const result = await trpcClient.auth.register.mutate({
             email,
             password,
             firstName,
@@ -86,33 +74,32 @@ export const useAuthStore = create<AuthStore>()(
             role,
           });
           
-          if (result.success && result.user) {
-            console.log('Signup successful via TRPC:', {
-              userId: result.user.id,
+          if (result.success && 'user' in result && result.user) {
+            console.log('Signup successful via TRPC:', { 
+              userId: result.user.id, 
               email: result.user.email,
               role: result.user.role,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString() 
             });
-
+            
             // Use the user object as returned from the backend
-            const completeUser: User = result.user;
-
-            // Store JWT tokens if provided
-            const accessToken = result.token || null;
-            const refreshToken = null; // Backend doesn't return refresh token yet, will be added later
-
+            const completeUser: User = {
+              ...result.user,
+              role: result.user.role as UserRole,
+              createdAt: new Date(result.user.createdAt)
+            };
+            
             // Auto-login after successful signup
-            set({
+            set({ 
               user: completeUser,
-              isAuthenticated: true,
-              isLoading: false,
-              token: accessToken,
-              refreshToken: refreshToken,
+              token: 'token' in result ? result.token || null : null,
+              isAuthenticated: true, 
+              isLoading: false 
             });
-
+            
             return true;
           } else {
-            console.log('Signup failed via TRPC:', result.error);
+            console.log('Signup failed via TRPC:', 'error' in result ? result.error : 'Unknown error');
             set({ isLoading: false });
             return false;
           }
@@ -164,36 +151,35 @@ export const useAuthStore = create<AuthStore>()(
           
           // Try TRPC client for login, but fallback to dev mode if it fails
           try {
-            const result = await trpcClient.auth.signin.mutate({
+            const result = await trpcClient.auth.login.mutate({
               email,
               password,
             });
             
-            if (result.success && result.user) {
-              console.log('Login successful via TRPC:', {
-                userId: result.user.id,
-                role: result.user.role,
-                timestamp: new Date().toISOString()
+            if (result.success && 'user' in result && result.user) {
+              console.log('Login successful via TRPC:', { 
+                userId: result.user.id, 
+                role: result.user.role, 
+                timestamp: new Date().toISOString() 
               });
-
+              
               // Use the user object as returned from the backend
-              const completeUser: User = result.user;
-
-              // Store JWT tokens if provided
-              const accessToken = result.token || null;
-              const refreshToken = null; // Backend doesn't return refresh token yet
-
-              set({
+              const completeUser: User = {
+                ...result.user,
+                role: result.user.role as UserRole,
+                createdAt: new Date(result.user.createdAt)
+              };
+              
+              set({ 
                 user: completeUser,
-                isAuthenticated: true,
-                isLoading: false,
-                token: accessToken,
-                refreshToken: refreshToken,
+                token: 'token' in result ? result.token || null : null,
+                isAuthenticated: true, 
+                isLoading: false 
               });
-
+              
               return true;
             } else {
-              console.log('Login failed via TRPC:', result.error);
+              console.log('Login failed via TRPC:', 'error' in result ? result.error : 'Unknown error');
             }
           } catch (trpcError) {
             console.warn('TRPC login failed, trying dev fallback:', trpcError);
@@ -230,27 +216,25 @@ export const useAuthStore = create<AuthStore>()(
 
       logout: () => {
         const currentUser = get().user;
-
+        
         // Production logging
-        console.log('User logout:', {
-          userId: currentUser?.id,
+        console.log('User logout:', { 
+          userId: currentUser?.id, 
           role: currentUser?.role,
           environment: 'production',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString() 
         });
-
-        set({
+        
+        set({ 
           user: null,
-          isAuthenticated: false,
-          verificationStatus: null,
           token: null,
-          refreshToken: null,
+          isAuthenticated: false 
         });
       },
 
       setUser: (user: User) => {
         // Production security: Validate user role
-        if (user.role === 'mechanic' && user.id !== 'mechanic-cody') {
+        if (user.role === 'MECHANIC' && user.id !== 'mechanic-cody') {
           console.warn('Unauthorized mechanic access attempt:', { 
             userId: user.id, 
             environment: 'production',
@@ -259,7 +243,7 @@ export const useAuthStore = create<AuthStore>()(
           return;
         }
         
-        if (user.role === 'admin' && user.id !== 'admin-cody') {
+        if (user.role === 'ADMIN' && user.id !== 'admin-cody') {
           console.warn('Unauthorized admin access attempt:', { 
             userId: user.id, 
             environment: 'production',
@@ -282,11 +266,11 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
 
-      updateUserRole: async (userId: string, role: 'customer' | 'mechanic' | 'admin') => {
+      updateUserRole: async (userId: string, role: 'CUSTOMER' | 'MECHANIC' | 'ADMIN') => {
         const currentUser = get().user;
         
         // Only admin can update roles
-        if (currentUser?.role !== 'admin') {
+        if (currentUser?.role !== 'ADMIN') {
           console.warn('Unauthorized role update attempt:', { 
             currentUserId: currentUser?.id,
             currentUserRole: currentUser?.role,
@@ -325,7 +309,7 @@ export const useAuthStore = create<AuthStore>()(
         const currentUser = get().user;
         
         // Only admin can view all users
-        if (currentUser?.role !== 'admin') {
+        if (currentUser?.role !== 'ADMIN') {
           console.warn('Unauthorized user list access attempt:', { 
             userId: currentUser?.id,
             role: currentUser?.role,
@@ -340,73 +324,40 @@ export const useAuthStore = create<AuthStore>()(
           ...registeredCustomers
         ];
       },
-
-      // JWT Token Management Methods
-      setTokens: (accessToken: string, refreshToken: string) => {
-        set({
-          token: accessToken,
-          refreshToken: refreshToken,
-        });
-      },
-
-      clearTokens: () => {
-        set({
-          token: null,
-          refreshToken: null,
-        });
-      },
-
-      verifyToken: async () => {
-        const currentToken = get().token;
-
-        if (!currentToken) {
-          return false;
-        }
-
-        try {
-          const result = await trpcClient.auth.verifyToken.query({
-            token: currentToken,
-          });
-
-          if (result.valid && result.user) {
-            // Token is valid, optionally update user data
-            return true;
-          } else {
-            // Token is invalid, clear auth state
-            set({
-              user: null,
-              isAuthenticated: false,
-              token: null,
-              refreshToken: null,
-            });
-            return false;
-          }
-        } catch (error) {
-          console.error('Token verification error:', error);
-          set({
-            user: null,
-            isAuthenticated: false,
-            token: null,
-            refreshToken: null,
-          });
-          return false;
-        }
-      },
-
-      setVerificationStatus: (status: MechanicVerificationStatus | null) => {
-        set({ verificationStatus: status });
-      },
     }),
     {
       name: 'heinicus-auth-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => AsyncStorage, {
+        // Add error handling to prevent crashes if AsyncStorage fails
+        replacer: (key, value) => {
+          try {
+            return value;
+          } catch (error) {
+            console.warn('AsyncStorage serialization error for key:', key, error);
+            return null;
+          }
+        },
+        reviver: (key, value) => {
+          try {
+            return value;
+          } catch (error) {
+            console.warn('AsyncStorage deserialization error for key:', key, error);
+            return null;
+          }
+        },
+      }),
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        verificationStatus: state.verificationStatus,
-        token: state.token,
-        refreshToken: state.refreshToken,
       }),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Auth store hydration failed:', error);
+          // Don't crash the app - just log the error and continue with default state
+        } else {
+          console.log('✅ Auth store hydrated successfully');
+        }
+      },
     }
   )
 );
