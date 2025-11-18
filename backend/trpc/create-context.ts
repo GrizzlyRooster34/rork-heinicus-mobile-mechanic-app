@@ -9,3 +9,7 @@ export function createContext(opts: FetchCreateContextFnOptions) {
 }
 
 export type Context = ReturnType<typeof createContext>;
+
+// Re-export router and procedures from trpc.ts for convenience
+export { router as createTRPCRouter, publicProcedure, protectedProcedure } from './trpc';
+export type { JWTPayload, AuthContext } from './middleware/auth';
