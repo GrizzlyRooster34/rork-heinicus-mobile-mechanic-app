@@ -1,3 +1,11 @@
+// Load environment variables from .env file
+// Note: Create a .env file in the project root with:
+// GOOGLE_SERVICES_JSON=./path/to/google-services.json
+// GOOGLE_MAPS_API_KEY=your_api_key_here
+// EAS_PROJECT_ID=your_eas_project_id
+// EXPO_PUBLIC_API_URL=your_backend_api_url
+// EXPO_PUBLIC_ENVIRONMENT=development|staging|production
+
 export default {
   expo: {
     name: "Heinicus Mobile Mechanic",
@@ -16,7 +24,21 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.heinicus.mobilemechanic",
-      buildNumber: "1"
+      buildNumber: "1",
+      infoPlist: {
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Heinicus needs location access to connect you with nearby mechanics and provide accurate service locations.",
+        NSLocationAlwaysUsageDescription: "Heinicus needs background location access to send you notifications about nearby mechanics and job updates.",
+        NSLocationWhenInUseUsageDescription: "Heinicus needs location access to show your current location and find nearby mechanics.",
+        UIBackgroundModes: [
+          "location"
+        ],
+        NSPhotoLibraryUsageDescription: "Heinicus needs photo access to upload images of vehicle issues and service documentation.",
+        NSCameraUsageDescription: "Heinicus needs camera access to take photos of vehicle issues, parts, and completed work for service documentation.",
+        NSMicrophoneUsageDescription: "Allow Heinicus to access your microphone for video documentation of vehicle issues."
+      },
+      entitlements: {
+        "com.apple.developer.networking.wifi-info": true
+      }
     },
     android: {
       compileSdkVersion: 35,
@@ -32,7 +54,7 @@ export default {
       permissions: [
         "CAMERA",
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION", 
+        "ACCESS_COARSE_LOCATION",
         "INTERNET",
         "ACCESS_NETWORK_STATE",
         "WRITE_EXTERNAL_STORAGE",
@@ -41,6 +63,7 @@ export default {
         "WAKE_LOCK",
         "RECEIVE_BOOT_COMPLETED",
         "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
         "POST_NOTIFICATIONS",
         "RECORD_AUDIO",
@@ -63,9 +86,7 @@ export default {
       // Android 11+ specific configurations
       requestLegacyExternalStorage: false,
       usesCleartextTraffic: false,
-      // Scoped storage support for Android 11+
       usesNonSdkApi: false,
-      // Target Android 11+ features
       resizeableActivity: true,
       supportsPictureInPicture: false
     },
@@ -87,13 +108,16 @@ export default {
           locationAlwaysPermission: "Heinicus needs background location access to send you notifications about nearby mechanics and job updates.",
           locationWhenInUsePermission: "Heinicus needs location access to show your current location and find nearby mechanics.",
           isIosBackgroundLocationEnabled: true,
-          isAndroidBackgroundLocationEnabled: true
+          isAndroidBackgroundLocationEnabled: true,
+          isAndroidForegroundServiceEnabled: true
         }
       ],
       [
         "expo-camera",
         {
-          cameraPermission: "Heinicus needs camera access to take photos of vehicle issues, parts, and completed work for service documentation."
+          cameraPermission: "Heinicus needs camera access to take photos of vehicle issues, parts, and completed work for service documentation.",
+          microphonePermission: "Allow Heinicus to access your microphone for video documentation of vehicle issues.",
+          recordAudioAndroid: true
         }
       ],
       [
@@ -118,7 +142,10 @@ export default {
     extra: {
       eas: {
         projectId: process.env.EAS_PROJECT_ID || "your-project-id"
-      }
+      },
+      // Environment variables accessible via expo-constants
+      apiUrl: process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000",
+      environment: process.env.EXPO_PUBLIC_ENVIRONMENT || "development"
     }
   }
 };
