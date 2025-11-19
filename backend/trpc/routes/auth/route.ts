@@ -54,7 +54,7 @@ export const authRouter = createTRPCRouter({
           process.env.DEV_CUSTOMER_EMAIL,
         ].filter(Boolean);
 
-        if (devEmails.includes(input.email)) {
+        if (devEmails.map(e => e.toLowerCase()).includes(input.email.toLowerCase())) {
           return {
             success: false,
             error: 'An account with this email already exists'
