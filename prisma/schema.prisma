@@ -1,0 +1,217 @@
+// Heinicus Mobile Mechanic App - Prisma Schema
+// Database: PostgreSQL (Supabase)
+// Generated: 2025-11-18
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Role {
+  ADMIN
+  MECHANIC
+  CUSTOMER
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+enum ServiceRequestStatus {
+  PENDING
+  QUOTED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum QuoteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+// ============================================================================
+// USER & AUTH MODELS
+// ============================================================================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         Role     @default(CUSTOMER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  refreshTokens             RefreshToken[]
+  vehicles                  Vehicle[]
+  serviceRequestsAsCustomer ServiceRequest[] @relation("CustomerServiceRequests")
+  serviceRequestsAsMechanic ServiceRequest[] @relation("MechanicServiceRequests")
+  mechanicProfile           Mechanic?
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ============================================================================
+// MECHANIC MODEL
+// ============================================================================
+
+model Mechanic {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  verificationStatus VerificationStatus @default(PENDING)
+  skills             String[] // Array of skills: "brake repair", "oil change", etc.
+  availabilityRadius Int                @default(25) // Miles from location
+  latitude           Float? // Mechanic's base location
+  longitude          Float?
+  bio                String?            @db.Text
+  yearsExperience    Int?
+  certifications     String[] // Future: certification names/IDs
+  insuranceDocUrl    String? // Future: link to insurance document
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  // Relations
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quotes Quote[]
+
+  @@index([verificationStatus])
+  @@index([userId])
+  @@map("mechanics")
+}
+
+// ============================================================================
+// VEHICLE MODEL
+// ============================================================================
+
+model Vehicle {
+  id        String   @id @default(cuid())
+  vin       String?  @unique // VIN can be optional for older vehicles
+  year      Int
+  make      String
+  model     String
+  trim      String?
+  color     String?
+  odometer  Int? // Current mileage
+  userId    String // Owner (customer)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceRequests ServiceRequest[]
+
+  @@index([userId])
+  @@index([vin])
+  @@map("vehicles")
+}
+
+// ============================================================================
+// SERVICE REQUEST (JOB) MODEL
+// ============================================================================
+
+model ServiceRequest {
+  id          String               @id @default(cuid())
+  title       String
+  description String               @db.Text
+  status      ServiceRequestStatus @default(PENDING)
+  customerId  String
+  mechanicId  String? // Assigned mechanic (nullable until assigned)
+  vehicleId   String
+
+  // Location information
+  latitude  Float?
+  longitude Float?
+  address   String?
+
+  // Scheduling
+  preferredDate DateTime?
+  completedAt   DateTime?
+
+  // Media (future)
+  imageUrls String[] // URLs to uploaded images
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  customer User    @relation("CustomerServiceRequests", fields: [customerId], references: [id], onDelete: Restrict)
+  mechanic User?   @relation("MechanicServiceRequests", fields: [mechanicId], references: [id], onDelete: SetNull)
+  vehicle  Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  quotes   Quote[]
+
+  @@index([customerId])
+  @@index([mechanicId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("service_requests")
+}
+
+// ============================================================================
+// QUOTE MODEL
+// ============================================================================
+
+model Quote {
+  id               String      @id @default(cuid())
+  serviceRequestId String
+  mechanicId       String
+  amount           Decimal     @db.Decimal(10, 2) // Up to $99,999,999.99
+  description      String      @db.Text
+  status           QuoteStatus @default(PENDING)
+  laborHours       Decimal?    @db.Decimal(5, 2) // Estimated labor hours
+  partsBreakdown   String?     @db.Text // JSON or text description of parts
+  notes            String?     @db.Text // Additional notes for customer
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  rejectedAt       DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  // Relations
+  serviceRequest ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  mechanic       Mechanic       @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
+
+  @@index([serviceRequestId])
+  @@index([mechanicId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("quotes")
+}
