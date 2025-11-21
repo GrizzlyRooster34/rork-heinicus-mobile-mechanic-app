@@ -1,83 +1,33 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
 import * as Icons from 'lucide-react-native';
-import { useAppStore } from '@/stores/app-store';
+import { trpc } from '@/lib/trpc';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface ReportsAnalyticsProps {
   mechanicId: string;
 }
 
 export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
-  const { serviceRequests, quotes, jobLogs, getTotalRevenue, getPaymentHistory } = useAppStore();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
 
-  // Calculate date ranges
-  const now = new Date();
-  const getDateRange = (period: typeof selectedPeriod) => {
-    const end = new Date(now);
-    const start = new Date(now);
-    
-    switch (period) {
-      case 'week':
-        start.setDate(start.getDate() - 7);
-        break;
-      case 'month':
-        start.setMonth(start.getMonth() - 1);
-        break;
-      case 'quarter':
-        start.setMonth(start.getMonth() - 3);
-        break;
-      case 'year':
-        start.setFullYear(start.getFullYear() - 1);
-        break;
-    }
-    
-    return { start, end };
-  };
+  // Fetch analytics data from tRPC
+  const { data: analyticsData, isLoading, error } = trpc.analytics.getMechanicAnalytics.useQuery({
+    mechanicId,
+    period: selectedPeriod,
+  });
 
-  const { start: periodStart, end: periodEnd } = getDateRange(selectedPeriod);
+  // Show error if data fetch failed
+  if (error) {
+    Alert.alert('Error', 'Failed to load analytics data. Please try again.');
+  }
 
-  // Calculate metrics
-  const completedJobs = serviceRequests.filter(r => 
-    r.status === 'completed' && 
-    r.completedAt && 
-    r.completedAt >= periodStart && 
-    r.completedAt <= periodEnd
-  );
-
-  const totalRevenue = getTotalRevenue(periodStart, periodEnd);
-  const averageJobValue = completedJobs.length > 0 ? totalRevenue / completedJobs.length : 0;
-
-  const totalWorkTime = jobLogs
-    .filter(log => 
-      log.mechanicId === mechanicId &&
-      log.startTime >= periodStart && 
-      log.startTime <= periodEnd &&
-      log.endTime
-    )
-    .reduce((total, log) => {
-      if (log.endTime) {
-        return total + (log.endTime.getTime() - log.startTime.getTime());
-      }
-      return total;
-    }, 0);
-
-  const averageJobTime = completedJobs.length > 0 ? totalWorkTime / completedJobs.length : 0;
-
-  // Service type breakdown
-  const serviceBreakdown = completedJobs.reduce((acc, job) => {
-    acc[job.type] = (acc[job.type] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const topServices = Object.entries(serviceBreakdown)
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 5);
-
-  // Customer satisfaction (mock data for now)
-  const customerRating = 4.8;
-  const totalReviews = completedJobs.length;
+  // Extract data from analytics response
+  const metrics = analyticsData?.metrics;
+  const performance = analyticsData?.performance;
+  const topServices = analyticsData?.topServices || [];
+  const revenueBreakdown = analyticsData?.revenueBreakdown;
 
   const periods = [
     { key: 'week', label: 'Week' },
@@ -98,6 +48,15 @@ export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
       currency: 'USD',
     }).format(amount);
   };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <LoadingSpinner />
+        <Text style={styles.loadingText}>Loading analytics...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -130,7 +89,7 @@ export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
             <View style={styles.metricIcon}>
               <Icons.DollarSign size={24} color={Colors.success} />
             </View>
-            <Text style={styles.metricValue}>{formatCurrency(totalRevenue)}</Text>
+            <Text style={styles.metricValue}>{formatCurrency(metrics?.totalRevenue || 0)}</Text>
             <Text style={styles.metricLabel}>Total Revenue</Text>
           </View>
 
@@ -138,7 +97,7 @@ export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
             <View style={styles.metricIcon}>
               <Icons.CheckCircle size={24} color={Colors.primary} />
             </View>
-            <Text style={styles.metricValue}>{completedJobs.length}</Text>
+            <Text style={styles.metricValue}>{metrics?.completedJobs || 0}</Text>
             <Text style={styles.metricLabel}>Jobs Completed</Text>
           </View>
 
@@ -146,7 +105,7 @@ export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
             <View style={styles.metricIcon}>
               <Icons.TrendingUp size={24} color={Colors.warning} />
             </View>
-            <Text style={styles.metricValue}>{formatCurrency(averageJobValue)}</Text>
+            <Text style={styles.metricValue}>{formatCurrency(metrics?.averageJobValue || 0)}</Text>
             <Text style={styles.metricLabel}>Avg Job Value</Text>
           </View>
 
@@ -154,7 +113,7 @@ export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
             <View style={styles.metricIcon}>
               <Icons.Clock size={24} color={Colors.mechanic} />
             </View>
-            <Text style={styles.metricValue}>{formatTime(averageJobTime)}</Text>
+            <Text style={styles.metricValue}>{formatTime(metrics?.averageJobTime || 0)}</Text>
             <Text style={styles.metricLabel}>Avg Job Time</Text>
           </View>
         </View>
@@ -168,14 +127,14 @@ export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
             <View style={styles.performanceItem}>
               <Icons.Star size={20} color={Colors.warning} />
               <View style={styles.performanceContent}>
-                <Text style={styles.performanceValue}>{customerRating}</Text>
+                <Text style={styles.performanceValue}>{performance?.averageRating?.toFixed(1) || '0.0'}</Text>
                 <Text style={styles.performanceLabel}>Customer Rating</Text>
               </View>
             </View>
             <View style={styles.performanceItem}>
               <Icons.MessageSquare size={20} color={Colors.primary} />
               <View style={styles.performanceContent}>
-                <Text style={styles.performanceValue}>{totalReviews}</Text>
+                <Text style={styles.performanceValue}>{performance?.totalReviews || 0}</Text>
                 <Text style={styles.performanceLabel}>Total Reviews</Text>
               </View>
             </View>
@@ -185,14 +144,14 @@ export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
             <View style={styles.performanceItem}>
               <Icons.Clock size={20} color={Colors.success} />
               <View style={styles.performanceContent}>
-                <Text style={styles.performanceValue}>{formatTime(totalWorkTime)}</Text>
+                <Text style={styles.performanceValue}>{formatTime(metrics?.totalWorkTime || 0)}</Text>
                 <Text style={styles.performanceLabel}>Total Work Time</Text>
               </View>
             </View>
             <View style={styles.performanceItem}>
               <Icons.Target size={20} color={Colors.mechanic} />
               <View style={styles.performanceContent}>
-                <Text style={styles.performanceValue}>95%</Text>
+                <Text style={styles.performanceValue}>{performance?.onTimeRate || 0}%</Text>
                 <Text style={styles.performanceLabel}>On-Time Rate</Text>
               </View>
             </View>
@@ -205,22 +164,22 @@ export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
         <Text style={styles.sectionTitle}>Top Services</Text>
         <View style={styles.servicesCard}>
           {topServices.length > 0 ? (
-            topServices.map(([serviceType, count], index) => (
-              <View key={serviceType} style={styles.serviceRow}>
+            topServices.map((service, index) => (
+              <View key={service.category} style={styles.serviceRow}>
                 <View style={styles.serviceRank}>
                   <Text style={styles.serviceRankText}>{index + 1}</Text>
                 </View>
                 <View style={styles.serviceContent}>
                   <Text style={styles.serviceName}>
-                    {serviceType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    {service.category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </Text>
-                  <Text style={styles.serviceCount}>{count} jobs</Text>
+                  <Text style={styles.serviceCount}>{service.count} jobs</Text>
                 </View>
                 <View style={styles.serviceBar}>
-                  <View 
+                  <View
                     style={[
                       styles.serviceBarFill,
-                      { width: `${(count / Math.max(...topServices.map(([,c]) => c))) * 100}%` }
+                      { width: `${(service.count / Math.max(...topServices.map(s => s.count))) * 100}%` }
                     ]}
                   />
                 </View>
@@ -235,28 +194,28 @@ export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
         </View>
       </View>
 
-      {/* Revenue Trend */}
+      {/* Revenue Breakdown */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Revenue Breakdown</Text>
         <View style={styles.revenueCard}>
           <View style={styles.revenueRow}>
             <View style={styles.revenueItem}>
               <Text style={styles.revenueLabel}>Labor</Text>
-              <Text style={styles.revenueValue}>{formatCurrency(totalRevenue * 0.7)}</Text>
+              <Text style={styles.revenueValue}>{formatCurrency(revenueBreakdown?.labor || 0)}</Text>
             </View>
             <View style={styles.revenueItem}>
               <Text style={styles.revenueLabel}>Parts</Text>
-              <Text style={styles.revenueValue}>{formatCurrency(totalRevenue * 0.3)}</Text>
+              <Text style={styles.revenueValue}>{formatCurrency(revenueBreakdown?.parts || 0)}</Text>
             </View>
           </View>
           <View style={styles.revenueRow}>
             <View style={styles.revenueItem}>
-              <Text style={styles.revenueLabel}>Travel Fees</Text>
-              <Text style={styles.revenueValue}>{formatCurrency(completedJobs.length * 25)}</Text>
+              <Text style={styles.revenueLabel}>Fees</Text>
+              <Text style={styles.revenueValue}>{formatCurrency(revenueBreakdown?.fees || 0)}</Text>
             </View>
             <View style={styles.revenueItem}>
-              <Text style={styles.revenueLabel}>Emergency</Text>
-              <Text style={styles.revenueValue}>{formatCurrency(totalRevenue * 0.1)}</Text>
+              <Text style={styles.revenueLabel}>Total</Text>
+              <Text style={styles.revenueValue}>{formatCurrency(metrics?.totalRevenue || 0)}</Text>
             </View>
           </View>
         </View>
@@ -292,6 +251,16 @@ export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: Colors.textSecondary,
   },
   periodSelector: {
     flexDirection: 'row',

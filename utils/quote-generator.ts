@@ -155,11 +155,13 @@ export function generateSmartQuote(
     description,
     laborCost,
     partsCost,
+    travelCost: travelFee,
     travelFee,
     totalCost,
     estimatedDuration: laborHours,
     validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     status: 'pending',
+    createdAt: new Date(),
   };
 }
 
@@ -181,6 +183,18 @@ function generateQuoteDescription(
     ac_service: 'A/C System Service',
     general_repair: 'General Automotive Repair',
     emergency_roadside: 'Emergency Roadside Assistance',
+    motorcycle_oil_change: 'Motorcycle Oil Change Service',
+    motorcycle_brake_inspection: 'Motorcycle Brake Inspection',
+    motorcycle_tire_replacement: 'Motorcycle Tire Replacement',
+    motorcycle_chain_service: 'Motorcycle Chain Service',
+    motorcycle_battery_service: 'Motorcycle Battery Service',
+    motorcycle_diagnostic: 'Motorcycle Diagnostic',
+    scooter_oil_change: 'Scooter Oil Change Service',
+    scooter_brake_inspection: 'Scooter Brake Inspection',
+    scooter_tire_replacement: 'Scooter Tire Replacement',
+    scooter_carburetor_clean: 'Scooter Carburetor Cleaning',
+    scooter_battery_service: 'Scooter Battery Service',
+    scooter_diagnostic: 'Scooter Diagnostic',
   };
   
   let description = `Professional ${serviceNames[serviceType]}`;
@@ -221,7 +235,7 @@ export function calculateMaintenanceDue(
   
   if (!interval) return null;
   
-  return new Date(lastServiceDate.getTime() + interval.intervalDays * 24 * 60 * 60 * 1000);
+  return new Date(lastServiceDate.getTime() + (interval.intervalDays || 90) * 24 * 60 * 60 * 1000);
 }
 
 export function getMaintenanceIntervals(): MaintenanceInterval[] {

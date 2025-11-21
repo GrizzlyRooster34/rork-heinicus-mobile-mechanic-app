@@ -1,22 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Alert, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Alert, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { Button } from '@/components/Button';
 import { useAuthStore } from '@/stores/auth-store';
-import { ENV_CONFIG, validateEmail, validatePassword } from '@/utils/firebase-config';
+import { ENV_CONFIG } from '@/utils/firebase-config';
+import { ValidatedForm, FormSection, FieldGroup } from '@/components/forms/ValidatedForm';
+import { EmailInput, PasswordInput, NameInput, PhoneInput } from '@/components/forms/ValidatedTextInput';
+import { validateEmail, validatePassword, validateName, validatePhoneNumber, sanitizeEmail, sanitizeName, sanitizePhoneNumber } from '@/utils/validation';
 import * as Icons from 'lucide-react-native';
 import AdminDualLoginToggle from '@/components/AdminDualLoginToggle';
 
 export default function AuthScreen() {
   const { login, signup, isLoading, isAuthenticated, user } = useAuthStore();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [role, setRole] = useState<'customer' | 'mechanic'>('customer');
+  const [role, setRole] = useState<'CUSTOMER' | 'MECHANIC'>('CUSTOMER');
   const [isLoginMode, setIsLoginMode] = useState(true);
+  const [isOfflineMode, setIsOfflineMode] = useState(
+    process.env.EXPO_PUBLIC_API_URL === 'disabled'
+  );
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -24,11 +25,11 @@ export default function AuthScreen() {
       console.log('User authenticated:', { userId: user.id, role: user.role, timestamp: new Date() });
       
       // Redirect based on role
-      if (user.role === 'customer') {
+      if (user.role === 'CUSTOMER') {
         router.replace('/(customer)');
-      } else if (user.role === 'mechanic') {
+      } else if (user.role === 'MECHANIC') {
         router.replace('/(mechanic)');
-      } else if (user.role === 'admin') {
+      } else if (user.role === 'ADMIN') {
         router.replace('/(admin)');
       } else {
         // Invalid role
@@ -38,76 +39,92 @@ export default function AuthScreen() {
     }
   }, [isAuthenticated, user]);
 
-  const handleAuth = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
+  const handleOfflineMode = () => {
+    Alert.alert(
+      'Demo Mode',
+      'Choose your role to explore the app in demo mode (no server required)',
+      [
+        { text: 'Customer', onPress: () => router.replace('/(customer)') },
+        { text: 'Mechanic', onPress: () => router.replace('/(mechanic)') },
+        { text: 'Admin', onPress: () => router.replace('/(admin)') },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
 
-    if (!isLoginMode) {
-      // Sign up validation
-      if (!firstName.trim() || !lastName.trim()) {
-        Alert.alert('Error', 'Please enter your first and last name');
-        return;
-      }
+  // Form configuration for login
+  const loginFormConfig = {
+    email: {
+      required: true,
+      validateOnChange: true,
+      validateOnBlur: true,
+      customValidator: (value: string) => validateEmail(value),
+    },
+    password: {
+      required: true,
+      validateOnBlur: true,
+      minLength: 1,
+    },
+  };
 
-      // Email validation
-      if (!validateEmail(email.trim())) {
-        Alert.alert('Error', 'Please enter a valid email address');
-        return;
-      }
+  // Form configuration for signup
+  const signupFormConfig = {
+    firstName: {
+      required: true,
+      validateOnChange: true,
+      validateOnBlur: true,
+      customValidator: (value: string) => validateName(value, 'First name'),
+    },
+    lastName: {
+      required: true,
+      validateOnChange: true,
+      validateOnBlur: true,
+      customValidator: (value: string) => validateName(value, 'Last name'),
+    },
+    email: {
+      required: true,
+      validateOnChange: true,
+      validateOnBlur: true,
+      customValidator: (value: string) => validateEmail(value),
+    },
+    password: {
+      required: true,
+      validateOnChange: true,
+      validateOnBlur: true,
+      customValidator: (value: string) => validatePassword(value),
+    },
+    phone: {
+      required: false,
+      validateOnChange: true,
+      validateOnBlur: true,
+      customValidator: (value: string) => validatePhoneNumber(value),
+    },
+  };
 
-      // Password validation
-      const passwordValidation = validatePassword(password);
-      if (!passwordValidation.isValid) {
-        Alert.alert('Error', passwordValidation.errors.join('\n'));
-        return;
-      }
-    }
-
-    // Production logging
-    console.log('Authentication attempt:', { 
-      email: email.trim(), 
-      mode: isLoginMode ? 'login' : 'signup',
-      role: isLoginMode ? 'N/A' : role,
-      timestamp: new Date() 
-    });
-
-    let success = false;
-    
-    if (isLoginMode) {
-      success = await login(email.trim(), password);
-      if (!success) {
-        Alert.alert('Login Failed', 'Invalid email or password. Please try again.');
-      }
-    } else {
-      success = await signup(email.trim(), password, firstName.trim(), lastName.trim(), phone.trim() || undefined, role);
-      if (!success) {
-        Alert.alert('Sign Up Failed', 'An account with this email already exists. Please try logging in instead.');
-      }
-    }
-
+  const handleLogin = async (values: Record<string, string>) => {
+    const success = await login(values.email, values.password);
     if (!success) {
-      console.log('Authentication failed:', { 
-        email: email.trim(), 
-        mode: isLoginMode ? 'login' : 'signup',
-        timestamp: new Date() 
-      });
+      Alert.alert('Login Failed', 'Invalid email or password. Please try again.');
     }
   };
 
-  const resetForm = () => {
-    setEmail('');
-    setPassword('');
-    setFirstName('');
-    setLastName('');
-    setPhone('');
-    setRole('customer');
+  const handleSignup = async (values: Record<string, string>) => {
+    const success = await signup(
+      values.email,
+      values.password,
+      values.firstName,
+      values.lastName,
+      values.phone || undefined,
+      role
+    );
+    if (!success) {
+      Alert.alert('Sign Up Failed', 'An account with this email already exists. Please try logging in instead.');
+    }
   };
 
   const switchMode = () => {
     setIsLoginMode(!isLoginMode);
-    resetForm();
+    setRole('CUSTOMER');
   };
 
   return (
@@ -133,123 +150,137 @@ export default function AuthScreen() {
           }
         </Text>
 
-        {!isLoginMode && (
-          <>
-            <View style={styles.nameRow}>
-              <View style={[styles.inputGroup, styles.nameInput]}>
-                <Text style={styles.inputLabel}>First Name *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  placeholder="John"
-                  placeholderTextColor={Colors.textMuted}
-                  autoCapitalize="words"
-                  autoCorrect={false}
+        {isLoginMode ? (
+          <ValidatedForm
+            config={loginFormConfig}
+            onSubmit={handleLogin}
+            submitButtonTitle={isLoading ? 'Signing In...' : 'Sign In'}
+            submitButtonLoadingTitle="Signing In..."
+            showSubmitButton={true}
+            scrollable={false}
+          >
+            {(formApi) => (
+              <>
+                <EmailInput
+                  label="Email Address"
+                  required
+                  sanitize={sanitizeEmail}
+                  {...formApi.getFieldProps('email')}
                 />
-              </View>
-              <View style={[styles.inputGroup, styles.nameInput]}>
-                <Text style={styles.inputLabel}>Last Name *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={lastName}
-                  onChangeText={setLastName}
-                  placeholder="Doe"
-                  placeholderTextColor={Colors.textMuted}
-                  autoCapitalize="words"
-                  autoCorrect={false}
+                <PasswordInput
+                  label="Password"
+                  required
+                  placeholder="Enter your password"
+                  {...formApi.getFieldProps('password')}
                 />
-              </View>
-            </View>
+              </>
+            )}
+          </ValidatedForm>
+        ) : (
+          <ValidatedForm
+            config={signupFormConfig}
+            onSubmit={handleSignup}
+            submitButtonTitle={isLoading ? 'Creating Account...' : 'Create Account'}
+            submitButtonLoadingTitle="Creating Account..."
+            showSubmitButton={true}
+            scrollable={false}
+          >
+            {(formApi) => (
+              <>
+                <FormSection title="Personal Information">
+                  <FieldGroup direction="row" spacing="medium">
+                    <NameInput
+                      label="First Name"
+                      required
+                      placeholder="John"
+                      sanitize={sanitizeName}
+                      containerStyle={styles.nameInput}
+                      {...formApi.getFieldProps('firstName')}
+                    />
+                    <NameInput
+                      label="Last Name"
+                      required
+                      placeholder="Doe"
+                      sanitize={sanitizeName}
+                      containerStyle={styles.nameInput}
+                      {...formApi.getFieldProps('lastName')}
+                    />
+                  </FieldGroup>
+                </FormSection>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Account Type *</Text>
-              <View style={styles.roleSelector}>
-                <TouchableOpacity
-                  style={[
-                    styles.roleOption,
-                    role === 'customer' && styles.roleOptionActive
-                  ]}
-                  onPress={() => setRole('customer')}
-                >
-                  <Icons.User size={20} color={role === 'customer' ? Colors.white : Colors.textSecondary} />
-                  <Text style={[
-                    styles.roleOptionText,
-                    role === 'customer' && styles.roleOptionTextActive
-                  ]}>
-                    Customer
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.roleOption,
-                    role === 'mechanic' && styles.roleOptionActive
-                  ]}
-                  onPress={() => setRole('mechanic')}
-                >
-                  <Icons.Wrench size={20} color={role === 'mechanic' ? Colors.white : Colors.textSecondary} />
-                  <Text style={[
-                    styles.roleOptionText,
-                    role === 'mechanic' && styles.roleOptionTextActive
-                  ]}>
-                    Mechanic
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </>
+                <FormSection title="Account Details">
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Account Type *</Text>
+                    <View style={styles.roleSelector}>
+                      <TouchableOpacity
+                        style={[
+                          styles.roleOption,
+                          role === 'CUSTOMER' && styles.roleOptionActive
+                        ]}
+                        onPress={() => setRole('CUSTOMER')}
+                      >
+                        <Icons.User size={20} color={role === 'CUSTOMER' ? Colors.white : Colors.textSecondary} />
+                        <Text style={[
+                          styles.roleOptionText,
+                          role === 'CUSTOMER' && styles.roleOptionTextActive
+                        ]}>
+                          Customer
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.roleOption,
+                          role === 'MECHANIC' && styles.roleOptionActive
+                        ]}
+                        onPress={() => setRole('MECHANIC')}
+                      >
+                        <Icons.Wrench size={20} color={role === 'MECHANIC' ? Colors.white : Colors.textSecondary} />
+                        <Text style={[
+                          styles.roleOptionText,
+                          role === 'MECHANIC' && styles.roleOptionTextActive
+                        ]}>
+                          Mechanic
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <EmailInput
+                    label="Email Address"
+                    required
+                    sanitize={sanitizeEmail}
+                    {...formApi.getFieldProps('email')}
+                  />
+                  
+                  <PasswordInput
+                    label="Password"
+                    required
+                    placeholder="Create a password (min 6 characters)"
+                    helpText="Use at least 6 characters with a mix of letters, numbers, and symbols"
+                    {...formApi.getFieldProps('password')}
+                  />
+                  
+                  <PhoneInput
+                    label="Phone Number (Optional)"
+                    placeholder="(555) 123-4567"
+                    helpText="We'll use this to contact you about your service"
+                    sanitize={sanitizePhoneNumber}
+                    {...formApi.getFieldProps('phone')}
+                  />
+                </FormSection>
+              </>
+            )}
+          </ValidatedForm>
         )}
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Email Address *</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            placeholder="john@example.com"
-            placeholderTextColor={Colors.textMuted}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
+        {isOfflineMode && (
+          <Button
+            title="🚀 Demo Mode (No Login Required)"
+            onPress={handleOfflineMode}
+            variant="outline"
+            style={styles.offlineButton}
           />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Password *</Text>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            placeholder={isLoginMode ? "Enter your password" : "Create a password (min 6 characters)"}
-            placeholderTextColor={Colors.textMuted}
-            secureTextEntry
-          />
-        </View>
-
-        {!isLoginMode && (
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Phone Number (Optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="(555) 123-4567"
-              placeholderTextColor={Colors.textMuted}
-              keyboardType="phone-pad"
-            />
-          </View>
         )}
-
-        <Button
-          title={
-            isLoading 
-              ? (isLoginMode ? 'Signing In...' : 'Creating Account...') 
-              : (isLoginMode ? 'Sign In' : 'Create Account')
-          }
-          onPress={handleAuth}
-          disabled={isLoading}
-          style={styles.authButton}
-        />
 
         <TouchableOpacity
           style={styles.switchModeButton}
@@ -275,9 +306,10 @@ export default function AuthScreen() {
               <TouchableOpacity
                 style={styles.quickAccessButton}
                 onPress={() => {
-                  setEmail('customer@example.com');
-                  setPassword('password');
-                  setIsLoginMode(true);
+                  handleLogin({
+                    email: 'customer@example.com',
+                    password: process.env.EXPO_PUBLIC_CUSTOMER_PASSWORD || '',
+                  });
                 }}
               >
                 <Text style={styles.quickAccessText}>Customer Login</Text>
@@ -285,9 +317,10 @@ export default function AuthScreen() {
               <TouchableOpacity
                 style={styles.quickAccessButton}
                 onPress={() => {
-                  setEmail('matthew.heinen.2014@gmail.com');
-                  setPassword('RoosTer669072!@');
-                  setIsLoginMode(true);
+                  handleLogin({
+                    email: 'matthew.heinen.2014@gmail.com',
+                    password: process.env.EXPO_PUBLIC_ADMIN_PASSWORD || '',
+                  });
                 }}
               >
                 <Text style={styles.quickAccessText}>Admin (Cody)</Text>
@@ -295,9 +328,10 @@ export default function AuthScreen() {
               <TouchableOpacity
                 style={styles.quickAccessButton}
                 onPress={() => {
-                  setEmail('cody@heinicus.com');
-                  setPassword('RoosTer669072!@');
-                  setIsLoginMode(true);
+                  handleLogin({
+                    email: 'cody@heinicus.com',
+                    password: process.env.EXPO_PUBLIC_MECHANIC_PASSWORD || '',
+                  });
                 }}
               >
                 <Text style={styles.quickAccessText}>Mechanic (Cody)</Text>
@@ -445,6 +479,10 @@ const styles = StyleSheet.create({
   authButton: {
     marginTop: 8,
     marginBottom: 16,
+  },
+  offlineButton: {
+    marginBottom: 16,
+    borderColor: Colors.success,
   },
   switchModeButton: {
     alignItems: 'center',

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Alert, Modal } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, StyleSheet, TextInput, Alert, Modal, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { SERVICE_CATEGORIES, getToolsForService, getRequiredToolsForService, getServicesForVehicleType, getToolLoadoutSuggestions } from '@/constants/services';
@@ -10,17 +10,20 @@ import { VinScanner } from '@/components/VinScanner';
 import { AIAssistant } from '@/components/AIAssistant';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
+import { useAdminSettingsStore } from '@/stores/admin-settings-store';
 import { ServiceRequest, ServiceType, DiagnosticResult, Vehicle, VehicleType } from '@/types/service';
 import { generateSmartQuote } from '@/utils/quote-generator';
 import { ENV_CONFIG, logProductionEvent } from '@/utils/firebase-config';
+import { logger } from '@/utils/logger';
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
-import * as Icons from 'lucide-react-native';
+import { Car, Truck, Bike, MapPin, Camera, Bot, Shield, Brain, CheckCircle } from 'lucide-react-native';
 
 export default function CustomerRequestScreen() {
   const params = useLocalSearchParams();
-  const { addServiceRequest, addQuote, vehicles, currentLocation, setCurrentLocation, updateServiceRequest, addVehicle, logEvent } = useAppStore();
+  const { addServiceRequest, addQuote, vehicles, currentLocation, setCurrentLocation, updateServiceRequest, addVehicle } = useAppStore();
   const { user } = useAuthStore();
+  const { system } = useAdminSettingsStore();
   
   const [selectedService, setSelectedService] = useState<ServiceType | null>(
     params.serviceType as ServiceType || null
@@ -32,6 +35,7 @@ export default function CustomerRequestScreen() {
   );
   const [selectedParts, setSelectedParts] = useState<string[]>([]);
   const [showVinScanner, setShowVinScanner] = useState(false);
+  const [, setLocationError] = useState<string | null>(null);
   const [vinNumber, setVinNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiDiagnosis, setAiDiagnosis] = useState<DiagnosticResult | undefined>(
@@ -41,9 +45,153 @@ export default function CustomerRequestScreen() {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType>('car');
 
+  const getCurrentLocation = useCallback(async () => {
+    if (Platform.OS === 'web') {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setCurrentLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+          },
+          (error) => logger.warn('Location error', 'CustomerRequest', error)
+        );
+      }
+    } else {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setLocationError('Permission to access location was denied');
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({});
+        setCurrentLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+      } catch (error) {
+        logger.error('Failed to get current location', 'CustomerRequest', error);
+        setLocationError('Failed to get location');
+      }
+    }
+  }, [setCurrentLocation]);
+
+  // Define handleSubmit before useEffect that uses it (line 207)
+  const handleSubmit = useCallback(async () => {
+    if (!selectedService) {
+      Alert.alert('Error', 'Please select a service type.');
+      return;
+    }
+
+    if (!description.trim()) {
+      Alert.alert('Error', 'Please provide a description of the issue.');
+      return;
+    }
+
+    if (!user) {
+      Alert.alert('Error', 'Please log in to submit a request.');
+      return;
+    }
+
+    if (!selectedVehicle) {
+      Alert.alert('Vehicle Required', 'Please select or add a vehicle first.', [
+        { text: 'Add Vehicle', onPress: () => setShowVinScanner(true) },
+        { text: 'Cancel', style: 'cancel' }
+      ]);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Get required tools for this service
+      const requiredTools = getRequiredToolsForService(selectedService).map(tool => tool.id);
+
+      const request: ServiceRequest = {
+        id: Date.now().toString(),
+        type: selectedService,
+        description: description.trim(),
+        urgency,
+        status: 'pending',
+        createdAt: new Date(),
+        photos: photos.length > 0 ? photos : undefined,
+        location: currentLocation ? {
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude,
+          address: currentLocation.address
+        } : undefined,
+        vehicleId: selectedVehicle.id,
+        vehicleType: selectedVehicle.vehicleType,
+        vinNumber: vinNumber || selectedVehicle.vin || undefined,
+        aiDiagnosis: aiDiagnosis || undefined,
+        requiredTools, // Set required tools for this service
+        toolsChecked: {}, // Initialize empty tools check
+      };
+
+      addServiceRequest(request);
+
+      // Production logging
+      logProductionEvent('service_request_created', {
+        requestId: request.id,
+        serviceType: selectedService,
+        urgency,
+        hasAIDiagnosis: !!aiDiagnosis,
+        vehicleId: selectedVehicle.id,
+        vehicleType: selectedVehicle.vehicleType,
+        toolsCount: requiredTools.length
+      });
+
+      // Generate smart quote automatically
+      const quote = generateSmartQuote(request.id, {
+        serviceType: selectedService,
+        urgency,
+        description: description.trim(),
+        selectedParts: selectedParts.length > 0 ? selectedParts : undefined,
+        aiDiagnosis,
+        vehicle: selectedVehicle,
+      });
+
+      addQuote(quote);
+      updateServiceRequest(request.id, { status: 'quoted' });
+
+      // Production logging
+      logProductionEvent('quote_generated', {
+        quoteId: quote.id,
+        requestId: request.id,
+        totalCost: quote.totalCost,
+        laborCost: quote.laborCost,
+        partsCost: quote.partsCost,
+        vehicleType: selectedVehicle.vehicleType
+      });
+
+      Alert.alert(
+        'Request Submitted',
+        'Your service request has been submitted and a quote has been generated automatically.',
+        [
+          { text: 'View Quote', onPress: () => router.push('/quotes') }
+        ]
+      );
+
+      // Reset form
+      setDescription('');
+      setPhotos([]);
+      setUrgency('medium');
+      setSelectedService(null);
+      setSelectedParts([]);
+      setVinNumber('');
+      setAiDiagnosis(undefined);
+    } catch {
+      Alert.alert('Error', 'Failed to submit request. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [selectedService, description, user, selectedVehicle, urgency, photos, currentLocation, vinNumber, aiDiagnosis, selectedParts, addServiceRequest, addQuote, updateServiceRequest, router]);
+
   useEffect(() => {
     getCurrentLocation();
-  }, []);
+  }, [getCurrentLocation]);
 
   useEffect(() => {
     // Set selected vehicle from params or default to first vehicle
@@ -57,7 +205,7 @@ export default function CustomerRequestScreen() {
       setSelectedVehicle(vehicles[0]);
       setSelectedVehicleType(vehicles[0].vehicleType);
     }
-  }, [vehicles, params.vehicleId]);
+  }, [vehicles, params.vehicleId, selectedVehicle]);
 
   useEffect(() => {
     // Auto-generate quote if requested
@@ -67,48 +215,9 @@ export default function CustomerRequestScreen() {
         handleSubmit();
       }, 500);
     }
-  }, [params.autoQuote, selectedService, description, selectedVehicle]);
+  }, [params.autoQuote, selectedService, description, selectedVehicle, handleSubmit]);
 
-  const getCurrentLocation = async () => {
-    if (Platform.OS === 'web') {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setCurrentLocation({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            });
-          },
-          (error) => console.log('Location error:', error)
-        );
-      }
-      return;
-    }
-
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required to provide service at your location.');
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({});
-      const address = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
-
-      setCurrentLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        address: address[0] ? `${address[0].street}, ${address[0].city}` : undefined,
-      });
-    } catch (error) {
-      console.log('Location error:', error);
-    }
-  };
-
-  const handleVinScanned = (vinData: any) => {
+  const handleVinScanned = (vinData: { vin: string; vehicleType: VehicleType; make?: string; model?: string; year?: number; trim?: string; engine?: string }) => {
     setVinNumber(vinData.vin);
     setSelectedVehicleType(vinData.vehicleType);
     setShowVinScanner(false);
@@ -138,14 +247,16 @@ Would you like to add this vehicle to your profile?`,
             onPress: () => {
               const newVehicle: Vehicle = {
                 id: Date.now().toString(),
-                make: vinData.make,
-                model: vinData.model,
-                year: vinData.year,
+                customerId: user?.id || Date.now().toString(),
+                make: vinData.make || 'Unknown',
+                model: vinData.model || 'Unknown',
+                year: vinData.year || new Date().getFullYear(),
                 vehicleType: vinData.vehicleType,
                 vin: vinData.vin,
                 trim: vinData.trim,
                 engine: vinData.engine,
                 mileage: 0, // User can update this later
+                createdAt: new Date(),
               };
               addVehicle(newVehicle);
               setSelectedVehicle(newVehicle);
@@ -220,117 +331,9 @@ Would you like to add this vehicle to your profile?`,
       }
     }
     
-    return 'general_repair';
-  };
-
-  const handleSubmit = async () => {
-    if (!selectedService) {
-      Alert.alert('Error', 'Please select a service type.');
-      return;
-    }
-
-    if (!description.trim()) {
-      Alert.alert('Error', 'Please provide a description of the issue.');
-      return;
-    }
-
-    if (!user) {
-      Alert.alert('Error', 'Please log in to submit a request.');
-      return;
-    }
-
-    if (!selectedVehicle) {
-      Alert.alert('Vehicle Required', 'Please select or add a vehicle first.', [
-        { text: 'Add Vehicle', onPress: () => setShowVinScanner(true) },
-        { text: 'Cancel', style: 'cancel' }
-      ]);
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Get required tools for this service
-      const requiredTools = getRequiredToolsForService(selectedService).map(tool => tool.id);
-      
-      const request: ServiceRequest = {
-        id: Date.now().toString(),
-        type: selectedService,
-        description: description.trim(),
-        urgency,
-        status: 'pending',
-        createdAt: new Date(),
-        photos: photos.length > 0 ? photos : undefined,
-        location: currentLocation ? {
-          latitude: currentLocation.latitude,
-          longitude: currentLocation.longitude,
-          address: currentLocation.address
-        } : undefined,
-        vehicleId: selectedVehicle.id,
-        vehicleType: selectedVehicle.vehicleType,
-        vinNumber: vinNumber || selectedVehicle.vin || undefined,
-        aiDiagnosis: aiDiagnosis || undefined,
-        requiredTools, // Set required tools for this service
-        toolsChecked: {}, // Initialize empty tools check
-      };
-
-      addServiceRequest(request);
-
-      // Production logging
-      logProductionEvent('service_request_created', {
-        requestId: request.id,
-        serviceType: selectedService,
-        urgency,
-        hasAIDiagnosis: !!aiDiagnosis,
-        vehicleId: selectedVehicle.id,
-        vehicleType: selectedVehicle.vehicleType,
-        toolsCount: requiredTools.length
-      });
-
-      // Generate smart quote automatically
-      const quote = generateSmartQuote(request.id, {
-        serviceType: selectedService,
-        urgency,
-        description: description.trim(),
-        selectedParts: selectedParts.length > 0 ? selectedParts : undefined,
-        aiDiagnosis,
-        vehicle: selectedVehicle,
-      });
-
-      addQuote(quote);
-      updateServiceRequest(request.id, { status: 'quoted' });
-
-      // Production logging
-      logProductionEvent('quote_generated', {
-        quoteId: quote.id,
-        requestId: request.id,
-        totalCost: quote.totalCost,
-        laborCost: quote.laborCost,
-        partsCost: quote.partsCost,
-        vehicleType: selectedVehicle.vehicleType
-      });
-
-      Alert.alert(
-        'Request Submitted',
-        'Your service request has been submitted and a quote has been generated automatically.',
-        [
-          { text: 'View Quote', onPress: () => router.push('/quotes') }
-        ]
-      );
-
-      // Reset form
-      setDescription('');
-      setPhotos([]);
-      setUrgency('medium');
-      setSelectedService(null);
-      setSelectedParts([]);
-      setVinNumber('');
-      setAiDiagnosis(undefined);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to submit request. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Default fallback if no service matches
+    return vehicleType === 'motorcycle' ? 'motorcycle_diagnostic' :
+           vehicleType === 'scooter' ? 'scooter_diagnostic' : 'general_repair';
   };
 
   const selectedServiceData = selectedService ? 
@@ -377,12 +380,13 @@ Would you like to add this vehicle to your profile?`,
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.content}>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
         {/* Production Environment Indicator */}
         {ENV_CONFIG?.isProduction && (
           <View style={styles.productionBanner}>
-            <Icons.Shield size={16} color={Colors.success} />
+            <Shield size={16} color={Colors.success} />
             <Text style={styles.productionText}>Production Environment - Live Service</Text>
           </View>
         )}
@@ -396,7 +400,25 @@ Would you like to add this vehicle to your profile?`,
           {vehicles.length > 0 ? (
             <View style={styles.vehicleSelector}>
               {vehicles.map((vehicle) => {
-                const IconComponent = Icons[getVehicleTypeIcon(vehicle.vehicleType) as keyof typeof Icons] as any;
+                const getVehicleIcon = (type: VehicleType): typeof Car | typeof Truck | typeof Bike => {
+                  switch (type) {
+                    case 'car':
+                      return Car;
+                    case 'truck':
+                      return Truck;
+                    case 'suv':
+                      return Car;
+                    case 'van':
+                      return Truck;
+                    case 'motorcycle':
+                      return Bike;
+                    case 'scooter':
+                      return Bike;
+                    default:
+                      return Car;
+                  }
+                };
+                const IconComponent = getVehicleIcon(vehicle.vehicleType);
                 
                 return (
                   <View
@@ -465,50 +487,52 @@ Would you like to add this vehicle to your profile?`,
           )}
         </View>
 
-        {/* AI Assistant */}
-        <View style={styles.section}>
-          <View style={styles.aiHeader}>
-            <Text style={styles.sectionTitle}>Get AI-Powered Diagnosis</Text>
-            <Button
-              title={showAIAssistant ? 'Hide AI Assistant' : 'Use AI Assistant'}
-              variant="outline"
-              size="small"
-              onPress={() => setShowAIAssistant(!showAIAssistant)}
-              style={styles.toggleButton}
-            />
-          </View>
-          
-          {showAIAssistant && (
-            <AIAssistant
-              vehicle={selectedVehicle || undefined}
-              onDiagnosisComplete={handleAIDiagnosis}
-              initialSymptoms={description}
-            />
-          )}
-
-          {aiDiagnosis && !showAIAssistant && (
-            <View style={styles.diagnosisPreview}>
-              <View style={styles.diagnosisHeader}>
-                <Icons.Brain size={16} color={Colors.primary} />
-                <Text style={styles.diagnosisTitle}>AI Diagnosis Complete</Text>
-                <Button
-                  title="View Details"
-                  variant="outline"
-                  size="small"
-                  onPress={() => setShowAIAssistant(true)}
-                />
-              </View>
-              <Text style={styles.diagnosisPreviewText}>
-                {aiDiagnosis.likelyCauses[0]} • {aiDiagnosis.urgencyLevel.toUpperCase()} priority
-              </Text>
-              {aiDiagnosis.estimatedCost && (
-                <Text style={styles.diagnosisCostText}>
-                  Estimated cost: ${aiDiagnosis.estimatedCost.min} - ${aiDiagnosis.estimatedCost.max}
-                </Text>
-              )}
+        {/* AI Assistant - Only shown if enabled in admin settings */}
+        {system.enableAIDiagnostics && (
+          <View style={styles.section}>
+            <View style={styles.aiHeader}>
+              <Text style={styles.sectionTitle}>Get AI-Powered Diagnosis</Text>
+              <Button
+                title={showAIAssistant ? 'Hide AI Assistant' : 'Use AI Assistant'}
+                variant="outline"
+                size="small"
+                onPress={() => setShowAIAssistant(!showAIAssistant)}
+                style={styles.toggleButton}
+              />
             </View>
-          )}
-        </View>
+
+            {showAIAssistant && (
+              <AIAssistant
+                vehicle={selectedVehicle || undefined}
+                onDiagnosisComplete={handleAIDiagnosis}
+                initialSymptoms={description}
+              />
+            )}
+
+            {aiDiagnosis && !showAIAssistant && (
+              <View style={styles.diagnosisPreview}>
+                <View style={styles.diagnosisHeader}>
+                  <Brain size={16} color={Colors.primary} />
+                  <Text style={styles.diagnosisTitle}>AI Diagnosis Complete</Text>
+                  <Button
+                    title="View Details"
+                    variant="outline"
+                    size="small"
+                    onPress={() => setShowAIAssistant(true)}
+                  />
+                </View>
+                <Text style={styles.diagnosisPreviewText}>
+                  {aiDiagnosis.likelyCauses[0]} • {aiDiagnosis.urgencyLevel.toUpperCase()} priority
+                </Text>
+                {aiDiagnosis.estimatedCost && (
+                  <Text style={styles.diagnosisCostText}>
+                    Estimated cost: ${aiDiagnosis.estimatedCost.min} - ${aiDiagnosis.estimatedCost.max}
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Service Selection */}
         <View style={styles.section}>
@@ -577,7 +601,7 @@ Would you like to add this vehicle to your profile?`,
               <View style={styles.toolsList}>
                 {toolLoadoutSuggestions.slice(0, 6).map((toolName, index) => (
                   <View key={index} style={styles.toolItem}>
-                    <Icons.CheckCircle size={14} color={Colors.success} />
+                    <CheckCircle size={14} color={Colors.success} />
                     <Text style={styles.toolName}>{toolName}</Text>
                   </View>
                 ))}
@@ -619,7 +643,7 @@ Would you like to add this vehicle to your profile?`,
           <View style={styles.vinSection}>
             {vinNumber || selectedVehicle?.vin ? (
               <View style={styles.vinDisplay}>
-                <Icons.CheckCircle size={20} color={Colors.success} />
+                <CheckCircle size={20} color={Colors.success} />
                 <Text style={styles.vinText}>
                   VIN: {vinNumber || selectedVehicle?.vin}
                 </Text>
@@ -680,7 +704,7 @@ Would you like to add this vehicle to your profile?`,
                 title={`${option.label}
 ${option.desc}`}
                 variant={urgency === option.key ? 'primary' : 'outline'}
-                onPress={() => setUrgency(option.key as any)}
+                onPress={() => setUrgency(option.key as 'low' | 'medium' | 'high' | 'emergency')}
                 style={styles.urgencyButton}
                 textStyle={styles.urgencyButtonText}
               />
@@ -734,11 +758,16 @@ ${option.desc}`}
           onClose={() => setShowVinScanner(false)}
         />
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.background,

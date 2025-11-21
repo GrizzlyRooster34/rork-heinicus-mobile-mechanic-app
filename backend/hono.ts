@@ -3,6 +3,7 @@ import { trpcServer } from "@hono/trpc-server";
 import { cors } from "hono/cors";
 import { appRouter } from "./trpc/app-router";
 import { createContext } from "./trpc/create-context";
+import { payment } from "./routes/payment";
 
 // app will be mounted at /api
 const app = new Hono();
@@ -16,8 +17,8 @@ app.use("*", cors({
 
 // Health check endpoint
 app.get("/", (c) => {
-  return c.json({ 
-    status: "ok", 
+  return c.json({
+    status: "ok",
     message: "Heinicus API is running",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development"
@@ -39,6 +40,9 @@ app.get("/debug/routes", (c) => {
   });
 });
 
+// Mount payment routes at /payment
+app.route("/payment", payment);
+
 // Mount tRPC router at /trpc
 app.use(
   "/trpc/*",
@@ -54,11 +58,11 @@ app.use(
 // Catch-all for debugging
 app.all("*", (c) => {
   console.log(`Unhandled request: ${c.req.method} ${c.req.url}`);
-  return c.json({ 
+  return c.json({
     error: "Route not found",
     method: c.req.method,
     path: c.req.url,
-    availableRoutes: ["/", "/debug/routes", "/trpc/*"]
+    availableRoutes: ["/", "/debug/routes", "/payment/*", "/trpc/*"]
   }, 404);
 });
 

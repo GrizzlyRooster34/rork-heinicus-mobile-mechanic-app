@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
 import { useAppStore } from '@/stores/app-store';
@@ -37,7 +37,7 @@ export default function AdminQuotesScreen() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Create',
-          onPress: (totalCost) => {
+          onPress: (totalCost: any) => {
             if (!totalCost || isNaN(Number(totalCost))) {
               Alert.alert('Error', 'Please enter a valid amount');
               return;
@@ -48,7 +48,8 @@ export default function AdminQuotesScreen() {
               serviceRequestId: requestId,
               description: `Professional ${getServiceTitle(request.type)} service`,
               laborCost: Number(totalCost) * 0.7,
-              partsCost: Number(totalCost) * 0.3,
+              partsCost: Number(totalCost) * 0.2,
+              travelCost: Number(totalCost) * 0.1,
               totalCost: Number(totalCost),
               estimatedDuration: 2,
               validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
@@ -102,7 +103,7 @@ export default function AdminQuotesScreen() {
     }
   });
 
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'ADMIN') {
     return (
       <View style={styles.unauthorizedContainer}>
         <Icons.Shield size={64} color={Colors.error} />
@@ -134,7 +135,7 @@ export default function AdminQuotesScreen() {
           <TouchableOpacity
             key={tab.key}
             style={[styles.tab, selectedTab === tab.key && styles.activeTab]}
-            onPress={() => setSelectedTab(tab.key as any)}
+            onPress={() => setSelectedTab(tab.key as 'pending' | 'accepted' | 'all')}
           >
             <Text style={[styles.tabText, selectedTab === tab.key && styles.activeTabText]}>
               {tab.label} ({tab.count})

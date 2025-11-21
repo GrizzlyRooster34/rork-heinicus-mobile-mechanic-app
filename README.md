@@ -1,2 +1,2 @@
-# rork-heinicus-mobile-mechanic-app
+# rork-mobile-mechanic-service-app
 Created by Rork

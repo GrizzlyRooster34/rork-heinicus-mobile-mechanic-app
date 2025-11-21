@@ -20,6 +20,10 @@ expo-env.d.ts
 # Metro
 .metro-health-check*
 
+# Generated native directories (using prebuild)
+/android
+/ios
+
 # debug
 npm-debug.*
 yarn-debug.*
@@ -29,11 +33,19 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# Environment files
+# local env files
+.env*.local
 .env
-.env.*
+.env.production
+.env.development
+.env.staging
 !.env.example
+
+# NativeWind
+tailwind.config.js.backup
 
 # typescript
 *.tsbuildinfo
 .vercel
+
+/lib/generated/prisma

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Switch, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { Button } from '@/components/Button';
 import { trpc } from '@/lib/trpc';
-import { getPartEstimate, calculatePartsTotal } from '@/utils/parts/getPartEstimate';
+import { getPartEstimate, calculatePartsFromStringList, PartsCalculationResult } from '@/utils/parts/getPartEstimate';
 import * as Icons from 'lucide-react-native';
 
 interface PartsApprovalToggleProps {
@@ -23,17 +23,17 @@ export function PartsApprovalToggle({
   const [showDetails, setShowDetails] = useState(false);
 
   const updatePartsApprovalMutation = trpc.job.updatePartsApproval.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       console.log('Parts approval updated successfully:', data);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to update parts approval:', error);
       Alert.alert('Error', 'Failed to update parts approval. Please try again.');
     },
   });
 
   // Calculate parts estimates
-  const partsCalculation = calculatePartsTotal(partsNeeded);
+  const partsCalculation: PartsCalculationResult = calculatePartsFromStringList(partsNeeded);
   const hasPartsEstimates = partsCalculation.foundCount > 0;
 
   const handleToggleApproval = async (value: boolean) => {

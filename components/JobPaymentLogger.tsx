@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Button } from '@/components/Button';
-import { PaymentMethodSelector } from '@/components/PaymentMethodSelector';
+import PaymentMethodSelector from '@/components/PaymentMethodSelector';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
 import * as Icons from 'lucide-react-native';
@@ -30,6 +30,10 @@ export default function JobPaymentLogger({
 }: JobPaymentLoggerProps) {
   const { user } = useAuthStore();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('cash');
+  
+  const handleMethodSelect = (method: string) => {
+    setSelectedMethod(method as PaymentMethod);
+  };
   const [isLogging, setIsLogging] = useState(false);
   const [isLogged, setIsLogged] = useState(false);
 
@@ -128,8 +132,7 @@ export default function JobPaymentLogger({
 
       <PaymentMethodSelector
         selectedMethod={selectedMethod}
-        onMethodChange={setSelectedMethod}
-        amount={amount}
+        onSelect={handleMethodSelect}
       />
 
       <View style={styles.actions}>

@@ -1,45 +1,39 @@
-// Heinicus Designs brand colors - dark theme only
 export const Colors = {
-  // Primary brand colors - matching Heinicus Designs logo
-  primary: '#00BFFF',        // Bright cyan from logo
-  primaryDark: '#0099CC',    // Darker cyan for pressed states
-  secondary: '#00A3E0',      // Secondary blue
-  
-  // Role-specific colors
-  mechanic: '#00BFFF',       // Use brand color for mechanic
-  customer: '#00BFFF',       // Use brand color for customer
-  admin: '#00D4FF',          // Lighter cyan for admin
+  // Primary brand colors - blue/cyan theme
+  primary: '#00BFFF',
+  primaryDark: '#0099CC',
+  secondary: '#1E90FF',
   
   // Background colors
-  background: '#000000',     // Pure black like logo background
-  surface: '#1A1A1A',       // Very dark gray for cards
-  card: '#2A2A2A',          // Slightly lighter for elevated cards
+  background: '#0A0A0A',
+  surface: '#1A1A1A',
+  card: '#2A2A2A',
   
   // Border and divider colors
-  border: '#333333',
+  border: '#4A4A4A',  // Increased contrast from #3A3A3A for better visibility
+  borderLight: '#5A5A5A',  // For emphasized borders
   
   // Text colors
   text: '#FFFFFF',
-  textSecondary: '#E0E0E0',
-  textMuted: '#999999',
+  textSecondary: '#CCCCCC',
+  textMuted: '#888888',
   
   // Status colors
-  success: '#00FF88',
-  successBackground: '#003322',
-  warning: '#FFB800',
+  success: '#00C851',
+  successBackground: '#00C851',
+  warning: '#FFB347',
   error: '#FF4444',
-  errorBackground: '#330000',
-  info: '#00BFFF',          // Use brand color for info
+  errorBackground: '#FF4444',
+  info: '#33B5E5',
   
   // Utility colors
   white: '#FFFFFF',
   black: '#000000',
   transparent: 'transparent',
   
+  // Role-specific colors
+  mechanic: '#FF6B35',
+  
   // Development colors
-  development: '#FFB800',
+  development: '#FFB347',
 };
-
-// Legacy exports for compatibility
-export const LightColors = Colors;
-export const DarkColors = Colors;

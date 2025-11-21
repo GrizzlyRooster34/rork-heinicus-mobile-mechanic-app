@@ -7,11 +7,11 @@ import * as Icons from 'lucide-react-native';
 export default function MechanicSelfSwitch() {
   const { user, setUser } = useAuthStore();
 
-  if (!user || !['admin', 'mechanic'].includes(user.role)) {
+  if (!user || !['ADMIN', 'MECHANIC'].includes(user.role)) {
     return null;
   }
 
-  const canSwitchRoles = user.id === 'admin-cody' || user.id === 'mechanic-cody' || 
+  const canSwitchRoles = user.id === 'admin-cody' || user.id === 'mechanic-cody' ||
                         user.id === 'admin-dev-id' || user.id === 'mechanic-dev-id';
 
   if (!canSwitchRoles) {
@@ -19,14 +19,14 @@ export default function MechanicSelfSwitch() {
   }
 
   const currentRole = user.role;
-  const nextRole = currentRole === 'admin' ? 'mechanic' : 'admin';
+  const nextRole = currentRole === 'ADMIN' ? 'MECHANIC' : 'ADMIN';
 
   const handleRoleSwitch = () => {
     const switchedUser = {
       ...user,
-      role: nextRole as 'admin' | 'mechanic',
-      id: nextRole === 'admin' ? 
-          (user.id.includes('dev') ? 'admin-dev-id' : 'admin-cody') : 
+      role: nextRole as 'ADMIN' | 'MECHANIC',
+      id: nextRole === 'ADMIN' ?
+          (user.id.includes('dev') ? 'admin-dev-id' : 'admin-cody') :
           (user.id.includes('dev') ? 'mechanic-dev-id' : 'mechanic-cody'),
     };
 
@@ -41,11 +41,11 @@ export default function MechanicSelfSwitch() {
   };
 
   const getRoleIcon = (role: string) => {
-    return role === 'admin' ? 'Shield' : 'Wrench';
+    return role === 'ADMIN' ? 'Shield' : 'Wrench';
   };
 
   const getRoleColor = (role: string) => {
-    return role === 'admin' ? Colors.primary : Colors.mechanic;
+    return role === 'ADMIN' ? Colors.primary : Colors.mechanic;
   };
 
   const CurrentRoleIcon = Icons[getRoleIcon(currentRole) as keyof typeof Icons] as any;
