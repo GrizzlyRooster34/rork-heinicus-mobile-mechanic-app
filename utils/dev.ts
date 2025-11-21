@@ -40,35 +40,35 @@ export function getDevUser(email: string): User | null {
       email: DEV_CREDENTIALS.admin.email,
       firstName: 'Cody',
       lastName: 'Owner',
-      role: 'admin',
+      role: 'ADMIN',
       phone: '(555) 987-6543',
       createdAt: new Date(),
     };
   }
-  
+
   if (email === DEV_CREDENTIALS.mechanic.email) {
     return {
       id: 'mechanic-cody',
       email: DEV_CREDENTIALS.mechanic.email,
       firstName: 'Cody',
       lastName: 'Mechanic',
-      role: 'mechanic',
+      role: 'MECHANIC',
       phone: '(555) 987-6543',
       createdAt: new Date(),
     };
   }
-  
+
   if (email === DEV_CREDENTIALS.customer.email) {
     return {
       id: 'customer-demo',
       email: DEV_CREDENTIALS.customer.email,
       firstName: 'Demo',
       lastName: 'Customer',
-      role: 'customer',
+      role: 'CUSTOMER',
       phone: '(555) 123-4567',
       createdAt: new Date(),
     };
   }
-  
+
   return null;
 }

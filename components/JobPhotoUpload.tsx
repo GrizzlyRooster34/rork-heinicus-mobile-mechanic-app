@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, ScrollView, Modal } from 'react-native';
 import { Colors } from '@/constants/colors';
 import * as ImagePicker from 'expo-image-picker';
-import * as Icons from 'lucide-react-native';
+import { Camera, X, Clock, Image as ImageIcon, Package, AlertTriangle, Trash2 } from 'lucide-react-native';
 import { Platform } from 'react-native';
 import { JobPhoto } from '@/types/service';
 
@@ -22,6 +22,39 @@ export function JobPhotoUpload({
   allowedTypes = ['before', 'during', 'after', 'parts', 'damage']
 }: JobPhotoUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
+
+  const getTypeIcon = (type: JobPhoto['type']) => {
+    switch (type) {
+      case 'before': return Clock;
+      case 'during': return Camera;
+      case 'after': return ImageIcon;
+      case 'parts': return Package;
+      case 'damage': return AlertTriangle;
+      default: return Camera;
+    }
+  };
+
+  const getTypeLabel = (type: JobPhoto['type']) => {
+    switch (type) {
+      case 'before': return 'Before Work';
+      case 'during': return 'Work in Progress';
+      case 'after': return 'After Work';
+      case 'parts': return 'Parts & Components';
+      case 'damage': return 'Damage Assessment';
+      default: return 'Photo';
+    }
+  };
+
+  const getTypeColor = (type: JobPhoto['type']) => {
+    switch (type) {
+      case 'before': return Colors.warning;
+      case 'during': return Colors.primary;
+      case 'after': return Colors.success;
+      case 'parts': return Colors.info;
+      case 'damage': return Colors.error;
+      default: return Colors.text;
+    }
+  };
   const [selectedPhotoType, setSelectedPhotoType] = useState<JobPhoto['type']>('after');
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<JobPhoto | null>(null);
@@ -143,38 +176,6 @@ export function JobPhotoUpload({
     setShowTypeSelector(true);
   };
 
-  const getTypeIcon = (type: JobPhoto['type']) => {
-    switch (type) {
-      case 'before': return 'Clock';
-      case 'during': return 'Wrench';
-      case 'after': return 'CheckCircle';
-      case 'parts': return 'Package';
-      case 'damage': return 'AlertTriangle';
-      default: return 'Camera';
-    }
-  };
-
-  const getTypeColor = (type: JobPhoto['type']) => {
-    switch (type) {
-      case 'before': return Colors.warning;
-      case 'during': return Colors.mechanic;
-      case 'after': return Colors.success;
-      case 'parts': return Colors.secondary;
-      case 'damage': return Colors.error;
-      default: return Colors.primary;
-    }
-  };
-
-  const getTypeLabel = (type: JobPhoto['type']) => {
-    switch (type) {
-      case 'before': return 'Before Work';
-      case 'during': return 'Work in Progress';
-      case 'after': return 'Completed Work';
-      case 'parts': return 'Parts Used';
-      case 'damage': return 'Damage Found';
-      default: return type;
-    }
-  };
 
   const groupedPhotos = allowedTypes.reduce((acc, type) => {
     acc[type] = photos.filter(p => p.type === type);
@@ -194,7 +195,7 @@ export function JobPhotoUpload({
       <ScrollView style={styles.photosContainer} showsVerticalScrollIndicator={false}>
         {allowedTypes.map(type => {
           const typePhotos = groupedPhotos[type];
-          const IconComponent = Icons[getTypeIcon(type) as keyof typeof Icons] as any;
+          const IconComponent = getTypeIcon(type);
           
           return (
             <View key={type} style={styles.photoGroup}>
@@ -223,7 +224,7 @@ export function JobPhotoUpload({
                         style={styles.removeButton}
                         onPress={() => removePhoto(photo.id)}
                       >
-                        <Icons.X size={16} color={Colors.white} />
+                        <X size={16} color={Colors.white} />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -244,7 +245,7 @@ export function JobPhotoUpload({
         onPress={showPhotoOptions}
         disabled={isUploading || photos.length >= maxPhotos}
       >
-        <Icons.Camera size={24} color={photos.length >= maxPhotos ? Colors.textMuted : Colors.primary} />
+        <Camera size={24} color={photos.length >= maxPhotos ? Colors.textMuted : Colors.primary} />
         <Text style={[
           styles.addButtonText,
           photos.length >= maxPhotos && styles.addButtonTextDisabled
@@ -259,13 +260,13 @@ export function JobPhotoUpload({
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select Photo Type</Text>
             <TouchableOpacity onPress={() => setShowTypeSelector(false)}>
-              <Icons.X size={24} color={Colors.text} />
+              <X size={24} color={Colors.text} />
             </TouchableOpacity>
           </View>
           
           <ScrollView style={styles.modalContent}>
             {allowedTypes.map(type => {
-              const IconComponent = Icons[getTypeIcon(type) as keyof typeof Icons] as any;
+              const IconComponent = getTypeIcon(type);
               
               return (
                 <TouchableOpacity
@@ -305,11 +306,11 @@ export function JobPhotoUpload({
               <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalCameraButton} onPress={takePhoto}>
-              <Icons.Camera size={16} color={Colors.white} />
+              <Camera size={16} color={Colors.white} />
               <Text style={styles.modalCameraText}>Camera</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalGalleryButton} onPress={pickImage}>
-              <Icons.Image size={16} color={Colors.primary} />
+              <ImageIcon size={16} color={Colors.primary} />
               <Text style={styles.modalGalleryText}>Gallery</Text>
             </TouchableOpacity>
           </View>
@@ -322,11 +323,11 @@ export function JobPhotoUpload({
           <View style={styles.viewerContainer}>
             <View style={styles.viewerHeader}>
               <TouchableOpacity onPress={() => setSelectedPhoto(null)}>
-                <Icons.X size={24} color={Colors.white} />
+                <X size={24} color={Colors.white} />
               </TouchableOpacity>
               <Text style={styles.viewerTitle}>{getTypeLabel(selectedPhoto.type)}</Text>
               <TouchableOpacity onPress={() => removePhoto(selectedPhoto.id)}>
-                <Icons.Trash2 size={24} color={Colors.error} />
+                <Trash2 size={24} color={Colors.error} />
               </TouchableOpacity>
             </View>
             <View style={styles.viewerContent}>

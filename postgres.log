@@ -1,0 +1,7 @@
+2025-10-14 02:33:51.207 CDT [12349] LOG:  starting PostgreSQL 17.0 on aarch64-unknown-linux-android, compiled by Android (13624864, +pgo, +bolt, +lto, +mlgo, based on r530567e) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2), 64-bit
+2025-10-14 02:33:51.209 CDT [12349] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2025-10-14 02:33:51.211 CDT [12349] LOG:  listening on Unix socket "/data/data/com.termux/files/usr/tmp/.s.PGSQL.5432"
+2025-10-14 02:33:51.232 CDT [12381] LOG:  database system was shut down at 2025-10-14 02:20:58 CDT
+2025-10-14 02:33:51.246 CDT [12349] LOG:  database system is ready to accept connections
+2025-10-14 02:38:51.307 CDT [12379] LOG:  checkpoint starting: time
+2025-10-14 02:40:30.059 CDT [12379] LOG:  checkpoint complete: wrote 968 buffers (5.9%); 0 WAL file(s) added, 0 removed, 0 recycled; write=98.524 s, sync=0.105 s, total=98.753 s; sync files=310, longest=0.006 s, average=0.001 s; distance=4528 kB, estimate=4528 kB; lsn=0/195A380, redo lsn=0/195A2F0

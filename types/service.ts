@@ -1,9 +1,11 @@
 import { User } from './auth';
+import { Review, Rating, MechanicRatingProfile } from './rating';
 
-export type VehicleType = 'car' | 'motorcycle' | 'scooter';
+export type VehicleType = 'car' | 'truck' | 'suv' | 'van' | 'motorcycle' | 'scooter';
 
 export interface Vehicle {
   id: string;
+  customerId: string;
   make: string;
   model: string;
   year: number;
@@ -14,9 +16,11 @@ export interface Vehicle {
   mileage: number;
   color?: string;
   licensePlate?: string;
+  isPrimary?: boolean;
   lastServiceDate?: Date;
   nextServiceDue?: Date;
   maintenanceHistory?: MaintenanceRecord[];
+  createdAt: Date;
 }
 
 export interface VinData {
@@ -84,6 +88,7 @@ export type QuoteStatus =
   | 'pending'
   | 'accepted'
   | 'rejected'
+  | 'declined'
   | 'expired'
   | 'deposit_paid'
   | 'paid';
@@ -135,6 +140,7 @@ export interface ServiceRequest {
   status: ServiceStatus;
   createdAt: Date;
   updatedAt?: Date;
+  paidAt?: Date; // New field for payment timestamp
   photos?: string[];
   jobPhotos?: JobPhoto[];
   location?: {
@@ -154,6 +160,8 @@ export interface ServiceRequest {
   cancelledBy?: string;
   cancellationReason?: string;
   mechanicId?: string;
+  assignedMechanicId?: string;
+  customerId?: string;
   claimedAt?: Date;
   scheduledAt?: Date;
   startedAt?: Date;
@@ -174,6 +182,12 @@ export interface ServiceRequest {
   partsApproved?: boolean; // New field for parts approval toggle
   partsEstimate?: number; // Estimated parts cost
   partsActual?: number; // Actual parts cost
+  // Rating and review fields
+  rating?: Rating;
+  review?: Review;
+  isRatingEligible?: boolean; // Whether this job is eligible for rating
+  ratingReminderSent?: boolean;
+  ratingDeadline?: Date; // When rating period expires
 }
 
 export interface Quote {
@@ -182,6 +196,7 @@ export interface Quote {
   laborCost: number;
   partsCost: number;
   travelCost: number;
+  travelFee?: number;
   totalCost: number;
   estimatedDuration: number; // in hours
   validUntil: Date;
@@ -190,12 +205,19 @@ export interface Quote {
   updatedAt?: Date;
   acceptedAt?: Date;
   paidAt?: Date;
+  depositPaidAt?: Date; // New field for deposit payment
+  depositAmount?: number; // Deposit amount
+  remainingBalance?: number; // Remaining balance after deposit
+  finalAmount?: number; // Final amount paid
+  paymentMethod?: 'card' | 'cash' | 'check' | 'apple_pay' | 'google_pay';
+  paymentIntentId?: string; // Stripe payment intent ID
+  stripeCustomerId?: string; // Stripe customer ID
   notes?: string;
+  description?: string;
   breakdown?: {
     description: string;
     cost: number;
   }[];
-  paymentMethod?: 'card' | 'cash' | 'check';
   stripePaymentIntentId?: string;
   vehicleType?: VehicleType;
   partsApproved?: boolean; // New field for parts approval
@@ -346,4 +368,54 @@ export interface PaymentMethod {
     expYear: number;
   };
   isDefault: boolean;
+}
+
+export interface MaintenanceInterval {
+  id?: string;
+  vehicleType?: VehicleType;
+  serviceType: ServiceType;
+  intervalType?: 'mileage' | 'time' | 'both';
+  mileageInterval?: number;
+  intervalMiles?: number;
+  timeInterval?: number; // in months
+  intervalDays?: number;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+  category?: 'routine' | 'safety' | 'preventive';
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Mechanic {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  specialties: ServiceType[];
+  serviceAreas: string[];
+  isVerified: boolean;
+  isActive: boolean;
+  ratingProfile?: MechanicRatingProfile;
+  joinedAt: Date;
+  lastActiveAt?: Date;
+  completedJobs: number;
+  responseRate: number;
+  bio?: string;
+  profilePhoto?: string;
+  certifications?: string[];
+  yearsExperience?: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  serviceRequestId: string;
+  senderId: string;
+  senderName: string;
+  senderType: 'customer' | 'mechanic' | 'admin';
+  message: string;
+  timestamp: Date;
+  isRead: boolean;
+  attachments?: string[];
 }

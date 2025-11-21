@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { useSettingsStore } from '@/stores/settings-store';
 import * as Icons from 'lucide-react-native';
 
 interface NotificationSettingsProps {
@@ -18,19 +19,17 @@ interface NotificationSettings {
 }
 
 export function NotificationSettings({ onSettingsChange }: NotificationSettingsProps) {
-  const [settings, setSettings] = useState<NotificationSettings>({
-    pushNotifications: true,
-    emailNotifications: true,
-    smsNotifications: false,
-    jobUpdates: true,
-    maintenanceReminders: true,
-    promotionalOffers: false,
-    emergencyAlerts: true,
-  });
+  const { notifications, updateNotificationSettings } = useSettingsStore();
+  const [settings, setSettings] = useState<NotificationSettings>(notifications);
+
+  useEffect(() => {
+    setSettings(notifications);
+  }, [notifications]);
 
   const updateSetting = (key: keyof NotificationSettings, value: boolean) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
+    updateNotificationSettings({ [key]: value } as Partial<NotificationSettings>);
     onSettingsChange(newSettings);
   };
 

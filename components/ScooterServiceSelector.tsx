@@ -147,7 +147,7 @@ export default function ScooterServiceSelector({
             onPress={() => handleServiceSelect(service)}
             style={[
               styles.serviceButton,
-              isSelected(service.id) && styles.serviceButtonSelected,
+              ...(isSelected(service.id) ? [styles.serviceButtonSelected] : []),
             ]}
             variant={isSelected(service.id) ? 'primary' : 'outline'}
           >

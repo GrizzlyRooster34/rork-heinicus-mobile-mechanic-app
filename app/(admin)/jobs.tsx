@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, Image } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
@@ -6,7 +6,7 @@ import { useAppStore } from '@/stores/app-store';
 import { SERVICE_CATEGORIES } from '@/constants/services';
 import { JobPhoto } from '@/types/service';
 import * as Icons from 'lucide-react-native';
-import { useState } from 'react';
+import { LucideIcon } from 'lucide-react-native';
 
 export default function AdminJobsScreen() {
   const { user } = useAuthStore();
@@ -32,14 +32,14 @@ export default function AdminJobsScreen() {
     }
   };
 
-  const getTypeIcon = (type: JobPhoto['type']) => {
+  const getTypeIcon = (type: JobPhoto['type']): LucideIcon => {
     switch (type) {
-      case 'before': return 'Clock';
-      case 'during': return 'Wrench';
-      case 'after': return 'CheckCircle';
-      case 'parts': return 'Package';
-      case 'damage': return 'AlertTriangle';
-      default: return 'Camera';
+      case 'before': return Icons.Clock;
+      case 'during': return Icons.Wrench;
+      case 'after': return Icons.CheckCircle;
+      case 'parts': return Icons.Package;
+      case 'damage': return Icons.AlertTriangle;
+      default: return Icons.Camera;
     }
   };
 
@@ -54,7 +54,7 @@ export default function AdminJobsScreen() {
     }
   };
 
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'ADMIN') {
     return (
       <View style={styles.unauthorizedContainer}>
         <Icons.Shield size={64} color={Colors.error} />
@@ -168,7 +168,7 @@ export default function AdminJobsScreen() {
                       
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photosPreview}>
                         {jobPhotos.slice(0, 4).map((photo) => {
-                          const IconComponent = Icons[getTypeIcon(photo.type) as keyof typeof Icons] as any;
+                          const IconComponent = getTypeIcon(photo.type);
                           
                           return (
                             <TouchableOpacity
@@ -316,7 +316,7 @@ export default function AdminJobsScreen() {
                 const typePhotos = selectedJobPhotos.filter(p => p.type === type);
                 if (typePhotos.length === 0) return null;
                 
-                const IconComponent = Icons[getTypeIcon(type as JobPhoto['type']) as keyof typeof Icons] as any;
+                const IconComponent = getTypeIcon(type as JobPhoto['type']);
                 
                 return (
                   <View key={type} style={styles.photoTypeGroup}>
