@@ -1,0 +1,866 @@
+
+> heinicus-mobile-mechanic-app@1.0.0 lint
+> eslint . --ext .js,.jsx,.ts,.tsx
+
+
+/data/data/com.termux/files/home/downloads/repo2/app/(admin)/_layout.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/app/(admin)/index.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/app/(admin)/jobs.tsx
+    1:1   error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  171:55  error  Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+  319:45  error  Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/app/(admin)/quotes.tsx
+  1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  2:71  warning  'TextInput' is defined but never used                                           no-unused-vars
+  2:71  warning  'TextInput' is defined but never used                                           @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/app/(admin)/settings.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  14:38  warning  'updateUserRole' is assigned a value but never used                             no-unused-vars
+  14:38  warning  'updateUserRole' is assigned a value but never used                             @typescript-eslint/no-unused-vars
+  34:7   warning  Unexpected console statement                                                    no-console
+  37:7   warning  Unexpected console statement                                                    no-console
+  58:7   warning  Unexpected console statement                                                    no-console
+  60:7   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/app/(admin)/users.tsx
+  1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  2:78  warning  'TextInput' is defined but never used                                           no-unused-vars
+  2:78  warning  'TextInput' is defined but never used                                           @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/app/(customer)/_layout.tsx
+  1:1   error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1   error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  8:31  error  Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/app/(customer)/index.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/app/(customer)/profile.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/app/(customer)/quotes.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  13:71  warning  'addQuote' is assigned a value but never used                                   no-unused-vars
+  13:71  warning  'addQuote' is assigned a value but never used                                   @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/app/(customer)/request.tsx
+    1:1    error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found                                            @typescript-eslint/no-empty-object-type
+    1:1    error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found                                         @typescript-eslint/no-wrapper-object-types
+   22:121  warning  'logEvent' is assigned a value but never used                                                                          no-unused-vars
+   22:121  warning  'logEvent' is assigned a value but never used                                                                          @typescript-eslint/no-unused-vars
+   46:6    warning  React Hook useEffect has a missing dependency: 'getCurrentLocation'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   60:6    warning  React Hook useEffect has a missing dependency: 'selectedVehicle'. Either include it or remove the dependency array     react-hooks/exhaustive-deps
+   70:6    warning  React Hook useEffect has a missing dependency: 'handleSubmit'. Either include it or remove the dependency array        react-hooks/exhaustive-deps
+   82:22   warning  Unexpected console statement                                                                                           no-console
+  107:7    warning  Unexpected console statement                                                                                           no-console
+  329:14   warning  'error' is defined but never used. Allowed unused args must match /^_/u                                                no-unused-vars
+  329:14   warning  'error' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+  396:45   error    Unable to validate computed reference to imported namespace 'Icons'                                                    import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/app/(customer)/schedule.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/app/(mechanic)/_layout.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   8:31  error    Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+  17:5   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/app/(mechanic)/customers.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/app/(mechanic)/index.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  12:28  warning  'quotes' is assigned a value but never used                                     no-unused-vars
+  12:28  warning  'quotes' is assigned a value but never used                                     @typescript-eslint/no-unused-vars
+  12:53  warning  'getQuotesByStatus' is assigned a value but never used                          no-unused-vars
+  12:53  warning  'getQuotesByStatus' is assigned a value but never used                          @typescript-eslint/no-unused-vars
+  13:11  warning  'user' is assigned a value but never used                                       no-unused-vars
+  13:11  warning  'user' is assigned a value but never used                                       @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/app/(mechanic)/jobs.tsx
+     1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+     1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+     6:30  warning  'SERVICE_TOOLS' is defined but never used                                       no-unused-vars
+     6:30  warning  'SERVICE_TOOLS' is defined but never used                                       @typescript-eslint/no-unused-vars
+    38:11  warning  'user' is assigned a value but never used                                       no-unused-vars
+    38:11  warning  'user' is assigned a value but never used                                       @typescript-eslint/no-unused-vars
+   333:11  warning  'job' is assigned a value but never used                                        no-unused-vars
+   333:11  warning  'job' is assigned a value but never used                                        @typescript-eslint/no-unused-vars
+   379:11  warning  'job' is assigned a value but never used                                        no-unused-vars
+   379:11  warning  'job' is assigned a value but never used                                        @typescript-eslint/no-unused-vars
+  1141:10  warning  'reason' is assigned a value but never used                                     no-unused-vars
+  1141:10  warning  'reason' is assigned a value but never used                                     @typescript-eslint/no-unused-vars
+  1141:18  warning  'setReason' is assigned a value but never used                                  no-unused-vars
+  1141:18  warning  'setReason' is assigned a value but never used                                  @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/app/(mechanic)/map.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   1:27  warning  'useEffect' is defined but never used                                           no-unused-vars
+   1:27  warning  'useEffect' is defined but never used                                           @typescript-eslint/no-unused-vars
+   9:9   warning  'width' is assigned a value but never used                                      no-unused-vars
+   9:9   warning  'width' is assigned a value but never used                                      @typescript-eslint/no-unused-vars
+  53:7   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/app/(mechanic)/profile.tsx
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   40:5   warning  Unexpected console statement                                                    no-console
+   57:9   warning  Unexpected console statement                                                    no-console
+  192:41  error    Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/app/+not-found.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/app/_layout.tsx
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  34:9  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/app/auth/index.tsx
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  24:7  warning  Unexpected console statement                                                    no-console
+  35:9  warning  Unexpected console statement                                                    no-console
+  69:5  warning  Unexpected console statement                                                    no-console
+  91:7  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/app/dev-switcher.tsx
+  1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  6:10  warning  'devMode' is defined but never used                                             no-unused-vars
+  6:10  warning  'devMode' is defined but never used                                             @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/backend/hono.ts
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  35:7  warning  Unexpected console statement                                                    no-console
+  42:3  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/app-router.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/create-context.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/routes/admin/route.ts
+    1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+    8:7  warning  Unexpected console statement                                                    no-console
+   51:7  warning  Unexpected console statement                                                    no-console
+   62:7  warning  Unexpected console statement                                                    no-console
+   86:7  warning  Unexpected console statement                                                    no-console
+  106:7  warning  Unexpected console statement                                                    no-console
+  131:7  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/routes/auth/route.ts
+    1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   68:9  warning  Unexpected console statement                                                    no-console
+   90:9  warning  Unexpected console statement                                                    no-console
+  147:9  warning  Unexpected console statement                                                    no-console
+  169:9  warning  Unexpected console statement                                                    no-console
+  218:9  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/routes/config/route.ts
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  25:7  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/routes/diagnosis/route.ts
+    1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  228:7  warning  Unexpected console statement                                                    no-console
+  239:7  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/routes/example/hi/route.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/routes/job/route.ts
+    1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   43:7  warning  Unexpected console statement                                                    no-console
+   81:7  warning  Unexpected console statement                                                    no-console
+  104:7  warning  Unexpected console statement                                                    no-console
+  155:7  warning  Unexpected console statement                                                    no-console
+  187:7  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/routes/mechanic/route.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+    3:15  warning  'Context' is defined but never used                                             no-unused-vars
+    3:15  warning  'Context' is defined but never used                                             @typescript-eslint/no-unused-vars
+   41:5   warning  Unexpected console statement                                                    no-console
+   99:9   warning  Unexpected console statement                                                    no-console
+  117:9   warning  Unexpected console statement                                                    no-console
+  158:9   warning  Unexpected console statement                                                    no-console
+  211:9   warning  Unexpected console statement                                                    no-console
+  250:9   warning  Unexpected console statement                                                    no-console
+  262:9   warning  Unexpected console statement                                                    no-console
+  314:9   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/routes/notifications/route.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   30:12  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+   30:12  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+   90:9   warning  Unexpected console statement                                                    no-console
+  120:9   warning  Unexpected console statement                                                    no-console
+  147:9   warning  Unexpected console statement                                                    no-console
+  174:9   warning  Unexpected console statement                                                    no-console
+  194:9   warning  Unexpected console statement                                                    no-console
+  213:9   warning  Unexpected console statement                                                    no-console
+  237:9   warning  Unexpected console statement                                                    no-console
+  242:9   warning  Unexpected console statement                                                    no-console
+  269:9   warning  Unexpected console statement                                                    no-console
+  321:9   warning  Unexpected console statement                                                    no-console
+  371:9   warning  Unexpected console statement                                                    no-console
+  383:9   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/routes/payments/route.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   34:12  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+   34:12  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+  128:9   warning  Unexpected console statement                                                    no-console
+  205:9   warning  Unexpected console statement                                                    no-console
+  238:9   warning  Unexpected console statement                                                    no-console
+  333:9   warning  Unexpected console statement                                                    no-console
+  388:9   warning  Unexpected console statement                                                    no-console
+  488:9   warning  Unexpected console statement                                                    no-console
+  524:13  warning  Unexpected console statement                                                    no-console
+  536:13  warning  Unexpected console statement                                                    no-console
+  540:13  warning  Unexpected console statement                                                    no-console
+  546:9   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/routes/quote/route.ts
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  17:7  warning  Unexpected console statement                                                    no-console
+  36:7  warning  Unexpected console statement                                                    no-console
+  64:7  warning  Unexpected console statement                                                    no-console
+  78:7  warning  Unexpected console statement                                                    no-console
+  92:7  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/routes/reviews/route.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   29:12  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+   29:12  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+  167:9   warning  Unexpected console statement                                                    no-console
+  277:9   warning  Unexpected console statement                                                    no-console
+  363:9   warning  Unexpected console statement                                                    no-console
+  418:9   warning  Unexpected console statement                                                    no-console
+  480:9   warning  Unexpected console statement                                                    no-console
+  523:9   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/routes/vin/route.ts
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  21:7  warning  Unexpected console statement                                                    no-console
+  30:7  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/test.ts
+  1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  1:10  warning  'ServiceType' is defined but never used                                         no-unused-vars
+  1:10  warning  'ServiceType' is defined but never used                                         @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/backend/trpc/trpc.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/backend/websocket/server.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   51:12  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+   51:12  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+   59:3   warning  Unexpected console statement                                                    no-console
+   77:5   warning  Unexpected console statement                                                    no-console
+   82:5   warning  Unexpected console statement                                                    no-console
+  131:7   warning  Unexpected console statement                                                    no-console
+  166:7   warning  Unexpected console statement                                                    no-console
+  179:13  warning  'updatedJob' is assigned a value but never used                                 no-unused-vars
+  179:13  warning  'updatedJob' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
+  216:7   warning  Unexpected console statement                                                    no-console
+  228:12  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead                     @typescript-eslint/array-type
+  291:7   warning  Unexpected console statement                                                    no-console
+  298:5   warning  Unexpected console statement                                                    no-console
+  349:5   warning  Unexpected console statement                                                    no-console
+  378:3   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/components/AIAssistant.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/components/AdminDualLoginToggle.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/components/AvailabilityCalendar.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/components/AvailabilitySettings.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  32:17  warning  'AvailabilitySettings' is already defined                                       @typescript-eslint/no-redeclare
+
+/data/data/com.termux/files/home/downloads/repo2/components/BreadcrumbLogger.tsx
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  25:5  warning  Unexpected console statement                                                    no-console
+  49:9  warning  Unexpected console statement                                                    no-console
+  64:7  warning  Unexpected console statement                                                    no-console
+  77:7  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/components/Button.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/components/ChatComponent.tsx
+  1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  5:10  warning  'useAppStore' is defined but never used                                         no-unused-vars
+  5:10  warning  'useAppStore' is defined but never used                                         @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/components/JobPaymentLogger.tsx
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  59:7  warning  Unexpected console statement                                                    no-console
+  74:7  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/components/JobPhotoUpload.tsx
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   72:14  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+   72:14  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+  117:14  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+  117:14  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+  197:39  error    Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+  268:43  error    Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/components/JobTimeline.tsx
+    1:1   error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  114:43  error  Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/components/LicensePlateScanner.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/components/LoadingSpinner.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/components/MaintenanceReminderEngine.tsx
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found                                                     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found                                                  @typescript-eslint/no-wrapper-object-types
+  38:6  warning  React Hook useEffect has a missing dependency: 'generateMaintenanceSchedule'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/data/data/com.termux/files/home/downloads/repo2/components/MaintenanceReminders.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  11:45  warning  'maintenanceReminders' is assigned a value but never used                       no-unused-vars
+  11:45  warning  'maintenanceReminders' is assigned a value but never used                       @typescript-eslint/no-unused-vars
+  14:22  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead                     @typescript-eslint/array-type
+
+/data/data/com.termux/files/home/downloads/repo2/components/MaintenanceSuggestions.tsx
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  112:9   warning  Unexpected console statement                                                    no-console
+  135:33  error    Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/components/MechanicSelfSwitch.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  33:5   warning  Unexpected console statement                                                    no-console
+  51:33  error    Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+  52:30  error    Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/components/MechanicVerificationPanel.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  33:7   warning  Unexpected console statement                                                    no-console
+  67:14  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+  67:14  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+  94:14  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+  94:14  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/components/NotificationSettings.tsx
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   21:17  warning  'NotificationSettings' is already defined                                       @typescript-eslint/no-redeclare
+   90:39  error    Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+  117:39  error    Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/components/OfflineIndicator.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/components/PartsApprovalToggle.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   6:10  warning  'getPartEstimate' is defined but never used                                     no-unused-vars
+   6:10  warning  'getPartEstimate' is defined but never used                                     @typescript-eslint/no-unused-vars
+  27:7   warning  Unexpected console statement                                                    no-console
+  30:7   warning  Unexpected console statement                                                    no-console
+  57:7   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/components/PaymentMethodSelector.tsx
+   1:1   error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  35:39  error  Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/components/PaymentModal.tsx
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  113:14  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+  113:14  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/components/PhotoUpload.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  53:14  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+  53:14  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+  91:14  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+  91:14  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/components/PushNotificationConfig.tsx
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  35:7  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/components/QuickPayMenu.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/components/QuoteDispatcher.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/components/ReportsAnalytics.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  12:28  warning  'quotes' is assigned a value but never used                                     no-unused-vars
+  12:28  warning  'quotes' is assigned a value but never used                                     @typescript-eslint/no-unused-vars
+  12:62  warning  'getPaymentHistory' is assigned a value but never used                          no-unused-vars
+  12:62  warning  'getPaymentHistory' is assigned a value but never used                          @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/components/ScooterServiceSelector.tsx
+    1:1   error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  118:33  error  Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/components/ServiceCard.tsx
+   1:1   error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  13:31  error  Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/components/ServicePricingSettings.tsx
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   19:6   warning  'key' is defined but never used                                                 no-unused-vars
+   19:6   warning  'key' is defined but never used                                                 @typescript-eslint/no-unused-vars
+  207:39  error    Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/components/ServiceTypeToggle.tsx
+   1:1   error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  36:33  error  Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/components/SignatureCapture.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found                                    @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found                                 @typescript-eslint/no-wrapper-object-types
+   2:67  warning  'Animated' is defined but never used                                                                           no-unused-vars
+   2:67  warning  'Animated' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+  16:16  warning  'screenWidth' is assigned a value but never used                                                               no-unused-vars
+  16:16  warning  'screenWidth' is assigned a value but never used                                                               @typescript-eslint/no-unused-vars
+  21:56  warning  Array type using 'Array<{ x: number; y: number }[]>' is forbidden. Use '{ x: number; y: number }[][]' instead  @typescript-eslint/array-type
+
+/data/data/com.termux/files/home/downloads/repo2/components/StoreIntegrationTest.tsx
+  1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  1:27  warning  'useEffect' is defined but never used                                           no-unused-vars
+  1:27  warning  'useEffect' is defined but never used                                           @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/components/StripePayment.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  36:14  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+  36:14  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/components/ThemeToggle.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/components/ToolsEquipmentSettings.tsx
+    1:1   error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  171:41  error  Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/components/TwoFactorGate.tsx
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/components/VINCheckerMotorcycle.tsx
+    1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  130:7  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/components/VinScanner.tsx
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   99:18  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+   99:18  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+  100:11  warning  Unexpected console statement                                                    no-console
+  119:7   warning  Unexpected console statement                                                    no-console
+  251:14  warning  'error' is defined but never used. Allowed unused args must match /^_/u         no-unused-vars
+  251:14  warning  'error' is defined but never used                                               @typescript-eslint/no-unused-vars
+  310:43  error    Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+  388:49  error    Unable to validate computed reference to imported namespace 'Icons'             import/namespace
+
+/data/data/com.termux/files/home/downloads/repo2/components/WorkTimer.tsx
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   69:5   warning  Unexpected console statement                                                    no-console
+   89:5   warning  Unexpected console statement                                                    no-console
+  119:13  warning  Unexpected console statement                                                    no-console
+  178:13  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/components/chat/RealTimeChatWidget.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found                                                  @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found                                               @typescript-eslint/no-wrapper-object-types
+  55:20  warning  'setIsTyping' is assigned a value but never used                                                                             no-unused-vars
+  55:20  warning  'setIsTyping' is assigned a value but never used                                                                             @typescript-eslint/no-unused-vars
+  67:6   warning  React Hook useEffect has missing dependencies: 'joinJob' and 'leaveJob'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/data/data/com.termux/files/home/downloads/repo2/components/payments/StripePaymentWidget.tsx
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   37:10  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead                     @typescript-eslint/array-type
+   62:10  warning  'loading' is assigned a value but never used                                    no-unused-vars
+   62:10  warning  'loading' is assigned a value but never used                                    @typescript-eslint/no-unused-vars
+   62:19  warning  'setLoading' is assigned a value but never used                                 no-unused-vars
+   62:19  warning  'setLoading' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
+  127:7   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/components/reviews/ReviewSubmissionModal.tsx
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  99:7  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/constants/colors.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/constants/pricing.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/constants/services.ts
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  15:32  warning  'key' is defined but never used                                                 no-unused-vars
+  15:32  warning  'key' is defined but never used                                                 @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/hooks/use-firebase.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found                                         @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found                                      @typescript-eslint/no-wrapper-object-types
+    4:26  warning  'Quote' is defined but never used                                                                                   no-unused-vars
+    4:26  warning  'Quote' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+   64:6   warning  React Hook useEffect has a missing dependency: 'loadRequests'. Either include it or remove the dependency array     react-hooks/exhaustive-deps
+   71:7   warning  Unexpected console statement                                                                                        no-console
+  121:6   warning  React Hook useEffect has a missing dependency: 'firebaseService'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/data/data/com.termux/files/home/downloads/repo2/hooks/useHydrateConfig.ts
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   4:11  warning  'ConfigItem' is defined but never used                                          no-unused-vars
+   4:11  warning  'ConfigItem' is defined but never used                                          @typescript-eslint/no-unused-vars
+  30:7   warning  Unexpected console statement                                                    no-console
+  32:7   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/hooks/usePushNotifications.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found                                                     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found                                                  @typescript-eslint/no-wrapper-object-types
+  102:7   warning  Unexpected console statement                                                                                                    no-console
+  110:5   warning  Unexpected console statement                                                                                                    no-console
+  118:7   warning  Unexpected console statement                                                                                                    no-console
+  124:5   warning  Unexpected console statement                                                                                                    no-console
+  132:9   warning  Unexpected console statement                                                                                                    no-console
+  136:9   warning  Unexpected console statement                                                                                                    no-console
+  140:9   warning  Unexpected console statement                                                                                                    no-console
+  144:9   warning  Unexpected console statement                                                                                                    no-console
+  147:9   warning  Unexpected console statement                                                                                                    no-console
+  168:11  warning  Unexpected console statement                                                                                                    no-console
+  171:9   warning  Unexpected console statement                                                                                                    no-console
+  195:6   warning  React Hook useEffect has a missing dependency: 'registerDeviceTokenMutation'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  216:7   warning  Unexpected console statement                                                                                                    no-console
+  225:7   warning  Unexpected console statement                                                                                                    no-console
+  234:7   warning  Unexpected console statement                                                                                                    no-console
+  244:7   warning  Unexpected console statement                                                                                                    no-console
+  255:7   warning  Unexpected console statement                                                                                                    no-console
+  265:7   warning  Unexpected console statement                                                                                                    no-console
+  291:7   warning  Unexpected console statement                                                                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/hooks/useWebSocket.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   34:10  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead                     @typescript-eslint/array-type
+   83:7   warning  Unexpected console statement                                                    no-console
+   89:7   warning  Unexpected console statement                                                    no-console
+   94:7   warning  Unexpected console statement                                                    no-console
+  189:12  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead                     @typescript-eslint/array-type
+
+/data/data/com.termux/files/home/downloads/repo2/jest.setup.js
+   1:8   error  Unable to resolve path to module 'jest-expo/mock-expo'  import/no-unresolved
+   5:1   error  'jest' is not defined                                   no-undef
+  12:1   error  'jest' is not defined                                   no-undef
+  14:11  error  'jest' is not defined                                   no-undef
+  15:14  error  'jest' is not defined                                   no-undef
+  16:11  error  'jest' is not defined                                   no-undef
+  17:16  error  'jest' is not defined                                   no-undef
+  26:1   error  'jest' is not defined                                   no-undef
+  35:1   error  'jest' is not defined                                   no-undef
+
+/data/data/com.termux/files/home/downloads/repo2/lib/configStore.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/lib/notifications/firebase-admin.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/lib/notifications/push-service.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   41:9   warning  Unexpected console statement                                                    no-console
+   47:7   warning  Unexpected console statement                                                    no-console
+  108:7   warning  Unexpected console statement                                                    no-console
+  113:13  warning  Unexpected console statement                                                    no-console
+  125:7   warning  Unexpected console statement                                                    no-console
+  165:7   warning  Unexpected console statement                                                    no-console
+  169:7   warning  Unexpected console statement                                                    no-console
+  178:7   warning  Unexpected console statement                                                    no-console
+  181:7   warning  Unexpected console statement                                                    no-console
+  190:7   warning  Unexpected console statement                                                    no-console
+  193:7   warning  Unexpected console statement                                                    no-console
+  325:7   warning  Unexpected console statement                                                    no-console
+  348:7   warning  Unexpected console statement                                                    no-console
+  375:7   warning  Unexpected console statement                                                    no-console
+  396:7   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/lib/prisma.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/lib/trpc.ts
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  13:5   warning  Unexpected console statement                                                    no-console
+  19:5   warning  Unexpected console statement                                                    no-console
+  29:5   warning  Unexpected console statement                                                    no-console
+  34:3   warning  Unexpected console statement                                                    no-console
+  63:13  warning  Unexpected console statement                                                    no-console
+  89:13  warning  Unexpected console statement                                                    no-console
+  96:13  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/nativewind-env.d.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/scripts/bumpVersion.js
+   4:31  error    '__dirname' is not defined    no-undef
+  13:3   warning  Unexpected console statement  no-console
+  14:3   warning  Unexpected console statement  no-console
+  15:3   warning  Unexpected console statement  no-console
+  17:3   warning  Unexpected console statement  no-console
+
+/data/data/com.termux/files/home/downloads/repo2/services/firebase-service.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+    4:10  warning  'firebaseConfig' is defined but never used                                      no-unused-vars
+    4:10  warning  'firebaseConfig' is defined but never used                                      @typescript-eslint/no-unused-vars
+    4:26  warning  'COLLECTIONS' is defined but never used                                         no-unused-vars
+    4:26  warning  'COLLECTIONS' is defined but never used                                         @typescript-eslint/no-unused-vars
+   22:5   warning  Unexpected console statement                                                    no-console
+   41:5   warning  Unexpected console statement                                                    no-console
+   47:5   warning  Unexpected console statement                                                    no-console
+   68:7   warning  Unexpected console statement                                                    no-console
+   72:5   warning  Unexpected console statement                                                    no-console
+   77:5   warning  Unexpected console statement                                                    no-console
+   82:5   warning  Unexpected console statement                                                    no-console
+   88:5   warning  Unexpected console statement                                                    no-console
+   94:5   warning  Unexpected console statement                                                    no-console
+  100:5   warning  Unexpected console statement                                                    no-console
+  107:5   warning  Unexpected console statement                                                    no-console
+  114:5   warning  Unexpected console statement                                                    no-console
+  120:5   warning  Unexpected console statement                                                    no-console
+  128:5   warning  Unexpected console statement                                                    no-console
+  134:5   warning  Unexpected console statement                                                    no-console
+  143:5   warning  Unexpected console statement                                                    no-console
+  150:7   warning  Unexpected console statement                                                    no-console
+  156:5   warning  Unexpected console statement                                                    no-console
+  164:5   warning  Unexpected console statement                                                    no-console
+  170:5   warning  Unexpected console statement                                                    no-console
+  176:5   warning  Unexpected console statement                                                    no-console
+  182:5   warning  Unexpected console statement                                                    no-console
+  188:5   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/stores/StoreProvider.tsx
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  37:11  warning  Unexpected console statement                                                    no-console
+  43:9   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/stores/admin-settings-store.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+    4:29  warning  'withAsyncErrorHandling' is defined but never used                              no-unused-vars
+    4:29  warning  'withAsyncErrorHandling' is defined but never used                              @typescript-eslint/no-unused-vars
+  132:9   warning  Unexpected console statement                                                    no-console
+  140:9   warning  Unexpected console statement                                                    no-console
+  148:9   warning  Unexpected console statement                                                    no-console
+  156:9   warning  Unexpected console statement                                                    no-console
+  168:9   warning  Unexpected console statement                                                    no-console
+  172:11  warning  Unexpected console statement                                                    no-console
+  174:11  warning  Unexpected console statement                                                    no-console
+  179:9   warning  Unexpected console statement                                                    no-console
+  192:11  warning  Unexpected console statement                                                    no-console
+  195:11  warning  Unexpected console statement                                                    no-console
+  201:9   warning  Unexpected console statement                                                    no-console
+  213:11  warning  Unexpected console statement                                                    no-console
+  216:11  warning  Unexpected console statement                                                    no-console
+  229:9   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/stores/app-store.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+    4:99  warning  'ToolCheckItem' is defined but never used                                       no-unused-vars
+    4:99  warning  'ToolCheckItem' is defined but never used                                       @typescript-eslint/no-unused-vars
+  618:9   warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/stores/auth-store.ts
+    1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+    7:10  warning  'withAsyncErrorHandling' is defined but never used                              no-unused-vars
+    7:10  warning  'withAsyncErrorHandling' is defined but never used                              @typescript-eslint/no-unused-vars
+    7:34  warning  'withErrorHandling' is defined but never used                                   no-unused-vars
+    7:34  warning  'withErrorHandling' is defined but never used                                   @typescript-eslint/no-unused-vars
+    7:53  warning  'logStoreAction' is defined but never used                                      no-unused-vars
+    7:53  warning  'logStoreAction' is defined but never used                                      @typescript-eslint/no-unused-vars
+   78:13  warning  Unexpected console statement                                                    no-console
+  101:13  warning  Unexpected console statement                                                    no-console
+  106:11  warning  Unexpected console statement                                                    no-console
+  110:13  warning  Unexpected console statement                                                    no-console
+  118:15  warning  Unexpected console statement                                                    no-console
+  135:15  warning  Unexpected console statement                                                    no-console
+  159:15  warning  Unexpected console statement                                                    no-console
+  180:15  warning  Unexpected console statement                                                    no-console
+  183:13  warning  Unexpected console statement                                                    no-console
+  189:17  warning  Unexpected console statement                                                    no-console
+  209:11  warning  Unexpected console statement                                                    no-console
+  219:9   warning  Unexpected console statement                                                    no-console
+  236:11  warning  Unexpected console statement                                                    no-console
+  245:11  warning  Unexpected console statement                                                    no-console
+  254:9   warning  Unexpected console statement                                                    no-console
+  272:11  warning  Unexpected console statement                                                    no-console
+  289:13  warning  Unexpected console statement                                                    no-console
+  301:11  warning  Unexpected console statement                                                    no-console
+  311:11  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/stores/index.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/stores/settings-store.ts
+   1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  57:16  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead                     @typescript-eslint/array-type
+
+/data/data/com.termux/files/home/downloads/repo2/stores/store-utils.ts
+    1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+   31:5  warning  Unexpected console statement                                                    no-console
+   52:7  warning  Unexpected console statement                                                    no-console
+   71:7  warning  Unexpected console statement                                                    no-console
+  169:5  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/stores/store-validators.ts
+    1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+    1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  123:9  warning  Unexpected console statement                                                    no-console
+  127:5  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/stores/theme-store.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/types/auth.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/types/rating.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/types/service.ts
+  1:1   error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1   error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  1:10  warning  'User' is defined but never used                                                no-unused-vars
+  1:10  warning  'User' is defined but never used                                                @typescript-eslint/no-unused-vars
+
+/data/data/com.termux/files/home/downloads/repo2/utils/dev.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/utils/firebase-config.ts
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  45:5  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/utils/misc.ts
+   1:1  error    Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+   1:1  error    Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+  10:7  warning  Unexpected console statement                                                    no-console
+  13:5  warning  Unexpected console statement                                                    no-console
+
+/data/data/com.termux/files/home/downloads/repo2/utils/parts/getPartEstimate.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/utils/quote-generator.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+/data/data/com.termux/files/home/downloads/repo2/utils/vin/fromPlate.ts
+  1:1  error  Definition for rule '@typescript-eslint/no-empty-object-type' was not found     @typescript-eslint/no-empty-object-type
+  1:1  error  Definition for rule '@typescript-eslint/no-wrapper-object-types' was not found  @typescript-eslint/no-wrapper-object-types
+
+✖ 624 problems (262 errors, 362 warnings)
+  0 errors and 7 warnings potentially fixable with the `--fix` option.
+

@@ -111,4 +111,132 @@ export const SERVICE_PRICING: Record<ServiceType, ServicePricing> = {
     ],
     priceRange: { min: 65, max: 200 },
   },
+  
+  // Motorcycle Services
+  motorcycle_oil_change: {
+    basePrice: 35,
+    laborRate: 70,
+    estimatedHours: 0.5,
+    commonParts: [
+      { name: 'Motorcycle Oil (1qt)', price: 18 },
+      { name: 'Oil Filter', price: 12 },
+    ],
+    priceRange: { min: 50, max: 75 },
+  },
+  motorcycle_brake_inspection: {
+    basePrice: 45,
+    laborRate: 70,
+    estimatedHours: 0.75,
+    commonParts: [
+      { name: 'Brake Pads (Front)', price: 40 },
+      { name: 'Brake Pads (Rear)', price: 35 },
+      { name: 'Brake Fluid', price: 12 },
+    ],
+    priceRange: { min: 45, max: 150 },
+  },
+  motorcycle_tire_replacement: {
+    basePrice: 60,
+    laborRate: 70,
+    estimatedHours: 1,
+    commonParts: [
+      { name: 'Motorcycle Tire (Front)', price: 85 },
+      { name: 'Motorcycle Tire (Rear)', price: 95 },
+      { name: 'Valve Stem', price: 4 },
+    ],
+    priceRange: { min: 60, max: 250 },
+  },
+  motorcycle_chain_service: {
+    basePrice: 55,
+    laborRate: 70,
+    estimatedHours: 1,
+    commonParts: [
+      { name: 'Chain Lube', price: 15 },
+      { name: 'Chain Cleaner', price: 12 },
+      { name: 'Sprocket Set', price: 85 },
+    ],
+    priceRange: { min: 55, max: 180 },
+  },
+  motorcycle_battery_service: {
+    basePrice: 40,
+    laborRate: 70,
+    estimatedHours: 0.5,
+    commonParts: [
+      { name: 'Motorcycle Battery', price: 65 },
+      { name: 'Battery Terminals', price: 8 },
+    ],
+    priceRange: { min: 40, max: 120 },
+  },
+  motorcycle_diagnostic: {
+    basePrice: 85,
+    laborRate: 80,
+    estimatedHours: 1.5,
+    commonParts: [
+      { name: 'Diagnostic Fee', price: 85 },
+      { name: 'Various Parts', price: 50 },
+    ],
+    priceRange: { min: 85, max: 300 },
+  },
+  
+  // Scooter Services  
+  scooter_oil_change: {
+    basePrice: 30,
+    laborRate: 65,
+    estimatedHours: 0.5,
+    commonParts: [
+      { name: 'Scooter Oil (1qt)', price: 15 },
+      { name: 'Oil Filter', price: 10 },
+    ],
+    priceRange: { min: 45, max: 65 },
+  },
+  scooter_brake_inspection: {
+    basePrice: 40,
+    laborRate: 65,
+    estimatedHours: 0.75,
+    commonParts: [
+      { name: 'Brake Pads', price: 25 },
+      { name: 'Brake Fluid', price: 10 },
+    ],
+    priceRange: { min: 40, max: 100 },
+  },
+  scooter_tire_replacement: {
+    basePrice: 45,
+    laborRate: 65,
+    estimatedHours: 0.75,
+    commonParts: [
+      { name: 'Scooter Tire (Front)', price: 45 },
+      { name: 'Scooter Tire (Rear)', price: 50 },
+      { name: 'Valve Stem', price: 3 },
+    ],
+    priceRange: { min: 45, max: 150 },
+  },
+  scooter_carburetor_clean: {
+    basePrice: 65,
+    laborRate: 65,
+    estimatedHours: 1.5,
+    commonParts: [
+      { name: 'Carburetor Cleaner', price: 15 },
+      { name: 'Gasket Kit', price: 25 },
+    ],
+    priceRange: { min: 65, max: 150 },
+  },
+  scooter_battery_service: {
+    basePrice: 35,
+    laborRate: 65,
+    estimatedHours: 0.5,
+    commonParts: [
+      { name: 'Scooter Battery', price: 45 },
+      { name: 'Battery Terminals', price: 6 },
+    ],
+    priceRange: { min: 35, max: 95 },
+  },
+  scooter_diagnostic: {
+    basePrice: 75,
+    laborRate: 75,
+    estimatedHours: 1,
+    commonParts: [
+      { name: 'Diagnostic Fee', price: 75 },
+      { name: 'Various Parts', price: 40 },
+    ],
+    priceRange: { min: 75, max: 250 },
+  },
 };

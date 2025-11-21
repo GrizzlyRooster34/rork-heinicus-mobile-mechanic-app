@@ -2,27 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Android-specific optimizations */
-@media (platform: android) {
+/* Custom base styles for React Native */
+@layer base {
   * {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    box-sizing: border-box;
   }
 }
 
-/* Dark theme base styles */
-:root {
-  --background: #1a1a1a;
-  --foreground: #ffffff;
-  --primary: #3b82f6;
-  --primary-foreground: #ffffff;
-  --secondary: #374151;
-  --secondary-foreground: #f9fafb;
-  --accent: #6366f1;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #374151;
-  --input: #374151;
-  --ring: #3b82f6;
+/* Custom component styles */
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-colors;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-600 text-white;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-900;
+  }
+  
+  .btn-outline {
+    @apply border border-primary-600 text-primary-600 bg-transparent;
+  }
+  
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4;
+  }
+  
+  .text-heading {
+    @apply text-xl font-semibold text-gray-900;
+  }
+  
+  .text-body {
+    @apply text-base text-gray-700;
+  }
+  
+  .text-caption {
+    @apply text-sm text-gray-500;
+  }
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
 }

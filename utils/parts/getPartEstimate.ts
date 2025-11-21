@@ -201,6 +201,69 @@ export function calculatePartsTotal(estimates: PartEstimate[]): number {
   return estimates.reduce((total, estimate) => total + estimate.estimatedPrice, 0);
 }
 
+// Enhanced parts calculation function for the PartsApprovalToggle component
+export interface PartsCalculationResult {
+  total: number;
+  foundCount: number;
+  notFoundCount: number;
+  breakdown: {
+    name: string;
+    category: string;
+    price: number;
+    availability: 'in-stock' | 'special-order' | 'unknown';
+    brand?: string;
+    estimatedDelivery?: string;
+  }[];
+}
+
+export async function calculatePartsFromList(partNames: string[]): Promise<PartsCalculationResult> {
+  const estimates = await Promise.all(
+    partNames.map(async (partName) => {
+      const estimate = await getPartEstimate(partName);
+      return { partName, estimate };
+    })
+  );
+
+  const foundEstimates = estimates.filter(e => e.estimate !== null);
+  const notFoundCount = estimates.length - foundEstimates.length;
+
+  const breakdown = foundEstimates.map(({ partName, estimate }) => ({
+    name: estimate!.partName,
+    category: 'General',
+    price: estimate!.estimatedPrice,
+    availability: estimate!.availability === 'in-stock' ? 'in-stock' as const : 'special-order' as const,
+    brand: estimate!.source,
+    estimatedDelivery: estimate!.availability === 'order-required' ? '2-3 business days' : undefined,
+  }));
+
+  return {
+    total: foundEstimates.reduce((sum, { estimate }) => sum + (estimate?.estimatedPrice || 0), 0),
+    foundCount: foundEstimates.length,
+    notFoundCount,
+    breakdown,
+  };
+}
+
+// Synchronous version for parts calculation from string array
+export function calculatePartsFromStringList(partNames: string[]): PartsCalculationResult {
+  // This is a mock implementation - in real usage, this would be async
+  const mockBreakdown = partNames.map(name => ({
+    name: name,
+    category: 'General',
+    price: 50.0, // Default estimate
+    availability: 'special-order' as const,
+    brand: 'Generic',
+    estimatedDelivery: '2-3 business days',
+  }));
+
+  return {
+    total: mockBreakdown.reduce((sum, item) => sum + item.price, 0),
+    foundCount: partNames.length,
+    notFoundCount: 0,
+    breakdown: mockBreakdown,
+  };
+}
+
 // Motorcycle/Scooter specific parts
 const motorcyclePartsDatabase: Record<string, PartEstimate> = {
   'motorcycle oil': {

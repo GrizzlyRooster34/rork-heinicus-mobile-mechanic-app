@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
-import { useThemeStore } from '@/stores/theme-store';
+import { Colors } from '@/constants/colors';
 import { SERVICE_CATEGORIES } from '@/constants/services';
 import { ServiceCard } from '@/components/ServiceCard';
 import { MaintenanceReminders } from '@/components/MaintenanceReminders';
@@ -10,7 +10,6 @@ import { useAuthStore } from '@/stores/auth-store';
 import * as Icons from 'lucide-react-native';
 
 export default function CustomerHomeScreen() {
-  const { colors } = useThemeStore();
   const { serviceRequests, vehicles } = useAppStore();
   const { user, logout } = useAuthStore();
   
@@ -44,62 +43,63 @@ export default function CustomerHomeScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
-      {/* Welcome Section */}
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Welcome Section */}
       <View style={styles.welcomeSection}>
         <View style={styles.welcomeHeader}>
           <View>
-            <Text style={[styles.welcomeText, { color: colors.text }]}>
+            <Text style={styles.welcomeText}>
               Welcome back, {user?.firstName}!
             </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            <Text style={styles.subtitle}>
               Professional mobile mechanic services at your location
             </Text>
           </View>
           <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-            <Icons.LogOut size={20} color={colors.textMuted} />
+            <Icons.LogOut size={20} color={Colors.textMuted} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Emergency Button */}
-      <TouchableOpacity style={[styles.emergencyButton, { backgroundColor: colors.error }]} onPress={handleEmergencyPress}>
-        <Icons.Phone size={24} color={colors.white} />
+      <TouchableOpacity style={styles.emergencyButton} onPress={handleEmergencyPress}>
+        <Icons.Phone size={24} color={Colors.white} />
         <View style={styles.emergencyContent}>
-          <Text style={[styles.emergencyTitle, { color: colors.white }]}>Emergency Roadside</Text>
-          <Text style={[styles.emergencySubtitle, { color: colors.white }]}>24/7 immediate assistance</Text>
+          <Text style={styles.emergencyTitle}>Emergency Roadside</Text>
+          <Text style={styles.emergencySubtitle}>24/7 immediate assistance</Text>
         </View>
-        <Icons.ChevronRight size={20} color={colors.white} />
+        <Icons.ChevronRight size={20} color={Colors.white} />
       </TouchableOpacity>
 
       {/* Quick Stats */}
       <View style={styles.statsSection}>
         <View style={styles.statsGrid}>
           <TouchableOpacity 
-            style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={styles.statCard}
             onPress={() => handleQuickAction('quotes')}
           >
-            <Text style={[styles.statNumber, { color: colors.text }]}>{pendingRequests + activeRequests}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Active Requests</Text>
-            <Icons.Clock size={16} color={colors.primary} />
+            <Text style={styles.statNumber}>{pendingRequests + activeRequests}</Text>
+            <Text style={styles.statLabel}>Active Requests</Text>
+            <Icons.Clock size={16} color={Colors.primary} />
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={styles.statCard}
             onPress={() => handleQuickAction('quotes')}
           >
-            <Text style={[styles.statNumber, { color: colors.text }]}>{completedRequests}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Completed</Text>
-            <Icons.CheckCircle size={16} color={colors.success} />
+            <Text style={styles.statNumber}>{completedRequests}</Text>
+            <Text style={styles.statLabel}>Completed</Text>
+            <Icons.CheckCircle size={16} color={Colors.success} />
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={styles.statCard}
             onPress={() => handleQuickAction('profile')}
           >
-            <Text style={[styles.statNumber, { color: colors.text }]}>{vehicles.length}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Vehicles</Text>
-            <Icons.Car size={16} color={colors.primary} />
+            <Text style={styles.statNumber}>{vehicles.length}</Text>
+            <Text style={styles.statLabel}>Vehicles</Text>
+            <Icons.Car size={16} color={Colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -109,45 +109,45 @@ export default function CustomerHomeScreen() {
 
       {/* Quick Actions */}
       <View style={styles.quickActionsSection}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.quickActionsGrid}>
           <TouchableOpacity 
-            style={[styles.quickActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={styles.quickActionCard}
             onPress={() => handleQuickAction('quotes')}
           >
-            <Icons.FileText size={24} color={colors.primary} />
-            <Text style={[styles.quickActionText, { color: colors.text }]}>View Quotes</Text>
+            <Icons.FileText size={24} color={Colors.primary} />
+            <Text style={styles.quickActionText}>View Quotes</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.quickActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={styles.quickActionCard}
             onPress={() => handleQuickAction('profile')}
           >
-            <Icons.User size={24} color={colors.primary} />
-            <Text style={[styles.quickActionText, { color: colors.text }]}>My Profile</Text>
+            <Icons.User size={24} color={Colors.primary} />
+            <Text style={styles.quickActionText}>My Profile</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.quickActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={styles.quickActionCard}
             onPress={() => router.push('/request')}
           >
-            <Icons.Plus size={24} color={colors.primary} />
-            <Text style={[styles.quickActionText, { color: colors.text }]}>New Request</Text>
+            <Icons.Plus size={24} color={Colors.primary} />
+            <Text style={styles.quickActionText}>New Request</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.quickActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={styles.quickActionCard}
             onPress={() => router.push('/quotes')}
           >
-            <Icons.History size={24} color={colors.primary} />
-            <Text style={[styles.quickActionText, { color: colors.text }]}>Service History</Text>
+            <Icons.History size={24} color={Colors.primary} />
+            <Text style={styles.quickActionText}>Service History</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Services Section */}
       <View style={styles.servicesSection}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Our Services</Text>
+        <Text style={styles.sectionTitle}>Our Services</Text>
         {SERVICE_CATEGORIES.filter(s => s.id !== 'emergency_roadside').map((service) => (
           <ServiceCard
             key={service.id}
@@ -156,13 +156,19 @@ export default function CustomerHomeScreen() {
           />
         ))}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   container: {
     flex: 1,
+    backgroundColor: Colors.background,
   },
   welcomeSection: {
     padding: 20,
@@ -176,16 +182,19 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 28,
     fontWeight: '700',
+    color: Colors.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
+    color: Colors.textSecondary,
     lineHeight: 22,
   },
   logoutButton: {
     padding: 8,
   },
   emergencyButton: {
+    backgroundColor: Colors.error,
     marginHorizontal: 20,
     marginBottom: 24,
     padding: 16,
@@ -200,9 +209,11 @@ const styles = StyleSheet.create({
   emergencyTitle: {
     fontSize: 18,
     fontWeight: '600',
+    color: Colors.white,
   },
   emergencySubtitle: {
     fontSize: 14,
+    color: Colors.white,
     opacity: 0.9,
   },
   statsSection: {
@@ -215,18 +226,22 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
+    backgroundColor: Colors.card,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
+    borderColor: Colors.border,
   },
   statNumber: {
     fontSize: 24,
     fontWeight: '700',
+    color: Colors.text,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
+    color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -237,6 +252,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
+    color: Colors.text,
     marginBottom: 16,
   },
   quickActionsGrid: {
@@ -245,7 +261,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   quickActionCard: {
+    backgroundColor: Colors.card,
     borderWidth: 1,
+    borderColor: Colors.border,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -255,6 +273,7 @@ const styles = StyleSheet.create({
   },
   quickActionText: {
     fontSize: 14,
+    color: Colors.text,
     fontWeight: '500',
     marginTop: 8,
     textAlign: 'center',

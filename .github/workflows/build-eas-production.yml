@@ -1,8 +1,6 @@
 name: Build with EAS Cloud (Production)
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -24,18 +22,35 @@ jobs:
     - name: Setup EAS CLI
       run: npm install -g eas-cli@latest
         
-    - name: Build APK with EAS Cloud
+    - name: Build APK with EAS Cloud (JS Bundle Included)
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       run: |
-        # Try to build with EAS cloud service
-        # This should work for public repositories without authentication
-        echo "Starting EAS build..."
+        echo "🚀 Starting EAS build with embedded JS bundle..."
         
-        # Submit build to EAS cloud
-        eas build --platform android --profile standalone --non-interactive --no-wait || {
-          echo "EAS build submission failed or requires authentication"
-          echo "This may be normal for the free tier or private repos"
-          exit 0
-        }
+        if [ -z "$EXPO_TOKEN" ]; then
+          echo "❌ EXPO_TOKEN not found in secrets"
+          echo "Please add your EAS access token to GitHub repository secrets"
+          echo "1. Go to: https://github.com/${{ github.repository }}/settings/secrets/actions"
+          echo "2. Add new secret: EXPO_TOKEN = your_eas_access_token"
+          echo "3. Get token by running: eas login && eas build:configure"
+          exit 1
+        fi
+        
+        echo "✅ Authentication token found"
+        echo "📱 Submitting build to EAS cloud with JS bundle..."
+        
+        # Configure EAS if needed
+        npx eas build:configure --platform android --non-interactive || true
+        
+        # Submit build to EAS cloud (automatically includes JS bundle)
+        npx eas build --platform android --profile standalone --non-interactive --wait --json > build-result.json
+        
+        echo "✅ Build completed"
+        if [ -f "build-result.json" ]; then
+          echo "📋 Build details:"
+          cat build-result.json | jq '.'
+        fi
         
     - name: Build Summary
       run: |
