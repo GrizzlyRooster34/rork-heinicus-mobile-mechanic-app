@@ -136,7 +136,6 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@expo/ngrok": "^4.1.0",
-<<<<<<< HEAD
     "concurrently": "^9.1.0",
     "@prisma/client": "^6.19.0",
     "@testing-library/react-native": "^13.3.3",
