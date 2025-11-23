@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 export { router, publicProcedure, protectedProcedure, createTRPCRouter } from './trpc';
 
 // JWT secret - should match the one in auth route
-const JWT_SECRET = process.env.JWT_SECRET || 'heinicus-mobile-mechanic-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'heinicus-mobile-mechanic-secret-key-for-dev-only';
 
 export function createContext(opts: FetchCreateContextFnOptions) {
   // Extract JWT token from Authorization header
