@@ -160,7 +160,7 @@ const result = await trpc.admin.getAllUsers.query();
 ### Test Case 2: Authenticated Access (Admin)
 ```typescript
 // Log in as admin
-await authStore.login('matthew.heinen.2014@gmail.com', 'RoosTer669072!@');
+await authStore.login('admin@example.com', 'your-secure-password');
 
 // Access admin route
 const result = await trpc.admin.getAllUsers.query();
