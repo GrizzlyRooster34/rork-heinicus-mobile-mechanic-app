@@ -109,7 +109,6 @@
     "hono": "^4.7.11",
     "jsonwebtoken": "^9.0.2",
     "lucide-react-native": "^0.552.0",
-    "nativewind": "^4.1.23",
     "nodemailer": "^7.0.10",
     "otplib": "^12.0.1",
     "qrcode": "^1.5.4",
@@ -131,7 +130,8 @@
     "superjson": "^2.2.2",
     "ws": "^8.18.3",
     "zod": "^3.25.64",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.2",
+    "@rork-ai/toolkit-sdk": "0.2.51"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

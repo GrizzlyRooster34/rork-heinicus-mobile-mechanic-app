@@ -49,3 +49,8 @@ tailwind.config.js.backup
 .vercel
 
 /lib/generated/prisma
+
+ios/
+android/
+.rork
+rork-eslint.config.js

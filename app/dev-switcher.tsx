@@ -3,14 +3,15 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
-import { devMode, DEV_CREDENTIALS } from '@/utils/dev';
+import { DEV_CREDENTIALS } from '@/utils/dev';
 import * as Icons from 'lucide-react-native';
 
 export default function DevSwitcherScreen() {
   const { login, logout, user, isAuthenticated } = useAuthStore();
 
   const handleQuickLogin = async (role: 'ADMIN' | 'MECHANIC' | 'CUSTOMER') => {
-    const credentials = DEV_CREDENTIALS[role];
+    const credentialKey = role.toLowerCase() as 'admin' | 'mechanic' | 'customer';
+    const credentials = DEV_CREDENTIALS[credentialKey];
     const success = await login(credentials.email, credentials.password);
 
     if (success) {

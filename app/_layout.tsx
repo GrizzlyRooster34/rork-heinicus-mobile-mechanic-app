@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Colors } from '@/constants/colors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -78,7 +78,7 @@ function AppContent() {
     <ErrorBoundary 
       level="app" 
       onError={handleAppError}
-      resetKeys={[isReady]}
+      resetKeys={[isReady ? 1 : 0]}
     >
       <StatusBar style="light" backgroundColor={Colors.background} />
       <Stack
