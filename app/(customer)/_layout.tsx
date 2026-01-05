@@ -46,7 +46,7 @@ export default function CustomerTabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Home',
           headerTitle: 'Heinicus Mobile Mechanic',

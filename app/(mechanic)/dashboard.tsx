@@ -10,13 +10,11 @@ import * as Icons from 'lucide-react-native';
 
 export default function MechanicDashboardScreen() {
   const { colors } = useThemeStore();
-  const { serviceRequests, quotes, getTotalRevenue, getQuotesByStatus, logEvent } = useAppStore();
-  const { user, logout } = useAuthStore();
+  const { serviceRequests, getTotalRevenue, logEvent } = useAppStore();
+  const { logout } = useAuthStore();
 
-  // Production: Filter jobs for Cody only
   const mechanicId = 'mechanic-cody';
   const mechanicJobs = serviceRequests.filter(job => {
-    // Only show jobs assigned to Cody or unassigned jobs
     return !job.mechanicId || job.mechanicId === mechanicId;
   });
 
@@ -27,13 +25,11 @@ export default function MechanicDashboardScreen() {
     new Date(r.createdAt).toDateString() === new Date().toDateString()
   ).length;
 
-  // Calculate today's revenue
   const today = new Date();
   const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
   const todayRevenue = getTotalRevenue(startOfDay, endOfDay);
 
-  // Calculate weekly stats
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const weeklyRevenue = getTotalRevenue(weekAgo);
   const weeklyJobs = mechanicJobs.filter(r => 
@@ -112,7 +108,7 @@ export default function MechanicDashboardScreen() {
             
             <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.statNumber, { color: colors.text }]}>${todayRevenue}</Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Today's Revenue</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Today&apos;s Revenue</Text>
               <Icons.DollarSign size={16} color={colors.primary} />
             </View>
           </View>

@@ -25,7 +25,7 @@ export default function AdminLayout() {
         }}
       >
         <Tabs.Screen
-          name="index"
+          name="dashboard"
           options={{
             title: 'Dashboard',
             tabBarIcon: ({ color, size }) => (

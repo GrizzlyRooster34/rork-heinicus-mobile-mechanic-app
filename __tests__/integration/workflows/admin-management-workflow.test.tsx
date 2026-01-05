@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import AdminIndexScreen from '@/app/(admin)/index';
+import AdminDashboardScreen from '@/app/(admin)/dashboard';
 import AdminUsersScreen from '@/app/(admin)/users';
 import AdminJobsScreen from '@/app/(admin)/jobs';
 import AdminQuotesScreen from '@/app/(admin)/quotes';
@@ -94,7 +94,7 @@ describe('Admin Management Workflow Integration', () => {
         createMockUser({ role: 'mechanic' }),
       ];
 
-      const { getByText } = render(<AdminIndexScreen />);
+      const { getByText } = render(<AdminDashboardScreen />);
 
       await waitFor(() => {
         expect(getByText('System Overview')).toBeTruthy();
@@ -122,7 +122,7 @@ describe('Admin Management Workflow Integration', () => {
         }),
       ];
 
-      const { getByText } = render(<AdminIndexScreen />);
+      const { getByText } = render(<AdminDashboardScreen />);
 
       await waitFor(() => {
         expect(getByText('Recent Activity')).toBeTruthy();
@@ -138,7 +138,7 @@ describe('Admin Management Workflow Integration', () => {
         monthly: [35000, 38000, 42000, 45000],
       });
 
-      const { getByText } = render(<AdminIndexScreen />);
+      const { getByText } = render(<AdminDashboardScreen />);
 
       await waitFor(() => {
         expect(getByText('Performance Metrics')).toBeTruthy();
@@ -547,7 +547,7 @@ describe('Admin Management Workflow Integration', () => {
 
   describe('System Settings and Configuration', () => {
     test('should allow admin to modify system settings', async () => {
-      const { getByText, getByPlaceholderText } = render(<AdminIndexScreen />);
+      const { getByText, getByPlaceholderText } = render(<AdminDashboardScreen />);
 
       const settingsButton = getByText('System Settings');
       fireEvent.press(settingsButton);
@@ -573,7 +573,7 @@ describe('Admin Management Workflow Integration', () => {
     });
 
     test('should manage pricing rules', async () => {
-      const { getByText, getByPlaceholderText } = render(<AdminIndexScreen />);
+      const { getByText, getByPlaceholderText } = render(<AdminDashboardScreen />);
 
       const pricingButton = getByText('Pricing Rules');
       fireEvent.press(pricingButton);
@@ -608,7 +608,7 @@ describe('Admin Management Workflow Integration', () => {
         ],
       });
 
-      const { getByText } = render(<AdminIndexScreen />);
+      const { getByText } = render(<AdminDashboardScreen />);
 
       const reportsButton = getByText('Generate Reports');
       fireEvent.press(reportsButton);
@@ -629,7 +629,7 @@ describe('Admin Management Workflow Integration', () => {
         averageJobsPerCustomer: 2.3,
       });
 
-      const { getByText } = render(<AdminIndexScreen />);
+      const { getByText } = render(<AdminDashboardScreen />);
 
       await waitFor(() => {
         expect(getByText('User Metrics')).toBeTruthy();
@@ -645,7 +645,7 @@ describe('Admin Management Workflow Integration', () => {
         throw new Error('Database connection failed');
       });
 
-      const { getByText } = render(<AdminIndexScreen />);
+      const { getByText } = render(<AdminDashboardScreen />);
 
       await waitFor(() => {
         expect(getByText('Error Loading Data')).toBeTruthy();
@@ -662,7 +662,7 @@ describe('Admin Management Workflow Integration', () => {
     test('should handle permission errors', async () => {
       mockAuthStore.user.role = 'customer'; // Non-admin user
 
-      const { getByText } = render(<AdminIndexScreen />);
+      const { getByText } = render(<AdminDashboardScreen />);
 
       await waitFor(() => {
         expect(getByText('Access Denied')).toBeTruthy();
@@ -714,7 +714,7 @@ describe('Admin Management Workflow Integration', () => {
     });
 
     test('should update dashboard metrics in real-time', async () => {
-      const { getByText, rerender } = render(<AdminIndexScreen />);
+      const { getByText, rerender } = render(<AdminDashboardScreen />);
 
       mockAppStore.getAllStats.mockReturnValue({
         totalJobs: 150,
@@ -734,7 +734,7 @@ describe('Admin Management Workflow Integration', () => {
         completedJobs: 121,
       });
 
-      rerender(<AdminIndexScreen />);
+      rerender(<AdminDashboardScreen />);
 
       await waitFor(() => {
         expect(getByText('24')).toBeTruthy();

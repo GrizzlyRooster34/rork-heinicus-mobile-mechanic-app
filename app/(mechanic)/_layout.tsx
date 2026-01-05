@@ -52,7 +52,7 @@ export default function MechanicTabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="dashboard"
         options={{
           title: 'Dashboard',
           headerTitle: 'Mechanic Dashboard',

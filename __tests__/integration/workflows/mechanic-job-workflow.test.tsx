@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import MechanicJobsScreen from '@/app/(mechanic)/jobs';
-import MechanicIndexScreen from '@/app/(mechanic)/index';
+import MechanicDashboardScreen from '@/app/(mechanic)/dashboard';
 import { setupTestEnvironment, createMockServiceRequest, createMockQuote } from '../../utils/test-utils';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
@@ -480,7 +480,7 @@ describe('Mechanic Job Workflow Integration', () => {
         }),
       ];
 
-      const { getByText } = render(<MechanicIndexScreen />);
+      const { getByText } = render(<MechanicDashboardScreen />);
 
       await waitFor(() => {
         expect(getByText('Jobs Today')).toBeTruthy();
@@ -509,7 +509,7 @@ describe('Mechanic Job Workflow Integration', () => {
         }),
       ];
 
-      const { getByText } = render(<MechanicIndexScreen />);
+      const { getByText } = render(<MechanicDashboardScreen />);
 
       await waitFor(() => {
         expect(getByText('Today\'s Earnings')).toBeTruthy();
@@ -568,7 +568,7 @@ describe('Mechanic Job Workflow Integration', () => {
     test('should handle location unavailable', async () => {
       mockAppStore.mechanics[0].currentLocation = null;
 
-      const { getByText } = render(<MechanicIndexScreen />);
+      const { getByText } = render(<MechanicDashboardScreen />);
 
       await waitFor(() => {
         expect(getByText('Location Unavailable')).toBeTruthy();
@@ -578,7 +578,7 @@ describe('Mechanic Job Workflow Integration', () => {
 
   describe('Availability Management', () => {
     test('should allow mechanic to toggle availability', async () => {
-      const { getByText } = render(<MechanicIndexScreen />);
+      const { getByText } = render(<MechanicDashboardScreen />);
 
       await waitFor(() => {
         expect(getByText('Available')).toBeTruthy();
