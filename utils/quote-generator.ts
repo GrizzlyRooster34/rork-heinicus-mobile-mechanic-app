@@ -22,7 +22,7 @@ export function generateSmartQuote(
   serviceRequestId: string,
   options: QuoteOptions
 ): Quote {
-  const pricing = SERVICE_PRICING[options.serviceType];
+  const pricing = SERVICE_PRICING[options.serviceType] || SERVICE_PRICING['general_repair'];
   
   // Calculate labor cost
   let laborHours = options.customLaborHours || pricing.estimatedHours;
@@ -64,16 +64,16 @@ export function generateSmartQuote(
   }
   
   // Location-based travel fee
-  let travelFee = 0;
+  let travelCost = 0;
   if (options.location) {
     // Mock calculation - in production, calculate distance from mechanic location
     // For now, add a base travel fee
-    travelFee = 25; // Base $25 travel fee
+    travelCost = 25; // Base $25 travel fee
     
     // Add distance-based fee (mock calculation)
     const mockDistance = Math.random() * 20; // 0-20 miles
     if (mockDistance > 10) {
-      travelFee += (mockDistance - 10) * 2; // $2 per mile over 10 miles
+      travelCost += (mockDistance - 10) * 2; // $2 per mile over 10 miles
     }
   }
   
@@ -81,11 +81,11 @@ export function generateSmartQuote(
   switch (options.urgency) {
     case 'emergency':
       laborRate *= 1.5;
-      travelFee *= 1.5; // Emergency travel fee
+      travelCost *= 1.5; // Emergency travel fee
       break;
     case 'high':
       laborRate *= 1.25;
-      travelFee *= 1.2;
+      travelCost *= 1.2;
       break;
     case 'medium':
       laborRate *= 1.1;
@@ -120,19 +120,19 @@ export function generateSmartQuote(
   if (options.vehicle) {
     // Luxury brands typically have higher parts costs
     const luxuryBrands = ['BMW', 'Mercedes', 'Audi', 'Lexus', 'Acura', 'Infiniti', 'Cadillac'];
-    if (luxuryBrands.includes(options.vehicle.make)) {
+    if (options.vehicle.make && luxuryBrands.includes(options.vehicle.make)) {
       partsCost *= 1.3;
     }
     
     // Import brands might have higher parts costs
     const importBrands = ['Toyota', 'Honda', 'Nissan', 'Subaru', 'Mazda', 'Mitsubishi'];
-    if (importBrands.includes(options.vehicle.make)) {
+    if (options.vehicle.make && importBrands.includes(options.vehicle.make)) {
       partsCost *= 1.1;
     }
   }
   
   // Apply discount if any
-  let subtotal = laborCost + partsCost + travelFee;
+  let subtotal = laborCost + partsCost + travelCost;
   if (options.discountPercent && options.discountPercent > 0) {
     subtotal = Math.round(subtotal * (1 - options.discountPercent / 100));
   }
@@ -146,7 +146,7 @@ export function generateSmartQuote(
     laborHours, 
     options.aiDiagnosis,
     options.vehicle,
-    travelFee
+    travelCost
   );
   
   return {
@@ -155,11 +155,13 @@ export function generateSmartQuote(
     description,
     laborCost,
     partsCost,
-    travelFee,
+    travelCost, // Corrected from travelFee
     totalCost,
     estimatedDuration: laborHours,
     validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     status: 'pending',
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 }
 
@@ -181,9 +183,21 @@ function generateQuoteDescription(
     ac_service: 'A/C System Service',
     general_repair: 'General Automotive Repair',
     emergency_roadside: 'Emergency Roadside Assistance',
+    motorcycle_oil_change: 'Motorcycle Oil Change',
+    motorcycle_brake_inspection: 'Motorcycle Brake Inspection',
+    motorcycle_tire_replacement: 'Motorcycle Tire Replacement',
+    motorcycle_chain_service: 'Motorcycle Chain Service',
+    motorcycle_battery_service: 'Motorcycle Battery Service',
+    motorcycle_diagnostic: 'Motorcycle Diagnostic',
+    scooter_oil_change: 'Scooter Oil Change',
+    scooter_brake_inspection: 'Scooter Brake Inspection',
+    scooter_tire_replacement: 'Scooter Tire Replacement',
+    scooter_carburetor_clean: 'Scooter Carburetor Clean',
+    scooter_battery_service: 'Scooter Battery Service',
+    scooter_diagnostic: 'Scooter Diagnostic'
   };
   
-  let description = `Professional ${serviceNames[serviceType]}`;
+  let description = `Professional ${serviceNames[serviceType] || 'Service'}`;
   
   if (vehicle) {
     description += ` for ${vehicle.year} ${vehicle.make} ${vehicle.model}`;
@@ -316,7 +330,7 @@ export function calculateLiveCost(
   location?: { latitude: number; longitude: number },
   selectedParts?: string[]
 ): { min: number; max: number; breakdown: any } {
-  const pricing = SERVICE_PRICING[serviceType];
+  const pricing = SERVICE_PRICING[serviceType] || SERVICE_PRICING['general_repair'];
   
   let baseLaborCost = pricing.estimatedHours * pricing.laborRate;
   let basePartsCost = selectedParts?.reduce((total, partName) => {

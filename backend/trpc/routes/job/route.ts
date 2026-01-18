@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { publicProcedure, createTRPCRouter } from '../../create-context';
+import { publicProcedure, router } from '../../trpc';
+import { prisma } from '@/lib/prisma';
+import { JobStatus } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 
-// Mock job storage - in production this would be a database
-const jobStorage = new Map();
-
-export const jobRouter = createTRPCRouter({
+export const jobRouter = router({
   create: publicProcedure
     .input(z.object({
       customerId: z.string(),
@@ -26,28 +26,49 @@ export const jobRouter = createTRPCRouter({
       estimatedCost: z.number().optional(),
     }))
     .mutation(async ({ input }) => {
-      const jobId = `job-${Date.now()}`;
-      const job = {
-        id: jobId,
-        ...input,
-        status: 'pending',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        timeStarted: null,
-        timePaused: null,
-        timeEnded: null,
-        totalDuration: 0,
-      };
-      
-      jobStorage.set(jobId, job);
-      console.log('Job created:', jobId);
-      
-      return { success: true, job };
+      try {
+        const job = await prisma.job.create({
+          data: {
+            customerId: input.customerId,
+            serviceType: input.serviceType,
+            description: input.description,
+            vehicleMake: input.vehicleInfo.make,
+            vehicleModel: input.vehicleInfo.model,
+            vehicleYear: input.vehicleInfo.year,
+            vehicleVin: input.vehicleInfo.vin,
+            address: input.location.address,
+            latitude: input.location.latitude,
+            longitude: input.location.longitude,
+            scheduledDate: input.scheduledDate ? new Date(input.scheduledDate) : null,
+            partsApproved: input.partsApproved,
+            estimatedCost: input.estimatedCost,
+            status: JobStatus.PENDING,
+          },
+        });
+        
+        return { success: true, job };
+      } catch (error) {
+        console.error('Job creation error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create job',
+        });
+      }
     }),
 
   getAll: publicProcedure
     .query(async () => {
-      const jobs = Array.from(jobStorage.values());
+      const jobs = await prisma.job.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          customer: {
+            select: { firstName: true, lastName: true, email: true }
+          },
+          mechanic: {
+            select: { firstName: true, lastName: true }
+          }
+        }
+      });
       return { jobs };
     }),
 
@@ -56,9 +77,22 @@ export const jobRouter = createTRPCRouter({
       jobId: z.string(),
     }))
     .query(async ({ input }) => {
-      const job = jobStorage.get(input.jobId);
+      const job = await prisma.job.findUnique({
+        where: { id: input.jobId },
+        include: {
+          customer: true,
+          mechanic: true,
+          activityLog: true,
+          photos: true,
+          quotes: true,
+        }
+      });
+      
       if (!job) {
-        throw new Error('Job not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Job not found',
+        });
       }
       return { job };
     }),
@@ -69,17 +103,29 @@ export const jobRouter = createTRPCRouter({
       status: z.enum(['pending', 'accepted', 'in-progress', 'completed', 'cancelled']),
     }))
     .mutation(async ({ input }) => {
-      const job = jobStorage.get(input.jobId);
-      if (!job) {
-        throw new Error('Job not found');
+      const statusMap: Record<string, JobStatus> = {
+        'pending': JobStatus.PENDING,
+        'accepted': JobStatus.ACCEPTED,
+        'in-progress': JobStatus.IN_PROGRESS,
+        'completed': JobStatus.COMPLETED,
+        'cancelled': JobStatus.CANCELLED,
+      };
+
+      try {
+        const job = await prisma.job.update({
+          where: { id: input.jobId },
+          data: {
+            status: statusMap[input.status],
+          },
+        });
+        
+        return { success: true, job };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update job status',
+        });
       }
-      
-      job.status = input.status;
-      job.updatedAt = new Date();
-      jobStorage.set(input.jobId, job);
-      
-      console.log('Job status updated:', input.jobId, input.status);
-      return { success: true, job };
     }),
 
   updatePartsApproval: publicProcedure
@@ -89,20 +135,22 @@ export const jobRouter = createTRPCRouter({
       estimatedPartsCost: z.number().optional(),
     }))
     .mutation(async ({ input }) => {
-      const job = jobStorage.get(input.jobId);
-      if (!job) {
-        throw new Error('Job not found');
+      try {
+        const job = await prisma.job.update({
+          where: { id: input.jobId },
+          data: {
+            partsApproved: input.partsApproved,
+            estimatedPartsCost: input.estimatedPartsCost,
+          },
+        });
+        
+        return { success: true, job };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update parts approval',
+        });
       }
-      
-      job.partsApproved = input.partsApproved;
-      if (input.estimatedPartsCost !== undefined) {
-        job.estimatedPartsCost = input.estimatedPartsCost;
-      }
-      job.updatedAt = new Date();
-      jobStorage.set(input.jobId, job);
-      
-      console.log('Job parts approval updated:', input.jobId, input.partsApproved);
-      return { success: true, job };
     }),
 
   updateTimeLog: publicProcedure
@@ -117,43 +165,35 @@ export const jobRouter = createTRPCRouter({
       notes: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      const job = jobStorage.get(input.jobId);
-      if (!job) {
-        throw new Error('Job not found');
+      try {
+        const updateData: any = {};
+        if (input.timeStarted) updateData.timeStarted = input.timeStarted;
+        if (input.timePaused) updateData.timePaused = input.timePaused;
+        if (input.timeEnded) updateData.timeEnded = input.timeEnded;
+        if (input.duration !== undefined) updateData.totalDuration = input.duration;
+
+        const job = await prisma.job.update({
+          where: { id: input.jobId },
+          data: {
+            ...updateData,
+            activityLog: {
+              create: {
+                mechanicId: input.mechanicId,
+                activity: input.activity || 'Time updated',
+                notes: input.notes,
+                duration: input.duration,
+              }
+            }
+          },
+        });
+        
+        return { success: true, job };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update time log',
+        });
       }
-      
-      // Update time tracking fields
-      if (input.timeStarted) {
-        job.timeStarted = input.timeStarted;
-      }
-      if (input.timePaused) {
-        job.timePaused = input.timePaused;
-      }
-      if (input.timeEnded) {
-        job.timeEnded = input.timeEnded;
-      }
-      if (input.duration !== undefined) {
-        job.totalDuration = input.duration;
-      }
-      
-      // Add to activity log
-      if (!job.activityLog) {
-        job.activityLog = [];
-      }
-      
-      job.activityLog.push({
-        timestamp: new Date(),
-        mechanicId: input.mechanicId,
-        activity: input.activity || 'Time updated',
-        notes: input.notes,
-        duration: input.duration,
-      });
-      
-      job.updatedAt = new Date();
-      jobStorage.set(input.jobId, job);
-      
-      console.log('Job time log updated:', input.jobId, input.activity);
-      return { success: true, job };
     }),
 
   addPhoto: publicProcedure
@@ -164,27 +204,26 @@ export const jobRouter = createTRPCRouter({
       mechanicId: z.string(),
     }))
     .mutation(async ({ input }) => {
-      const job = jobStorage.get(input.jobId);
-      if (!job) {
-        throw new Error('Job not found');
+      try {
+        const job = await prisma.job.update({
+          where: { id: input.jobId },
+          data: {
+            photos: {
+              create: {
+                url: input.photoUrl,
+                description: input.description,
+                mechanicId: input.mechanicId,
+              }
+            }
+          },
+        });
+        
+        return { success: true, job };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to add photo',
+        });
       }
-      
-      if (!job.photos) {
-        job.photos = [];
-      }
-      
-      job.photos.push({
-        id: `photo-${Date.now()}`,
-        url: input.photoUrl,
-        description: input.description,
-        mechanicId: input.mechanicId,
-        timestamp: new Date(),
-      });
-      
-      job.updatedAt = new Date();
-      jobStorage.set(input.jobId, job);
-      
-      console.log('Photo added to job:', input.jobId);
-      return { success: true, job };
     }),
 });

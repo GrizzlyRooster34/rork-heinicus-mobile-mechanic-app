@@ -1,76 +1,103 @@
 import { z } from 'zod';
-import { publicProcedure, createTRPCRouter } from '../../create-context';
+import { publicProcedure, router } from '../../trpc';
+import { prisma } from '@/lib/prisma';
+import { UserRole, JobStatus, QuoteStatus } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
+import bcrypt from 'bcryptjs';
 
-export const adminRouter = createTRPCRouter({
+export const adminRouter = router({
   getAllUsers: publicProcedure
     .query(async () => {
-      // In a real app, this would fetch from database with admin auth check
-      console.log('Admin: Getting all users');
-      
-      // Mock users data
-      return {
-        users: [
-          {
-            id: 'admin-cody',
-            email: 'matthew.heinen.2014@gmail.com',
-            firstName: 'Cody',
-            lastName: 'Owner',
-            role: 'admin' as const,
-            createdAt: new Date(),
+      try {
+        const users = await prisma.user.findMany({
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            createdAt: true,
             isActive: true,
-          },
-          {
-            id: 'mechanic-cody',
-            email: 'cody@heinicus.com',
-            firstName: 'Cody',
-            lastName: 'Mechanic',
-            role: 'mechanic' as const,
-            createdAt: new Date(),
-            isActive: true,
-          },
-          {
-            id: 'customer-demo',
-            email: 'customer@example.com',
-            firstName: 'Demo',
-            lastName: 'Customer',
-            role: 'customer' as const,
-            createdAt: new Date(),
-            isActive: true,
+            phone: true,
           }
-        ]
-      };
+        });
+        return { users };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch users',
+        });
+      }
     }),
 
   updateUserRole: publicProcedure
     .input(z.object({
       userId: z.string(),
-      role: z.enum(['customer', 'mechanic', 'admin']),
+      role: z.enum(['CUSTOMER', 'MECHANIC', 'ADMIN']),
     }))
     .mutation(async ({ input }) => {
-      // In a real app, this would update database with admin auth check
-      console.log('Admin: Updating user role:', input);
-      
-      return {
-        success: true,
-        message: `User role updated to ${input.role}`
-      };
+      try {
+        await prisma.user.update({
+          where: { id: input.userId },
+          data: { role: input.role as UserRole },
+        });
+        
+        return {
+          success: true,
+          message: `User role updated to ${input.role}`
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update user role',
+        });
+      }
     }),
 
   getSystemStats: publicProcedure
     .query(async () => {
-      // In a real app, this would fetch real stats from database
-      console.log('Admin: Getting system stats');
-      
-      return {
-        totalUsers: 25,
-        totalCustomers: 22,
-        totalMechanics: 2,
-        totalAdmins: 1,
-        totalJobs: 45,
-        completedJobs: 38,
-        totalRevenue: 12500,
-        activeJobs: 7,
-      };
+      try {
+        const [
+          totalUsers,
+          totalCustomers,
+          totalMechanics,
+          totalAdmins,
+          totalJobs,
+          completedJobs,
+          activeJobs,
+          revenueResult
+        ] = await Promise.all([
+          prisma.user.count(),
+          prisma.user.count({ where: { role: UserRole.CUSTOMER } }),
+          prisma.user.count({ where: { role: UserRole.MECHANIC } }),
+          prisma.user.count({ where: { role: UserRole.ADMIN } }),
+          prisma.job.count(),
+          prisma.job.count({ where: { status: JobStatus.COMPLETED } }),
+          prisma.job.count({ where: { status: { in: [JobStatus.ACCEPTED, JobStatus.IN_PROGRESS] } } }),
+          prisma.quote.aggregate({
+            where: { status: QuoteStatus.PAID },
+            _sum: { totalCost: true }
+          })
+        ]);
+
+        return {
+          totalUsers,
+          totalCustomers,
+          totalMechanics,
+          totalAdmins,
+          totalJobs,
+          completedJobs,
+          activeJobs,
+          totalRevenue: revenueResult._sum.totalCost || 0,
+        };
+      } catch (error) {
+        console.error('Stats error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch system stats',
+        });
+      }
     }),
 
   createUser: publicProcedure
@@ -78,22 +105,49 @@ export const adminRouter = createTRPCRouter({
       email: z.string().email(),
       firstName: z.string(),
       lastName: z.string(),
-      role: z.enum(['customer', 'mechanic', 'admin']),
+      role: z.enum(['CUSTOMER', 'MECHANIC', 'ADMIN']),
       phone: z.string().optional(),
+      password: z.string().min(6).optional(), // Optional, could generate random if missing
     }))
     .mutation(async ({ input }) => {
-      // In a real app, this would create user in database with admin auth check
-      console.log('Admin: Creating user:', input);
-      
-      return {
-        success: true,
-        user: {
-          id: `user-${Date.now()}`,
-          ...input,
-          createdAt: new Date(),
-          isActive: true,
-        }
-      };
+      try {
+        const tempPassword = input.password || Math.random().toString(36).slice(-8);
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(tempPassword, salt);
+
+        const user = await prisma.user.create({
+          data: {
+            email: input.email.toLowerCase(),
+            firstName: input.firstName,
+            lastName: input.lastName,
+            role: input.role as UserRole,
+            phone: input.phone,
+            passwordHash,
+            isActive: true,
+          },
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            createdAt: true,
+            isActive: true,
+          }
+        });
+        
+        return {
+          success: true,
+          user,
+          tempPassword: input.password ? undefined : tempPassword // Return only if generated
+        };
+      } catch (error) {
+        console.error('Create user error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create user',
+        });
+      }
     }),
 
   updateSetting: publicProcedure
@@ -102,16 +156,9 @@ export const adminRouter = createTRPCRouter({
       value: z.union([z.string(), z.boolean(), z.number(), z.null()]),
     }))
     .mutation(async ({ input }) => {
-      // In a real app, this would persist to database with admin auth check
-      console.log('Admin: Updating setting:', input);
-      
-      // For now, just return success
-      // In production, this would upsert to a settings table:
-      // await ctx.db.config.upsert({
-      //   where: { key: input.key },
-      //   update: { value: input.value },
-      //   create: { key: input.key, value: input.value }
-      // });
+      // Placeholder: In a real app, you'd have a Settings/Config table
+      // e.g., await prisma.systemConfig.upsert(...)
+      console.log('Admin: Updating setting (DB not implemented for settings yet):', input);
       
       return {
         success: true,
@@ -127,7 +174,7 @@ export const adminRouter = createTRPCRouter({
       value: z.union([z.string(), z.boolean(), z.number(), z.null()]),
     }))
     .mutation(async ({ input }) => {
-      // In a real app, this would persist to database with admin auth check
+      // Placeholder: Same as updateSetting
       console.log('Admin: Updating config:', input);
       
       return {

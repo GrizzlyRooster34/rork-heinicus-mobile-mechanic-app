@@ -1,7 +1,16 @@
 import { z } from 'zod';
-import { publicProcedure, createTRPCRouter } from '../../create-context';
+import { publicProcedure, router } from '../../trpc';
+import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
+import { TRPCError } from '@trpc/server';
+import { 
+  generateAccessToken, 
+  generateRefreshToken,
+  TOKEN_EXPIRATION
+} from '@/backend/middleware/auth';
+import { UserRole } from '@prisma/client';
 
-export const authRouter = createTRPCRouter({
+export const authRouter = router({
   signup: publicProcedure
     .input(z.object({
       email: z.string().email(),
@@ -9,55 +18,71 @@ export const authRouter = createTRPCRouter({
       firstName: z.string().min(1),
       lastName: z.string().min(1),
       phone: z.string().optional(),
-      role: z.enum(['customer', 'mechanic']).optional().default('customer'),
+      role: z.enum(['CUSTOMER', 'MECHANIC']).optional().default('CUSTOMER'),
     }))
     .mutation(async ({ input }) => {
-      // In a real app, this would hash the password and save to database
-      console.log('Signup attempt:', { 
-        email: input.email, 
-        firstName: input.firstName,
-        role: input.role,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Check if user already exists (mock check)
-      const existingUsers = [
-        'matthew.heinen.2014@gmail.com',
-        'cody@heinicus.com',
-        'customer@example.com'
-      ];
-      
-      if (existingUsers.includes(input.email)) {
+      try {
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({
+          where: { email: input.email.toLowerCase() },
+        });
+
+        if (existingUser) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'An account with this email already exists',
+          });
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(input.password, salt);
+
+        // Create user
+        const user = await prisma.user.create({
+          data: {
+            email: input.email.toLowerCase(),
+            passwordHash,
+            firstName: input.firstName,
+            lastName: input.lastName,
+            phone: input.phone,
+            role: input.role as UserRole,
+            isActive: true,
+          },
+        });
+
+        // Generate tokens
+        const accessToken = generateAccessToken({
+          userId: user.id,
+          email: user.email,
+          role: user.role,
+        });
+
+        const refreshToken = generateRefreshToken(user.id);
+
         return {
-          success: false,
-          error: 'An account with this email already exists'
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            phone: user.phone,
+            createdAt: user.createdAt,
+          },
+          token: accessToken,
+          refreshToken,
         };
+      } catch (error: any) {
+        if (error instanceof TRPCError) throw error;
+        
+        console.error('Signup error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create user account',
+        });
       }
-      
-      // Mock successful signup
-      const newUser = {
-        id: `user-${Date.now()}`,
-        email: input.email,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        role: input.role as 'customer' | 'mechanic',
-        phone: input.phone,
-        createdAt: new Date(),
-        isActive: true,
-      };
-      
-      console.log('Signup successful:', { 
-        userId: newUser.id, 
-        email: newUser.email,
-        role: newUser.role,
-        timestamp: new Date().toISOString()
-      });
-      
-      return {
-        success: true,
-        user: newUser,
-        token: 'mock-jwt-token'
-      };
     }),
 
   signin: publicProcedure
@@ -66,66 +91,69 @@ export const authRouter = createTRPCRouter({
       password: z.string(),
     }))
     .mutation(async ({ input }) => {
-      // In a real app, this would verify password hash
-      console.log('Signin attempt:', { 
-        email: input.email,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Mock authentication logic
-      if (input.email === 'matthew.heinen.2014@gmail.com' && input.password === 'RoosTer669072!@') {
+      try {
+        // Find user
+        const user = await prisma.user.findUnique({
+          where: { email: input.email.toLowerCase() },
+        });
+
+        if (!user || !user.passwordHash) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Invalid email or password',
+          });
+        }
+
+        // Verify password
+        const isValid = await bcrypt.compare(input.password, user.passwordHash);
+
+        if (!isValid) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Invalid email or password',
+          });
+        }
+
+        // Check if user is active
+        if (!user.isActive) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'User account is inactive',
+          });
+        }
+
+        // Generate tokens
+        const accessToken = generateAccessToken({
+          userId: user.id,
+          email: user.email,
+          role: user.role,
+        });
+
+        const refreshToken = generateRefreshToken(user.id);
+
         return {
           success: true,
           user: {
-            id: 'admin-cody',
-            email: input.email,
-            firstName: 'Cody',
-            lastName: 'Owner',
-            role: 'admin' as const,
-            createdAt: new Date(),
-            isActive: true,
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            phone: user.phone,
+            createdAt: user.createdAt,
           },
-          token: 'mock-jwt-token'
+          token: accessToken,
+          refreshToken,
         };
+      } catch (error: any) {
+        if (error instanceof TRPCError) throw error;
+        
+        console.error('Signin error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Authentication failed',
+        });
       }
-      
-      if (input.email === 'cody@heinicus.com' && input.password === 'RoosTer669072!@') {
-        return {
-          success: true,
-          user: {
-            id: 'mechanic-cody',
-            email: input.email,
-            firstName: 'Cody',
-            lastName: 'Mechanic',
-            role: 'mechanic' as const,
-            createdAt: new Date(),
-            isActive: true,
-          },
-          token: 'mock-jwt-token'
-        };
-      }
-      
-      // Mock customer login
-      if (input.email === 'customer@example.com') {
-        return {
-          success: true,
-          user: {
-            id: 'customer-demo',
-            email: input.email,
-            firstName: 'Demo',
-            lastName: 'Customer',
-            role: 'customer' as const,
-            createdAt: new Date(),
-            isActive: true,
-          },
-          token: 'mock-jwt-token'
-        };
-      }
-      
-      return {
-        success: false,
-        error: 'Invalid credentials'
-      };
     }),
 
   verifyToken: publicProcedure
@@ -133,27 +161,35 @@ export const authRouter = createTRPCRouter({
       token: z.string(),
     }))
     .query(async ({ input }) => {
-      // In a real app, this would verify JWT token
-      console.log('Token verification:', { 
-        token: input.token,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Mock token verification
-      if (input.token === 'mock-jwt-token') {
+      // The actual verification is usually handled by middleware, 
+      // but this endpoint can be used for explicit verification
+      try {
+        const { verifyToken } = await import('../../middleware/auth');
+        const payload = verifyToken(input.token);
+        
+        // Verify user still exists and is active
+        const user = await prisma.user.findUnique({
+          where: { id: payload.userId },
+          select: { id: true, email: true, role: true, isActive: true },
+        });
+
+        if (!user || !user.isActive) {
+          return { valid: false, error: 'User not found or inactive' };
+        }
+
         return {
           valid: true,
           user: {
-            id: 'user-1',
-            email: 'user@example.com',
-            role: 'customer' as const,
+            id: user.id,
+            email: user.email,
+            role: user.role,
           }
         };
+      } catch (error: any) {
+        return {
+          valid: false,
+          error: error.message || 'Invalid token'
+        };
       }
-      
-      return {
-        valid: false,
-        error: 'Invalid token'
-      };
     }),
 });

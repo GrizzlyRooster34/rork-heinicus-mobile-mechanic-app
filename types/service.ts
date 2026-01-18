@@ -86,7 +86,9 @@ export type QuoteStatus =
   | 'rejected'
   | 'expired'
   | 'deposit_paid'
-  | 'paid';
+  | 'paid'
+  | 'approved'
+  | 'declined';
 
 export type MechanicVerificationStatus = 'pending' | 'approved' | 'rejected';
 
@@ -174,6 +176,7 @@ export interface ServiceRequest {
   partsApproved?: boolean; // New field for parts approval toggle
   partsEstimate?: number; // Estimated parts cost
   partsActual?: number; // Actual parts cost
+  paidAt?: Date;
 }
 
 export interface Quote {
@@ -189,8 +192,10 @@ export interface Quote {
   createdAt: Date;
   updatedAt?: Date;
   acceptedAt?: Date;
+  depositPaidAt?: Date;
   paidAt?: Date;
   notes?: string;
+  description?: string;
   breakdown?: {
     description: string;
     cost: number;
@@ -347,3 +352,14 @@ export interface PaymentMethod {
   };
   isDefault: boolean;
 }
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  text: string;
+  timestamp: Date;
+  read: boolean;
+}
+
+export type MaintenanceInterval = '3000' | '5000' | '10000' | 'custom';

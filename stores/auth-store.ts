@@ -68,13 +68,16 @@ export const useAuthStore = create<AuthStore>()(
         
         try {
           // Use TRPC client for signup
+          // Map lowercase role to uppercase for backend
+          const backendRole = role.toUpperCase() as 'CUSTOMER' | 'MECHANIC';
+          
           const result = await trpcClient.auth.signup.mutate({
             email,
             password,
             firstName,
             lastName,
             phone,
-            role,
+            role: backendRole,
           });
           
           if (result.success && result.user) {
@@ -85,8 +88,11 @@ export const useAuthStore = create<AuthStore>()(
               timestamp: new Date().toISOString() 
             });
             
-            // Use the user object as returned from the backend
-            const completeUser: User = result.user;
+            // Map backend uppercase role to frontend lowercase
+            const completeUser: User = {
+              ...result.user,
+              role: result.user.role.toLowerCase() as 'customer' | 'mechanic' | 'admin'
+            };
             
             // Auto-login after successful signup
             set({ 
@@ -96,11 +102,11 @@ export const useAuthStore = create<AuthStore>()(
             });
             
             return true;
-          } else {
-            console.log('Signup failed via TRPC:', result.error);
-            set({ isLoading: false });
-            return false;
           }
+          
+          // Should not reach here if backend throws on error
+          set({ isLoading: false });
+          return false;
         } catch (error) {
           console.error('Signup error:', error);
           
@@ -161,8 +167,11 @@ export const useAuthStore = create<AuthStore>()(
                 timestamp: new Date().toISOString() 
               });
               
-              // Use the user object as returned from the backend
-              const completeUser: User = result.user;
+              // Map backend uppercase role to frontend lowercase
+              const completeUser: User = {
+                ...result.user,
+                role: result.user.role.toLowerCase() as 'customer' | 'mechanic' | 'admin'
+              };
               
               set({ 
                 user: completeUser, 
@@ -171,8 +180,6 @@ export const useAuthStore = create<AuthStore>()(
               });
               
               return true;
-            } else {
-              console.log('Login failed via TRPC:', result.error);
             }
           } catch (trpcError) {
             console.warn('TRPC login failed, trying dev fallback:', trpcError);
@@ -275,9 +282,10 @@ export const useAuthStore = create<AuthStore>()(
         }
 
         try {
+          const backendRole = role.toUpperCase() as 'CUSTOMER' | 'MECHANIC' | 'ADMIN';
           const result = await trpcClient.admin.updateUserRole.mutate({
             userId,
-            role,
+            role: backendRole,
           });
           
           if (result.success) {

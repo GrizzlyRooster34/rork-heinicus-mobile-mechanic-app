@@ -1,58 +1,72 @@
 import { z } from 'zod';
-import { publicProcedure, createTRPCRouter } from '../../create-context';
+import { publicProcedure, router } from '../../trpc';
+import { prisma } from '@/lib/prisma';
+import { QuoteStatus, JobStatus } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 
-export const quoteRouter = createTRPCRouter({
+export const quoteRouter = router({
   create: publicProcedure
     .input(z.object({
-      serviceRequestId: z.string(),
+      jobId: z.string().optional(),
       description: z.string(),
       laborCost: z.number(),
       partsCost: z.number(),
       totalCost: z.number(),
       estimatedDuration: z.number(),
-      validUntil: z.date(),
+      validUntil: z.string().or(z.date()),
+      creatorId: z.string(), // In production this would come from ctx.user.id
     }))
     .mutation(async ({ input }) => {
-      // In a real app, this would save to database
-      console.log('Creating quote:', input);
-      
-      const quote = {
-        id: `quote-${Date.now()}`,
-        ...input,
-        status: 'pending' as const,
-        createdAt: new Date(),
-        createdBy: 'admin-cody', // In real app, get from auth context
-      };
-      
-      return {
-        success: true,
-        quote
-      };
+      try {
+        const validUntilDate = typeof input.validUntil === 'string' 
+          ? new Date(input.validUntil) 
+          : input.validUntil;
+
+        const quote = await prisma.quote.create({
+          data: {
+            jobId: input.jobId,
+            description: input.description,
+            laborCost: input.laborCost,
+            partsCost: input.partsCost,
+            totalCost: input.totalCost,
+            estimatedDuration: input.estimatedDuration,
+            validUntil: validUntilDate,
+            status: QuoteStatus.PENDING,
+            createdBy: input.creatorId,
+          },
+        });
+        
+        return { success: true, quote };
+      } catch (error) {
+        console.error('Quote creation error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create quote',
+        });
+      }
     }),
 
   listAll: publicProcedure
     .query(async () => {
-      // In a real app, this would fetch from database with auth check
-      console.log('Getting all quotes');
-      
-      // Mock quotes data
-      return {
-        quotes: [
-          {
-            id: 'quote-1',
-            serviceRequestId: 'request-1',
-            description: 'Oil change service',
-            laborCost: 50,
-            partsCost: 30,
-            totalCost: 80,
-            estimatedDuration: 1,
-            validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            status: 'pending' as const,
-            createdAt: new Date(),
-            createdBy: 'admin-cody',
+      const quotes = await prisma.quote.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          job: {
+            select: {
+              vehicleMake: true,
+              vehicleModel: true,
+              vehicleYear: true,
+            }
+          },
+          creator: {
+            select: {
+              firstName: true,
+              lastName: true,
+            }
           }
-        ]
-      };
+        }
+      });
+      return { quotes };
     }),
 
   listMine: publicProcedure
@@ -60,12 +74,19 @@ export const quoteRouter = createTRPCRouter({
       userId: z.string(),
     }))
     .query(async ({ input }) => {
-      // In a real app, this would fetch user's quotes from database
-      console.log('Getting quotes for user:', input.userId);
+      // Find quotes created by this user or related to jobs for this user (if customer)
+      // For now, simpler implementation: quotes created by user
+      const quotes = await prisma.quote.findMany({
+        where: {
+          createdBy: input.userId,
+        },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          job: true
+        }
+      });
       
-      return {
-        quotes: []
-      };
+      return { quotes };
     }),
 
   updateStatus: publicProcedure
@@ -74,13 +95,33 @@ export const quoteRouter = createTRPCRouter({
       status: z.enum(['pending', 'approved', 'declined', 'accepted', 'paid']),
     }))
     .mutation(async ({ input }) => {
-      // In a real app, this would update database
-      console.log('Updating quote status:', input);
-      
-      return {
-        success: true,
-        message: `Quote status updated to ${input.status}`
+      const statusMap: Record<string, QuoteStatus> = {
+        'pending': QuoteStatus.PENDING,
+        'approved': QuoteStatus.APPROVED,
+        'declined': QuoteStatus.DECLINED,
+        'accepted': QuoteStatus.ACCEPTED,
+        'paid': QuoteStatus.PAID,
       };
+
+      try {
+        const quote = await prisma.quote.update({
+          where: { id: input.quoteId },
+          data: {
+            status: statusMap[input.status],
+          },
+        });
+        
+        return { 
+          success: true, 
+          message: `Quote status updated to ${input.status}`,
+          quote 
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update quote status',
+        });
+      }
     }),
 
   approve: publicProcedure
@@ -88,13 +129,43 @@ export const quoteRouter = createTRPCRouter({
       quoteId: z.string(),
     }))
     .mutation(async ({ input }) => {
-      // In a real app, this would update database and create job
-      console.log('Approving quote:', input.quoteId);
-      
-      return {
-        success: true,
-        message: 'Quote approved and job scheduled'
-      };
+      try {
+        // Start a transaction to update quote and potentially job
+        const result = await prisma.$transaction(async (tx) => {
+          // 1. Update quote status
+          const quote = await tx.quote.update({
+            where: { id: input.quoteId },
+            data: { status: QuoteStatus.APPROVED },
+          });
+
+          // 2. If linked to a job, update job status and costs
+          if (quote.jobId) {
+            await tx.job.update({
+              where: { id: quote.jobId },
+              data: {
+                status: JobStatus.ACCEPTED,
+                estimatedCost: quote.totalCost,
+                partsApproved: true,
+                estimatedPartsCost: quote.partsCost,
+              },
+            });
+          }
+
+          return quote;
+        });
+        
+        return { 
+          success: true, 
+          message: 'Quote approved and job scheduled',
+          quote: result
+        };
+      } catch (error) {
+        console.error('Quote approval error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to approve quote',
+        });
+      }
     }),
 });
 
