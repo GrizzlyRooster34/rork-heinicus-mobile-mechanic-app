@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Button } from '@/components/Button';
 import { Colors } from '@/constants/colors';
+import { JobLog } from '@/types/service';
 import * as Icons from 'lucide-react-native';
 
 interface WorkTimerProps {
   jobId: string;
+  jobTitle?: string;
   onTimeUpdate?: (timeData: TimeData) => void;
+  onWorkComplete?: (jobId: string, workLog: JobLog) => void;
   initialTime?: number; // in seconds
 }
 
@@ -19,7 +22,7 @@ interface TimeData {
   pausedDuration: number;
 }
 
-export default function WorkTimer({ jobId, onTimeUpdate, initialTime = 0 }: WorkTimerProps) {
+export default function WorkTimer({ jobId, jobTitle, onTimeUpdate, onWorkComplete, initialTime = 0 }: WorkTimerProps) {
   const [timeData, setTimeData] = useState<TimeData>({
     jobId,
     startTime: null,
@@ -30,7 +33,7 @@ export default function WorkTimer({ jobId, onTimeUpdate, initialTime = 0 }: Work
   });
   
   const [currentTime, setCurrentTime] = useState(0);
-  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
+  const [intervalId, setIntervalId] = useState<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     // Update parent component when time data changes
@@ -114,6 +117,19 @@ export default function WorkTimer({ jobId, onTimeUpdate, initialTime = 0 }: Work
 
             setTimeData(newTimeData);
             setCurrentTime(0);
+
+            const workLog: JobLog = {
+              id: Date.now().toString(),
+              jobId,
+              mechanicId: 'mechanic-cody',
+              startTime: newTimeData.startTime || now,
+              endTime: now,
+              duration: Math.round(finalTotalSeconds / 60),
+              activity: jobTitle ? `Completed ${jobTitle}` : 'Work completed',
+              createdAt: new Date(),
+            };
+
+            onWorkComplete?.(jobId, workLog);
 
             console.log('Job completed:', {
               jobId,
@@ -227,7 +243,7 @@ Time has been recorded for job ${jobId}`,
         <Text style={styles.timeText}>
           {formatTime(getTotalDisplayTime())}
         </Text>
-        <Text style={styles.jobIdText}>Job: {jobId}</Text>
+        <Text style={styles.jobIdText}>Job: {jobTitle || jobId}</Text>
       </View>
 
       <View style={styles.controls}>

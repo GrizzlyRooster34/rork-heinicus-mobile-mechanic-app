@@ -39,12 +39,7 @@ export interface Contact {
   lastName: string;
   email: string;
   phone?: string;
-  address?: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
+  address?: string;
 }
 
 export type ServiceType = 
@@ -83,6 +78,8 @@ export type ServiceStatus =
 export type QuoteStatus = 
   | 'pending'
   | 'accepted'
+  | 'approved'
+  | 'declined'
   | 'rejected'
   | 'expired'
   | 'deposit_paid'
@@ -160,6 +157,7 @@ export interface ServiceRequest {
   pausedAt?: Date;
   resumedAt?: Date;
   completedAt?: Date;
+  paidAt?: Date;
   signatureData?: string;
   signatureCapturedAt?: Date;
   signatureCapturedBy?: string;
@@ -179,23 +177,29 @@ export interface ServiceRequest {
 export interface Quote {
   id: string;
   serviceRequestId: string;
+  description?: string;
   laborCost: number;
   partsCost: number;
-  travelCost: number;
+  travelCost?: number;
   totalCost: number;
   estimatedDuration: number; // in hours
   validUntil: Date;
   status: QuoteStatus;
   createdAt: Date;
+  createdBy?: string;
   updatedAt?: Date;
   acceptedAt?: Date;
   paidAt?: Date;
+  depositPaidAt?: Date;
+  depositAmount?: number;
+  remainingBalance?: number;
+  finalAmount?: number;
   notes?: string;
   breakdown?: {
     description: string;
     cost: number;
   }[];
-  paymentMethod?: 'card' | 'cash' | 'check';
+  paymentMethod?: 'card' | 'cash' | 'check' | 'apple_pay' | 'google_pay';
   stripePaymentIntentId?: string;
   vehicleType?: VehicleType;
   partsApproved?: boolean; // New field for parts approval
@@ -237,6 +241,26 @@ export interface DiagnosticResult {
   matchedServices: string[];
   recommendedServiceTypes?: string[];
   createdAt: Date;
+}
+
+export interface ChatMessage {
+  id: string;
+  serviceRequestId: string;
+  senderId: string;
+  senderName: string;
+  senderType: 'customer' | 'mechanic' | 'admin';
+  message: string;
+  timestamp: Date;
+  isRead: boolean;
+}
+
+export interface MaintenanceInterval {
+  serviceType: ServiceType;
+  intervalDays: number;
+  intervalMiles?: number;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+  category: 'routine' | 'preventive' | 'safety' | 'diagnostic';
 }
 
 export interface MaintenanceReminder {

@@ -10,6 +10,7 @@ export const PRODUCTION_CONFIG = {
   enableAnalytics: true,
   enablePushNotifications: true,
   enableLocationTracking: true,
+  requireSignature: true,
 };
 
 export function logProductionEvent(event: string, data: any): void {
@@ -35,3 +36,21 @@ export function validatePassword(password: string): { isValid: boolean; errors: 
     errors,
   };
 }
+
+// Firebase config placeholders for development. Populate for production.
+export const firebaseConfig = {
+  apiKey: '',
+  authDomain: '',
+  projectId: '',
+  storageBucket: '',
+  messagingSenderId: '',
+  appId: '',
+};
+
+export const COLLECTIONS = {
+  USERS: 'users',
+  SERVICE_REQUESTS: 'serviceRequests',
+  QUOTES: 'quotes',
+  CHAT_MESSAGES: 'chatMessages',
+  VEHICLES: 'vehicles',
+};

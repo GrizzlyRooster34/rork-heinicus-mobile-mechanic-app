@@ -48,35 +48,35 @@ export default function MechanicTabLayout() {
           options={{
             title: 'Dashboard',
             headerTitle: 'Mechanic Dashboard',
-            tabBarIcon: ({ color }) => <TabBarIcon name="LayoutDashboard" color={color} />,
+            tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="LayoutDashboard" color={color} />,
           }}
         />
         <Tabs.Screen
           name="jobs"
           options={{
             title: 'Jobs',
-            tabBarIcon: ({ color }) => <TabBarIcon name="Briefcase" color={color} />,
+            tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="Briefcase" color={color} />,
           }}
         />
         <Tabs.Screen
           name="map"
           options={{
             title: 'Map',
-            tabBarIcon: ({ color }) => <TabBarIcon name="Map" color={color} />,
+            tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="Map" color={color} />,
           }}
         />
         <Tabs.Screen
           name="customers"
           options={{
             title: 'Customers',
-            tabBarIcon: ({ color }) => <TabBarIcon name="Users" color={color} />,
+            tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="Users" color={color} />,
           }}
         />
         <Tabs.Screen
           name="profile"
           options={{
             title: 'Profile',
-            tabBarIcon: ({ color }) => <TabBarIcon name="Settings" color={color} />,
+            tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="Settings" color={color} />,
           }}
         />
       </Tabs>

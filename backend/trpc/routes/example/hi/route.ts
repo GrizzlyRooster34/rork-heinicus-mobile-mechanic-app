@@ -1,4 +1,4 @@
-import { publicProcedure } from "../../../create-context";
+import { publicProcedure } from "../../../trpc";
 
 export const hiProcedure = publicProcedure.query(() => {
   return "Hello from tRPC!";

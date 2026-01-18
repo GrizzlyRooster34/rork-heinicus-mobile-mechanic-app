@@ -54,7 +54,7 @@
     "expo-system-ui": "~5.0.6",
     "expo-web-browser": "~14.1.6",
     "hono": "^4.7.11",
-    "lucide-react-native": "^0.475.0",
+    "lucide-react-native": "^0.562.0",
     "nativewind": "^4.1.23",
     "react": "19.0.0",
     "react-dom": "19.0.0",
@@ -74,6 +74,9 @@
     "@expo/ngrok": "^4.1.0",
     "@types/react": "~19.0.10",
     "typescript": "~5.8.3"
+  },
+  "optionalDependencies": {
+    "lightningcss-win32-x64-msvc": "1.27.0"
   },
   "private": true
 }

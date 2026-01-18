@@ -6,6 +6,7 @@ import { calculateMaintenanceDue, getMaintenanceIntervals } from '@/utils/quote-
 import { SERVICE_CATEGORIES } from '@/constants/services';
 import * as Icons from 'lucide-react-native';
 import { router } from 'expo-router';
+import { ServiceType } from '@/types/service';
 
 export function MaintenanceReminders() {
   const { vehicles, addMaintenanceReminder, maintenanceReminders } = useAppStore();
@@ -46,7 +47,7 @@ export function MaintenanceReminders() {
           
           if (interval.intervalMiles && lastService.mileage) {
             dueMileage = lastService.mileage + interval.intervalMiles;
-            if (currentMileage >= dueMileage) {
+            if (dueMileage !== undefined && currentMileage >= dueMileage) {
               dueDate = new Date(); // Due now based on mileage
               reason = `${currentMileage - dueMileage} miles overdue`;
             }
@@ -138,12 +139,15 @@ export function MaintenanceReminders() {
     const reminder = {
       id: `${vehicleId}-${serviceType}-${Date.now()}`,
       vehicleId,
-      serviceType: serviceType as any,
+      serviceType: serviceType as ServiceType,
+      description: `Maintenance reminder for ${serviceType}`,
       dueDate: new Date(),
       dueMileage: undefined,
       isOverdue: false,
       reminderSent: true,
       priority: 'low' as const,
+      completed: false,
+      createdAt: new Date(),
     };
     
     addMaintenanceReminder(reminder);

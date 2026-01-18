@@ -24,6 +24,9 @@ export function StripePayment({ quote, onSuccess, onCancel }: StripePaymentProps
       
       // 1. Create payment intent on your backend
       const paymentIntent = await createPaymentIntent(quote);
+      if (!paymentIntent.client_secret) {
+        throw new Error('Missing payment intent client secret.');
+      }
       
       // 2. Confirm payment with Stripe
       const result = await confirmPayment(paymentIntent.client_secret, paymentMethod);
@@ -41,7 +44,7 @@ export function StripePayment({ quote, onSuccess, onCancel }: StripePaymentProps
   };
 
   // Mock functions - replace with actual Stripe integration
-  const createPaymentIntent = async (quote: Quote) => {
+  const createPaymentIntent = async (quote: Quote): Promise<{ client_secret: string; amount: number }> => {
     // This would call your backend to create a Stripe PaymentIntent
     await new Promise(resolve => setTimeout(resolve, 1000));
     return {
@@ -50,7 +53,7 @@ export function StripePayment({ quote, onSuccess, onCancel }: StripePaymentProps
     };
   };
 
-  const confirmPayment = async (clientSecret: string, method: string) => {
+  const confirmPayment = async (clientSecret: string, method: string): Promise<{ success: true; paymentIntentId: string } | { success: false; error: string }> => {
     // This would use Stripe SDK to confirm the payment
     await new Promise(resolve => setTimeout(resolve, 2000));
     

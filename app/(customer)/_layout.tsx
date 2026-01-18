@@ -42,35 +42,35 @@ export default function CustomerTabLayout() {
         options={{
           title: 'Home',
           headerTitle: 'Heinicus Mobile Mechanic',
-          tabBarIcon: ({ color }) => <TabBarIcon name="Home" color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="Home" color={color} />,
         }}
       />
       <Tabs.Screen
         name="request"
         options={{
           title: 'Request Service',
-          tabBarIcon: ({ color }) => <TabBarIcon name="Wrench" color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="Wrench" color={color} />,
         }}
       />
       <Tabs.Screen
         name="quotes"
         options={{
           title: 'My Quotes',
-          tabBarIcon: ({ color }) => <TabBarIcon name="FileText" color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="FileText" color={color} />,
         }}
       />
       <Tabs.Screen
         name="schedule"
         options={{
           title: 'Schedule',
-          tabBarIcon: ({ color }) => <TabBarIcon name="Calendar" color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="Calendar" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <TabBarIcon name="User" color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <TabBarIcon name="User" color={color} />,
         }}
       />
     </Tabs>

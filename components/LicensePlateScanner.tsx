@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert, TextInput } from 'react-native';
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Colors } from '@/constants/colors';
 import { Button } from '@/components/Button';
 import * as Icons from 'lucide-react-native';
@@ -10,8 +10,10 @@ interface LicensePlateScannerProps {
   onClose: () => void;
 }
 
+type CameraFacing = 'back' | 'front';
+
 export function LicensePlateScanner({ onPlateDetected, onClose }: LicensePlateScannerProps) {
-  const [facing, setFacing] = useState<CameraType>('back');
+  const [facing, setFacing] = useState<CameraFacing>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [isScanning, setIsScanning] = useState(false);
   const [manualPlate, setManualPlate] = useState('');
@@ -182,7 +184,7 @@ Is this correct?`,
             <Button
               title="Flip"
               variant="outline"
-              onPress={() => setFacing((current: CameraType) => (current === 'back' ? 'front' : 'back'))}
+              onPress={() => setFacing((current) => (current === 'back' ? 'front' : 'back'))}
               style={styles.flipButton}
             />
           </View>

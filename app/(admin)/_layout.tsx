@@ -28,7 +28,7 @@ export default function AdminLayout() {
           name="index"
           options={{
             title: 'Dashboard',
-            tabBarIcon: ({ color, size }) => (
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
               <Icons.BarChart3 size={size} color={color} />
             ),
           }}
@@ -37,7 +37,7 @@ export default function AdminLayout() {
           name="users"
           options={{
             title: 'Users',
-            tabBarIcon: ({ color, size }) => (
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
               <Icons.Users size={size} color={color} />
             ),
           }}
@@ -46,7 +46,7 @@ export default function AdminLayout() {
           name="quotes"
           options={{
             title: 'Quotes',
-            tabBarIcon: ({ color, size }) => (
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
               <Icons.FileText size={size} color={color} />
             ),
           }}
@@ -55,7 +55,7 @@ export default function AdminLayout() {
           name="jobs"
           options={{
             title: 'Jobs',
-            tabBarIcon: ({ color, size }) => (
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
               <Icons.Briefcase size={size} color={color} />
             ),
           }}
@@ -64,7 +64,7 @@ export default function AdminLayout() {
           name="settings"
           options={{
             title: 'Settings',
-            tabBarIcon: ({ color, size }) => (
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
               <Icons.Settings size={size} color={color} />
             ),
           }}

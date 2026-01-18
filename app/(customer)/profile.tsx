@@ -62,8 +62,9 @@ export default function CustomerProfileScreen() {
       make: vehicleMake.trim(),
       model: vehicleModel.trim(),
       year,
+      vehicleType: 'car',
       color: vehicleColor.trim() || undefined,
-      mileage: vehicleMileage.trim() ? parseInt(vehicleMileage) : undefined,
+      mileage: vehicleMileage.trim() ? parseInt(vehicleMileage, 10) : 0,
     };
 
     addVehicle(vehicle);

@@ -123,7 +123,10 @@ The app requests the following permissions for mobile mechanic functionality:
 
 Create a `.env` file with:
 ```
+EXPO_PUBLIC_API_BASE_URL=https://api.example.com
 GOOGLE_MAPS_API_KEY=your_google_maps_key
 EAS_PROJECT_ID=your_eas_project_id
 GOOGLE_SERVICES_JSON=path_to_google_services_json
 ```
+
+For backend deployments, set `CORS_ORIGINS` to a comma-separated allowlist.

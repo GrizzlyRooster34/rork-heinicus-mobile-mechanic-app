@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { publicProcedure, createTRPCRouter } from '../../create-context';
+import { publicProcedure, createTRPCRouter } from '../../trpc';
 
 export const adminRouter = createTRPCRouter({
   getAllUsers: publicProcedure

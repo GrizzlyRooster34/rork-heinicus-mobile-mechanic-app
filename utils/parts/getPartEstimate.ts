@@ -197,8 +197,74 @@ export async function getMultiplePartEstimates(partNames: string[]): Promise<Par
   return estimates.filter((estimate): estimate is PartEstimate => estimate !== null);
 }
 
-export function calculatePartsTotal(estimates: PartEstimate[]): number {
-  return estimates.reduce((total, estimate) => total + estimate.estimatedPrice, 0);
+interface PartsCalculationItem {
+  name: string;
+  category: string;
+  brand?: string;
+  price: number;
+  availability: 'in-stock' | 'special-order';
+  estimatedDelivery?: string;
+}
+
+interface PartsCalculation {
+  total: number;
+  foundCount: number;
+  notFoundCount: number;
+  breakdown: PartsCalculationItem[];
+}
+
+function normalizeAvailability(availability: PartEstimate['availability']): 'in-stock' | 'special-order' {
+  return availability === 'in-stock' ? 'in-stock' : 'special-order';
+}
+
+function buildPartsCalculation(partNames: string[]): PartsCalculation {
+  const combinedDatabase = { ...mockPartsDatabase, ...motorcyclePartsDatabase };
+  const databaseKeys = Object.keys(combinedDatabase);
+  const breakdown: PartsCalculationItem[] = [];
+  let total = 0;
+  let foundCount = 0;
+  let notFoundCount = 0;
+
+  partNames.forEach((partName) => {
+    const normalizedPartName = partName.toLowerCase().trim();
+    let estimate = combinedDatabase[normalizedPartName];
+
+    if (!estimate) {
+      const fuzzyMatch = databaseKeys.find((key) =>
+        key.includes(normalizedPartName) || normalizedPartName.includes(key)
+      );
+      if (fuzzyMatch) {
+        estimate = combinedDatabase[fuzzyMatch];
+      }
+    }
+
+    if (!estimate) {
+      notFoundCount += 1;
+      return;
+    }
+
+    foundCount += 1;
+    total += estimate.estimatedPrice;
+    breakdown.push({
+      name: estimate.partName,
+      category: 'Parts',
+      brand: estimate.source,
+      price: estimate.estimatedPrice,
+      availability: normalizeAvailability(estimate.availability),
+      estimatedDelivery: estimate.availability === 'order-required' ? '3-5 days' : undefined,
+    });
+  });
+
+  return {
+    total,
+    foundCount,
+    notFoundCount,
+    breakdown,
+  };
+}
+
+export function calculatePartsTotal(partNames: string[]): PartsCalculation {
+  return buildPartsCalculation(partNames);
 }
 
 // Motorcycle/Scooter specific parts

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { publicProcedure, createTRPCRouter } from '../../create-context';
+import { publicProcedure, createTRPCRouter } from '../../trpc';
 
 // Mock job storage - in production this would be a database
 const jobStorage = new Map();

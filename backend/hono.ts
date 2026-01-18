@@ -7,12 +7,38 @@ import { createContext } from "./trpc/create-context";
 // app will be mounted at /api
 const app = new Hono();
 
+const isProduction = process.env.NODE_ENV === "production";
+const rawOrigins = process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || "";
+const allowedOrigins = rawOrigins
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOrigin = (origin: string | undefined) => {
+  if (!origin) {
+    return origin;
+  }
+
+  if (!isProduction) {
+    return origin;
+  }
+
+  if (allowedOrigins.includes(origin)) {
+    return origin;
+  }
+
+  return null;
+};
+
 // Enable CORS for all routes
-app.use("*", cors({
-  origin: "*",
-  allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowHeaders: ["Content-Type", "Authorization", "X-Environment"],
-}));
+app.use(
+  "*",
+  cors({
+    origin: corsOrigin,
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Environment"],
+  })
+);
 
 // Health check endpoint
 app.get("/", (c) => {

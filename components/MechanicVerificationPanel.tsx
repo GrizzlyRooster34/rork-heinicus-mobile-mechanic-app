@@ -29,11 +29,14 @@ export function MechanicVerificationPanel({ onVerificationSubmitted }: MechanicV
       setSelfieUri(null);
       setIdUri(null);
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
       console.log('Verification submission error:', error);
+      const message = error instanceof Error
+        ? error.message
+        : 'Failed to submit verification. Please check your connection and try again.';
       Alert.alert(
         'Submission Failed', 
-        error.message || 'Failed to submit verification. Please check your connection and try again.'
+        message
       );
     },
     onSettled: () => {

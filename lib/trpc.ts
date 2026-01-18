@@ -14,10 +14,14 @@ const getBaseUrl = () => {
     return currentUrl;
   }
 
+  const envBaseUrl =
+    process.env.EXPO_PUBLIC_API_BASE_URL ||
+    process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+
   // Production API URL
-  if (process.env.EXPO_PUBLIC_RORK_API_BASE_URL) {
-    console.log('Using production API URL:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
-    return process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  if (envBaseUrl) {
+    console.log('Using configured API URL:', envBaseUrl);
+    return envBaseUrl;
   }
 
   // Development fallback with platform-specific URLs

@@ -28,23 +28,24 @@ interface PricingSettings {
   };
 }
 
+const defaultServicePricing = Object.fromEntries(
+  Object.entries(SERVICE_PRICING).map(([key, value]) => [
+    key,
+    {
+      basePrice: value.basePrice,
+      laborRate: value.laborRate,
+      estimatedHours: value.estimatedHours,
+    },
+  ])
+) as PricingSettings['servicePricing'];
+
 export function ServicePricingSettings({ onSettingsChange }: ServicePricingSettingsProps) {
   const [settings, setSettings] = useState<PricingSettings>({
     laborRate: 85,
     emergencyRate: 125,
     travelFee: 25,
     minimumCharge: 50,
-    servicePricing: {
-      oil_change: { basePrice: 45, laborRate: 75, estimatedHours: 0.5 },
-      brake_service: { basePrice: 150, laborRate: 85, estimatedHours: 2 },
-      tire_service: { basePrice: 80, laborRate: 75, estimatedHours: 1 },
-      battery_service: { basePrice: 120, laborRate: 75, estimatedHours: 0.75 },
-      engine_diagnostic: { basePrice: 100, laborRate: 85, estimatedHours: 1.5 },
-      transmission: { basePrice: 200, laborRate: 95, estimatedHours: 3 },
-      ac_service: { basePrice: 90, laborRate: 85, estimatedHours: 1.5 },
-      general_repair: { basePrice: 75, laborRate: 85, estimatedHours: 2 },
-      emergency_roadside: { basePrice: 65, laborRate: 95, estimatedHours: 1 },
-    },
+    servicePricing: defaultServicePricing,
     discounts: {
       seniorDiscount: 10,
       militaryDiscount: 15,
@@ -97,6 +98,18 @@ export function ServicePricingSettings({ onSettingsChange }: ServicePricingSetti
     { key: 'ac_service', title: 'A/C Service', icon: 'Snowflake' },
     { key: 'general_repair', title: 'General Repair', icon: 'Wrench' },
     { key: 'emergency_roadside', title: 'Emergency Roadside', icon: 'Phone' },
+    { key: 'motorcycle_oil_change', title: 'Motorcycle Oil Change', icon: 'Droplets' },
+    { key: 'motorcycle_brake_inspection', title: 'Motorcycle Brake Inspection', icon: 'Disc' },
+    { key: 'motorcycle_tire_replacement', title: 'Motorcycle Tire Replacement', icon: 'Circle' },
+    { key: 'motorcycle_chain_service', title: 'Motorcycle Chain Service', icon: 'Settings' },
+    { key: 'motorcycle_battery_service', title: 'Motorcycle Battery Service', icon: 'Battery' },
+    { key: 'motorcycle_diagnostic', title: 'Motorcycle Diagnostic', icon: 'Search' },
+    { key: 'scooter_oil_change', title: 'Scooter Oil Change', icon: 'Droplets' },
+    { key: 'scooter_brake_inspection', title: 'Scooter Brake Inspection', icon: 'Disc' },
+    { key: 'scooter_tire_replacement', title: 'Scooter Tire Replacement', icon: 'Circle' },
+    { key: 'scooter_carburetor_clean', title: 'Scooter Carburetor Clean', icon: 'Settings' },
+    { key: 'scooter_battery_service', title: 'Scooter Battery Service', icon: 'Battery' },
+    { key: 'scooter_diagnostic', title: 'Scooter Diagnostic', icon: 'Search' },
   ];
 
   const resetToDefaults = () => {
