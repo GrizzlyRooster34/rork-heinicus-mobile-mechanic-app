@@ -290,16 +290,23 @@ export async function verifyResetToken(token: string): Promise<{
       },
     });
 
-    // Check each token (timing-safe)
-    for (const record of resetRecords) {
-      const isValid = await bcrypt.compare(token, record.token);
+    // Check all tokens in parallel using Promise.all
+    // This is significantly faster than sequential comparisons for multiple tokens
+    const comparisonResults = await Promise.all(
+      resetRecords.map(async (record) => {
+        const isValid = await bcrypt.compare(token, record.token);
+        return { isValid, userId: record.userId };
+      })
+    );
 
-      if (isValid) {
-        return {
-          valid: true,
-          userId: record.userId,
-        };
-      }
+    // Find the first valid match
+    const validMatch = comparisonResults.find(r => r.isValid);
+
+    if (validMatch) {
+      return {
+        valid: true,
+        userId: validMatch.userId,
+      };
     }
 
     return {
