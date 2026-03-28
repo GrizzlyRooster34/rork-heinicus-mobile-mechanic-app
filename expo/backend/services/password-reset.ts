@@ -126,20 +126,14 @@ async function sendResetEmail(
   resetToken: string,
   userName: string
 ): Promise<boolean> {
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-
   // TODO: Replace with actual email service
-  console.log('\n=== PASSWORD RESET EMAIL ===');
+  console.log('\n=== PASSWORD RESET EMAIL (MOCK) ===');
   console.log(`To: ${email}`);
   console.log(`Subject: Reset Your Password - Heinicus Mobile Mechanic`);
-  console.log(`\nHi ${userName},\n`);
-  console.log(`You requested to reset your password. Click the link below to reset it:\n`);
-  console.log(`${resetUrl}\n`);
+  console.log(`\n[REDACTED: Password reset link for ${userName}]`);
+  console.log(`The reset link has been generated and would be sent in production.`);
   console.log(`This link will expire in ${TOKEN_EXPIRY_HOURS} hour(s).\n`);
-  console.log(`If you didn't request this, please ignore this email.\n`);
-  console.log(`Thanks,`);
-  console.log(`The Heinicus Team`);
-  console.log('============================\n');
+  console.log('====================================\n');
 
   // In production, use a real email service:
   /*
