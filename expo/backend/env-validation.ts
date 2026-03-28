@@ -46,7 +46,15 @@ const envSchema = z.object({
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_PHONE_NUMBER: z.string().optional(),
 
-  // SendGrid (for email notifications)
+  // Email Service configuration (SMTP)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().default('587'),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_SECURE: z.enum(['true', 'false']).default('false'),
+  EMAIL_FROM_ADDRESS: z.string().email().optional(),
+
+  // SendGrid (deprecated in favor of SMTP)
   SENDGRID_API_KEY: z.string().startsWith('SG.').optional(),
   SENDGRID_FROM_EMAIL: z.string().email().optional(),
 
@@ -168,7 +176,10 @@ export function printEnvSummary(): void {
     console.log(`   Twilio SMS: enabled`);
   }
   if (env.SENDGRID_API_KEY) {
-    console.log(`   SendGrid Email: enabled`);
+    console.log(`   SendGrid Email: enabled (deprecated)`);
+  }
+  if (env.SMTP_HOST) {
+    console.log(`   Email Service (SMTP): enabled`);
   }
 
   console.log('');

@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../lib/prisma';
+import { sendEmail } from './email';
 
 /**
  * Password Reset Service
@@ -119,7 +120,6 @@ async function checkRateLimit(userId: string): Promise<{
 
 /**
  * Send password reset email
- * TODO: Replace console.log with actual email service (SendGrid, AWS SES, etc.)
  */
 async function sendResetEmail(
   email: string,
@@ -127,44 +127,38 @@ async function sendResetEmail(
   userName: string
 ): Promise<boolean> {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+  const subject = 'Reset Your Password - Heinicus Mobile Mechanic';
 
-  // TODO: Replace with actual email service
-  console.log('\n=== PASSWORD RESET EMAIL ===');
-  console.log(`To: ${email}`);
-  console.log(`Subject: Reset Your Password - Heinicus Mobile Mechanic`);
-  console.log(`\nHi ${userName},\n`);
-  console.log(`You requested to reset your password. Click the link below to reset it:\n`);
-  console.log(`${resetUrl}\n`);
-  console.log(`This link will expire in ${TOKEN_EXPIRY_HOURS} hour(s).\n`);
-  console.log(`If you didn't request this, please ignore this email.\n`);
-  console.log(`Thanks,`);
-  console.log(`The Heinicus Team`);
-  console.log('============================\n');
-
-  // In production, use a real email service:
-  /*
-  const msg = {
-    to: email,
-    from: process.env.SMTP_FROM!,
-    subject: 'Reset Your Password - Heinicus Mobile Mechanic',
-    html: `
-      <h2>Reset Your Password</h2>
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+      <h2 style="color: #333;">Reset Your Password</h2>
       <p>Hi ${userName},</p>
       <p>You requested to reset your password. Click the button below to reset it:</p>
-      <a href="${resetUrl}" style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:5px;">
-        Reset Password
-      </a>
-      <p>Or copy and paste this link: ${resetUrl}</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">
+          Reset Password
+        </a>
+      </div>
+      <p>Or copy and paste this link into your browser:</p>
+      <p style="word-break: break-all; color: #007bff;">${resetUrl}</p>
       <p>This link will expire in ${TOKEN_EXPIRY_HOURS} hour(s).</p>
       <p>If you didn't request this, please ignore this email.</p>
-      <p>Thanks,<br>The Heinicus Team</p>
-    `,
-  };
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="color: #777; font-size: 12px;">Thanks,<br>The Heinicus Team</p>
+    </div>
+  `;
 
-  await sgMail.send(msg);
-  */
+  // Log in development, send in production/staging or if SMTP is configured
+  if (process.env.NODE_ENV === 'development' && !process.env.SMTP_HOST) {
+    console.log('\n=== PASSWORD RESET EMAIL (DEV MODE) ===');
+    console.log(`To: ${email}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`Reset URL: ${resetUrl}`);
+    console.log('========================================\n');
+    return true;
+  }
 
-  return true;
+  return sendEmail(email, subject, html);
 }
 
 /**
