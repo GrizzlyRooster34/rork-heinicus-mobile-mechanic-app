@@ -51,6 +51,7 @@ model User {
   // Relations
   backupCodes       TwoFactorBackupCode[]
   passwordResets    PasswordReset[]
+  smsCodes          SmsVerificationCode[]
 
   // Customer Relations
   vehiclesOwned     Vehicle[]
@@ -604,4 +605,21 @@ model Payment {
   @@index([jobId])
   @@index([customerId])
   @@index([status])
+}
+
+// ==========================================
+// SMS Verification
+// ==========================================
+
+model SmsVerificationCode {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([code])
 }

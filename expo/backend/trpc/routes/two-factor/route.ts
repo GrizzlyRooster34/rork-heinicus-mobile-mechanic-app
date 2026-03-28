@@ -10,6 +10,7 @@ import {
   regenerateBackupCodes,
   getTwoFactorStatus,
   sendSMSCode,
+  verifySMSCode,
 } from '../../../services/two-factor-auth';
 
 /**
@@ -198,13 +199,14 @@ export const twoFactorRouter = router({
    */
   sendSMSCode: publicProcedure
     .input(z.object({
+      userId: z.string(),
       phoneNumber: z.string(),
     }))
     .mutation(async ({ input }) => {
       // Generate a 6-digit code
       const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-      const result = await sendSMSCode(input.phoneNumber, code);
+      const result = await sendSMSCode(input.userId, input.phoneNumber, code);
 
       if (!result.success) {
         return {
@@ -220,7 +222,7 @@ export const twoFactorRouter = router({
     }),
 
   /**
-   * Verify SMS code (placeholder)
+   * Verify SMS code
    */
   verifySMSCode: publicProcedure
     .input(z.object({
@@ -228,10 +230,18 @@ export const twoFactorRouter = router({
       code: z.string().length(6),
     }))
     .mutation(async ({ input }) => {
-      // TODO: Implement SMS code verification with actual storage
+      const result = await verifySMSCode(input.userId, input.code);
+
+      if (!result.success) {
+        return {
+          success: false,
+          error: result.error,
+        };
+      }
+
       return {
-        success: false,
-        error: 'SMS verification not yet implemented',
+        success: true,
+        message: 'SMS code verified successfully',
       };
     }),
 });

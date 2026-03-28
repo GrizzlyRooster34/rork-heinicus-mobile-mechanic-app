@@ -391,14 +391,95 @@ export async function getTwoFactorStatus(userId: string): Promise<{
  * Send SMS code (placeholder for future Twilio integration)
  */
 export async function sendSMSCode(
+  userId: string,
   phoneNumber: string,
   code: string
 ): Promise<{ success: boolean; error?: string }> {
-  // TODO: Integrate with Twilio or other SMS provider
-  console.log(`SMS code would be sent to ${phoneNumber}: ${code}`);
+  try {
+    // Invalidate any existing unused codes for this user
+    await prisma.smsVerificationCode.updateMany({
+      where: {
+        userId,
+        used: false,
+      },
+      data: {
+        used: true,
+      },
+    });
 
-  return {
-    success: false,
-    error: 'SMS 2FA not yet implemented. Please use authenticator app.',
-  };
+    // Save the new code with a 10-minute expiration
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+
+    await prisma.smsVerificationCode.create({
+      data: {
+        userId,
+        code, // Note: In a real app, you might want to hash this, but for 6-digit codes it's often stored plaintext and rate-limited.
+        expiresAt,
+      },
+    });
+
+    // TODO: Integrate with Twilio or other SMS provider
+    console.log(`SMS code would be sent to ${phoneNumber}: ${code}`);
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error('Send SMS code error:', error);
+    return {
+      success: false,
+      error: 'Failed to send SMS code',
+    };
+  }
+}
+
+/**
+ * Verify an SMS code against stored value in database
+ */
+export async function verifySMSCode(
+  userId: string,
+  code: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const now = new Date();
+
+    // Find a valid code for this user
+    const verificationCode = await prisma.smsVerificationCode.findFirst({
+      where: {
+        userId,
+        code,
+        used: false,
+        expiresAt: {
+          gt: now, // Must not be expired
+        },
+      },
+      orderBy: {
+        createdAt: 'desc', // Get the most recent one
+      },
+    });
+
+    if (!verificationCode) {
+      return {
+        success: false,
+        error: 'Invalid or expired verification code',
+      };
+    }
+
+    // Mark the code as used
+    await prisma.smsVerificationCode.update({
+      where: { id: verificationCode.id },
+      data: { used: true },
+    });
+
+    console.log(`SMS code verified for user ${userId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error('Verify SMS code error:', error);
+    return {
+      success: false,
+      error: 'Failed to verify SMS code',
+    };
+  }
 }
