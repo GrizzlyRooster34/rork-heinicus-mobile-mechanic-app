@@ -3,6 +3,7 @@
  * Uses bcryptjs for secure password hashing
  */
 
+import * as Crypto from 'expo-crypto';
 import bcrypt from 'bcryptjs';
 import { logger } from './logger';
 
@@ -112,6 +113,19 @@ export function isBcryptHash(str: string): boolean {
 }
 
 /**
+ * Helper function to generate a cryptographically secure random float between 0 (inclusive) and 1 (exclusive)
+ */
+function getSecureRandomFloat(): number {
+  const randomBytes = Crypto.getRandomBytes(4);
+  const randomInt =
+    (randomBytes[0] << 24) |
+    (randomBytes[1] << 16) |
+    (randomBytes[2] << 8) |
+    randomBytes[3];
+  return (randomInt >>> 0) / 4294967296; // 4294967296 is 2^32
+}
+
+/**
  * Generate a secure random password
  * @param length - Length of password (default 16)
  * @returns A secure random password
@@ -123,22 +137,26 @@ export function generateSecurePassword(length: number = 16): string {
   const special = '!@#$%^&*()_+-=[]{}|;:,.<>?';
   const allChars = lowercase + uppercase + numbers + special;
 
-  let password = '';
+  let passwordChars: string[] = [];
 
   // Ensure at least one of each type
-  password += lowercase[Math.floor(Math.random() * lowercase.length)];
-  password += uppercase[Math.floor(Math.random() * uppercase.length)];
-  password += numbers[Math.floor(Math.random() * numbers.length)];
-  password += special[Math.floor(Math.random() * special.length)];
+  passwordChars.push(lowercase[Math.floor(getSecureRandomFloat() * lowercase.length)]);
+  passwordChars.push(uppercase[Math.floor(getSecureRandomFloat() * uppercase.length)]);
+  passwordChars.push(numbers[Math.floor(getSecureRandomFloat() * numbers.length)]);
+  passwordChars.push(special[Math.floor(getSecureRandomFloat() * special.length)]);
 
   // Fill the rest randomly
-  for (let i = password.length; i < length; i++) {
-    password += allChars[Math.floor(Math.random() * allChars.length)];
+  for (let i = passwordChars.length; i < length; i++) {
+    passwordChars.push(allChars[Math.floor(getSecureRandomFloat() * allChars.length)]);
   }
 
-  // Shuffle the password
-  return password
-    .split('')
-    .sort(() => Math.random() - 0.5)
-    .join('');
+  // Fisher-Yates shuffle using secure random
+  for (let i = passwordChars.length - 1; i > 0; i--) {
+    const j = Math.floor(getSecureRandomFloat() * (i + 1));
+    const temp = passwordChars[i];
+    passwordChars[i] = passwordChars[j];
+    passwordChars[j] = temp;
+  }
+
+  return passwordChars.join('');
 }
