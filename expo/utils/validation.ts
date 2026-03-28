@@ -221,7 +221,8 @@ export function validateVIN(vin: string): ValidationResult {
   const errors: string[] = [];
   
   if (!vin || vin.trim().length === 0) {
-    return { isValid: true, errors }; // VIN is optional
+    errors.push('VIN is required');
+    return { isValid: false, errors };
   }
 
   const trimmedVIN = vin.trim().toUpperCase();
