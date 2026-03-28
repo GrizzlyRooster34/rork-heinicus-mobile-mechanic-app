@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { createPaymentIntent, createStripeCustomer, retrievePaymentIntent } from '@/lib/stripe-service';
+import { prisma } from '../../lib/prisma';
+import { sendNotification } from '../services/notifications';
 
 const payment = new Hono();
 
@@ -198,9 +200,38 @@ payment.post('/webhook', async (c) => {
         break;
 
       case 'payment_intent.payment_failed':
-        const failedPayment = event.data.object;
+        const failedPayment = event.data.object as import('stripe').Stripe.PaymentIntent;
         console.log('PaymentIntent failed:', failedPayment.id);
-        // TODO: Notify customer of failed payment
+
+        try {
+          // Find payment and update status
+          const paymentRecord = await prisma.payment.findUnique({
+            where: { stripePaymentId: failedPayment.id },
+            include: { customer: true }
+          });
+
+          if (paymentRecord) {
+            await prisma.payment.update({
+              where: { id: paymentRecord.id },
+              data: { status: 'FAILED' }
+            });
+
+            // Notify customer of failed payment
+            await sendNotification({
+              userId: paymentRecord.customerId,
+              jobId: paymentRecord.jobId,
+              type: 'JOB_UPDATE',
+              title: 'Payment Failed',
+              body: `Your payment of $${(paymentRecord.amount).toFixed(2)} failed. Please try again or use a different payment method.`,
+              data: { paymentId: paymentRecord.id, status: 'FAILED' }
+            });
+            console.log(`Sent payment failure notification to customer: ${paymentRecord.customerId}`);
+          } else {
+            console.log(`No payment record found for Stripe PaymentIntent: ${failedPayment.id}`);
+          }
+        } catch (error) {
+          console.error('Error handling failed payment notification:', error);
+        }
         break;
 
       case 'customer.created':
