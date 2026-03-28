@@ -142,6 +142,22 @@ export const analyticsRouter = router({
 
         const averageJobTime = completedJobs.length > 0 ? totalWorkTime / completedJobs.length : 0;
 
+        // Calculate actual on-time rate from schedule vs completion
+        let onTimeJobs = 0;
+        let scheduledJobsCount = 0;
+
+        completedJobs.forEach(job => {
+          if (job.scheduledAt) {
+            scheduledJobsCount++;
+            const actualTime = job.startedAt || job.completedAt;
+            if (actualTime && (actualTime.getTime() - job.scheduledAt.getTime() <= 60 * 60 * 1000)) {
+              onTimeJobs++;
+            }
+          }
+        });
+
+        const actualOnTimeRate = scheduledJobsCount > 0 ? Math.round((onTimeJobs / scheduledJobsCount) * 100) : 100;
+
         // Calculate revenue breakdown (estimates from job totals)
         let laborRevenue = 0;
         let partsRevenue = 0;
@@ -178,7 +194,7 @@ export const analyticsRouter = router({
               communication: avgCommunication,
               value: avgValue,
             },
-            onTimeRate: 95, // TODO: Calculate actual on-time rate from schedule vs completion
+            onTimeRate: actualOnTimeRate,
           },
           topServices,
           revenueBreakdown: {
