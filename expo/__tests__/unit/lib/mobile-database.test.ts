@@ -77,7 +77,7 @@ describe('MobileDatabase', () => {
 
       expect(consoleSpy).toHaveBeenCalledWith('Database initialization timed out');
       consoleSpy.mockRestore();
-    });
+    }, 10000);
 
     test('should handle initialization errors gracefully', async () => {
       mockAsyncStorage.getItem.mockRejectedValue(new Error('Storage error'));

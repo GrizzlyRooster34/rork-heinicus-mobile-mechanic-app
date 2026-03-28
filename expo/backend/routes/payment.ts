@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { createPaymentIntent, createStripeCustomer, retrievePaymentIntent } from '@/lib/stripe-service';
+import { prisma } from '@/lib/prisma';
 
 const payment = new Hono();
 
@@ -191,17 +192,66 @@ payment.post('/webhook', async (c) => {
     console.log('Stripe webhook event:', event.type);
 
     switch (event.type) {
-      case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object;
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object as import('stripe').Stripe.PaymentIntent;
         console.log('PaymentIntent succeeded:', paymentIntent.id);
-        // TODO: Update job/quote status in database
-        break;
 
-      case 'payment_intent.payment_failed':
-        const failedPayment = event.data.object;
-        console.log('PaymentIntent failed:', failedPayment.id);
-        // TODO: Notify customer of failed payment
+        try {
+          // Update the payment record status if it exists
+          await prisma.payment.updateMany({
+            where: { stripePaymentId: paymentIntent.id },
+            data: { status: 'SUCCEEDED' },
+          });
+
+          // If quoteId or jobId is in metadata, update quote and job status
+          const quoteId = paymentIntent.metadata?.quoteId;
+          let jobId = paymentIntent.metadata?.jobId;
+
+          if (quoteId) {
+            const quote = await prisma.quote.findUnique({
+              where: { id: quoteId },
+              select: { jobId: true },
+            });
+
+            if (quote) {
+              await prisma.quote.update({
+                where: { id: quoteId },
+                data: { status: 'ACCEPTED' },
+              });
+
+              if (quote.jobId && !jobId) {
+                jobId = quote.jobId;
+              }
+            }
+          }
+
+          if (jobId) {
+            await prisma.job.update({
+              where: { id: jobId },
+              data: { status: 'ACCEPTED' },
+            });
+          }
+        } catch (error) {
+          console.error('Failed to update database for successful payment:', error);
+        }
         break;
+      }
+
+      case 'payment_intent.payment_failed': {
+        const failedPayment = event.data.object as import('stripe').Stripe.PaymentIntent;
+        console.log('PaymentIntent failed:', failedPayment.id);
+
+        try {
+          await prisma.payment.updateMany({
+            where: { stripePaymentId: failedPayment.id },
+            data: { status: 'FAILED' },
+          });
+          // TODO: Notify customer of failed payment
+        } catch (error) {
+          console.error('Failed to update database for failed payment:', error);
+        }
+        break;
+      }
 
       case 'customer.created':
         const customer = event.data.object;
