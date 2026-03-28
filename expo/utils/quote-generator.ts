@@ -2,6 +2,9 @@ import { ServiceType, DiagnosticResult, MaintenanceInterval, Vehicle } from '@/t
 import { SERVICE_PRICING } from '@/constants/pricing';
 import { Quote } from '@/types/service';
 
+const LUXURY_BRANDS = new Set(['BMW', 'Mercedes', 'Audi', 'Lexus', 'Acura', 'Infiniti', 'Cadillac']);
+const IMPORT_BRANDS = new Set(['Toyota', 'Honda', 'Nissan', 'Subaru', 'Mazda', 'Mitsubishi']);
+
 export interface QuoteOptions {
   serviceType: ServiceType;
   urgency: 'low' | 'medium' | 'high' | 'emergency';
@@ -119,14 +122,12 @@ export function generateSmartQuote(
   // Vehicle-specific parts markup
   if (options.vehicle) {
     // Luxury brands typically have higher parts costs
-    const luxuryBrands = ['BMW', 'Mercedes', 'Audi', 'Lexus', 'Acura', 'Infiniti', 'Cadillac'];
-    if (luxuryBrands.includes(options.vehicle.make)) {
+    if (LUXURY_BRANDS.has(options.vehicle.make)) {
       partsCost *= 1.3;
     }
     
     // Import brands might have higher parts costs
-    const importBrands = ['Toyota', 'Honda', 'Nissan', 'Subaru', 'Mazda', 'Mitsubishi'];
-    if (importBrands.includes(options.vehicle.make)) {
+    if (IMPORT_BRANDS.has(options.vehicle.make)) {
       partsCost *= 1.1;
     }
   }
