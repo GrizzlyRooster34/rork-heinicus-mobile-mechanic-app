@@ -40,7 +40,7 @@ export class StoreErrorHandler {
   }
 }
 
-export function withErrorHandling<T extends any[], R>(
+export function withErrorHandling<T extends unknown[], R>(
   actionName: string,
   fn: (...args: T) => R
 ): (...args: T) => R {
@@ -59,7 +59,7 @@ export function withErrorHandling<T extends any[], R>(
   };
 }
 
-export function withAsyncErrorHandling<T extends any[], R>(
+export function withAsyncErrorHandling<T extends unknown[], R>(
   actionName: string,
   fn: (...args: T) => Promise<R>
 ): (...args: T) => Promise<R> {
@@ -147,7 +147,7 @@ export function createStoreWithMigration<T>(
 /**
  * Debounce utility for store updates
  */
-export function debounce<T extends any[]>(
+export function debounce<T extends unknown[]>(
   func: (...args: T) => void,
   delay: number
 ): (...args: T) => void {
