@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../lib/prisma';
+import twilio from 'twilio';
 
 /**
  * Two-Factor Authentication Service
@@ -388,17 +389,45 @@ export async function getTwoFactorStatus(userId: string): Promise<{
 }
 
 /**
- * Send SMS code (placeholder for future Twilio integration)
+ * Send SMS code using Twilio
  */
 export async function sendSMSCode(
   phoneNumber: string,
   code: string
 ): Promise<{ success: boolean; error?: string }> {
-  // TODO: Integrate with Twilio or other SMS provider
-  console.log(`SMS code would be sent to ${phoneNumber}: ${code}`);
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER || process.env.SMS_SERVICE_PHONE_NUMBER;
 
-  return {
-    success: false,
-    error: 'SMS 2FA not yet implemented. Please use authenticator app.',
-  };
+  if (!accountSid || !authToken || !twilioPhoneNumber) {
+    console.warn('Twilio credentials not configured. Skipping SMS send.');
+    // In development mode, we might just log the code for testing
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DEV MODE] SMS code for ${phoneNumber}: ${code}`);
+      return { success: true };
+    }
+    return {
+      success: false,
+      error: 'SMS service is not configured. Please use an authenticator app.',
+    };
+  }
+
+  try {
+    const client = twilio(accountSid, authToken);
+
+    await client.messages.create({
+      body: `Your verification code is: ${code}`,
+      from: twilioPhoneNumber,
+      to: phoneNumber,
+    });
+
+    console.log(`SMS code successfully sent to ${phoneNumber}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to send SMS code:', error);
+    return {
+      success: false,
+      error: 'Failed to send SMS code. Please try again or use an authenticator app.',
+    };
+  }
 }
