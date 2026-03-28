@@ -17,6 +17,17 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
 
+// Mock Stripe
+jest.mock('@stripe/stripe-react-native', () => ({
+  useStripe: () => ({
+    initStripe: jest.fn(),
+    presentPaymentSheet: jest.fn(),
+    confirmPayment: jest.fn(),
+    createPaymentMethod: jest.fn(),
+  }),
+  StripeProvider: ({ children }: any) => children,
+}));
+
 // Mock for expo-location
 jest.mock('expo-location', () => ({
   requestForegroundPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
