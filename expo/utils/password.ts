@@ -4,6 +4,7 @@
  */
 
 import bcrypt from 'bcryptjs';
+import * as Crypto from 'expo-crypto';
 import { logger } from './logger';
 
 /**
@@ -116,6 +117,21 @@ export function isBcryptHash(str: string): boolean {
  * @param length - Length of password (default 16)
  * @returns A secure random password
  */
+/**
+ * Pick a random character from a given string using cryptographically secure random values.
+ * It uses rejection sampling to avoid modulo bias.
+ */
+function pickRandomChar(chars: string): string {
+  const limit = Math.floor(256 / chars.length) * chars.length;
+  const buffer = new Uint8Array(1);
+  let randomByte;
+  do {
+    Crypto.getRandomValues(buffer);
+    randomByte = buffer[0];
+  } while (randomByte >= limit);
+  return chars[randomByte % chars.length];
+}
+
 export function generateSecurePassword(length: number = 16): string {
   const lowercase = 'abcdefghijklmnopqrstuvwxyz';
   const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -126,19 +142,30 @@ export function generateSecurePassword(length: number = 16): string {
   let password = '';
 
   // Ensure at least one of each type
-  password += lowercase[Math.floor(Math.random() * lowercase.length)];
-  password += uppercase[Math.floor(Math.random() * uppercase.length)];
-  password += numbers[Math.floor(Math.random() * numbers.length)];
-  password += special[Math.floor(Math.random() * special.length)];
+  password += pickRandomChar(lowercase);
+  password += pickRandomChar(uppercase);
+  password += pickRandomChar(numbers);
+  password += pickRandomChar(special);
 
   // Fill the rest randomly
   for (let i = password.length; i < length; i++) {
-    password += allChars[Math.floor(Math.random() * allChars.length)];
+    password += pickRandomChar(allChars);
   }
 
-  // Shuffle the password
-  return password
-    .split('')
-    .sort(() => Math.random() - 0.5)
-    .join('');
+  // Shuffle the password cryptographically
+  const passwordArray = password.split('');
+  for (let i = passwordArray.length - 1; i > 0; i--) {
+    const limit = Math.floor(256 / (i + 1)) * (i + 1);
+    const buffer = new Uint8Array(1);
+    let randomByte;
+    do {
+      Crypto.getRandomValues(buffer);
+      randomByte = buffer[0];
+    } while (randomByte >= limit);
+    const j = randomByte % (i + 1);
+    const temp = passwordArray[i];
+    passwordArray[i] = passwordArray[j];
+    passwordArray[j] = temp;
+  }
+  return passwordArray.join('');
 }
