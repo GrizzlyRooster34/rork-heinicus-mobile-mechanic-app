@@ -8,6 +8,8 @@ import { jobRouter } from './routes/job/route';
 import { configRouter } from './routes/config/route';
 import { vinRouter } from './routes/vin/route';
 import { mechanicRouter } from './routes/mechanic/route';
+import { chatRouter } from './routes/chat/route';
+import { customerRouter } from './routes/customer/route';
 
 export const appRouter = router({
   example: router({
@@ -21,6 +23,8 @@ export const appRouter = router({
   config: configRouter,
   vin: vinRouter,
   mechanic: mechanicRouter,
+  chat: chatRouter,
+  customer: customerRouter,
 });
 
 export type AppRouter = typeof appRouter;
