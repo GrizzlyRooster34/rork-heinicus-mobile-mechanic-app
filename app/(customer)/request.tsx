@@ -10,17 +10,44 @@ import { VinScanner } from '@/components/VinScanner';
 import { AIAssistant } from '@/components/AIAssistant';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { ServiceRequest, ServiceType, DiagnosticResult, Vehicle, VehicleType } from '@/types/service';
-import { generateSmartQuote } from '@/utils/quote-generator';
+import { ServiceType, DiagnosticResult, Vehicle, VehicleType } from '@/types/service';
 import { ENV_CONFIG, logProductionEvent } from '@/utils/firebase-config';
+import { trpc } from '@/lib/trpc';
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
 import * as Icons from 'lucide-react-native';
 
 export default function CustomerRequestScreen() {
   const params = useLocalSearchParams();
-  const { addServiceRequest, addQuote, vehicles, currentLocation, setCurrentLocation, updateServiceRequest, addVehicle, logEvent } = useAppStore();
+  const { currentLocation, setCurrentLocation } = useAppStore();
   const { user } = useAuthStore();
+  const utils = trpc.useUtils();
+  const createJobMutation = trpc.job.create.useMutation();
+  const { data: profileData, isLoading: profileLoading } = trpc.customer.getProfile.useQuery();
+  const addVehicleMutation = trpc.customer.addVehicle.useMutation();
+
+  const mapVehicleType = (value: string): VehicleType => {
+    switch (value) {
+      case 'MOTORCYCLE':
+        return 'motorcycle';
+      case 'SCOOTER':
+        return 'scooter';
+      case 'CAR':
+      default:
+        return 'car';
+    }
+  };
+
+  const vehicles = (profileData?.profile.vehicles ?? []).map((vehicle) => ({
+    id: vehicle.id,
+    make: vehicle.make,
+    model: vehicle.model,
+    year: vehicle.year,
+    vehicleType: mapVehicleType(vehicle.vehicleType),
+    vin: vehicle.vin ?? undefined,
+    licensePlate: vehicle.licensePlate ?? undefined,
+    mileage: vehicle.mileage ?? 0,
+  })) as Vehicle[];
   
   const [selectedService, setSelectedService] = useState<ServiceType | null>(
     params.serviceType as ServiceType || null
@@ -135,29 +162,46 @@ Would you like to add this vehicle to your profile?`,
           { text: 'Skip', style: 'cancel' },
           { 
             text: 'Add Vehicle', 
-            onPress: () => {
-              const newVehicle: Vehicle = {
-                id: Date.now().toString(),
-                make: vinData.make,
-                model: vinData.model,
-                year: vinData.year,
-                vehicleType: vinData.vehicleType,
-                vin: vinData.vin,
-                trim: vinData.trim,
-                engine: vinData.engine,
-                mileage: 0, // User can update this later
-              };
-              addVehicle(newVehicle);
-              setSelectedVehicle(newVehicle);
-              setSelectedVehicleType(newVehicle.vehicleType);
-              Alert.alert('Vehicle Added', 'Vehicle has been added to your profile.');
+            onPress: async () => {
+              try {
+                const result = await addVehicleMutation.mutateAsync({
+                  make: vinData.make,
+                  model: vinData.model,
+                  year: vinData.year,
+                  vehicleType: vinData.vehicleType,
+                  vin: vinData.vin,
+                  mileage: 0,
+                });
+
+                const backendVehicle = result.vehicle;
+                const newVehicle: Vehicle = {
+                  id: backendVehicle.id,
+                  make: backendVehicle.make,
+                  model: backendVehicle.model,
+                  year: backendVehicle.year,
+                  vehicleType: mapVehicleType(backendVehicle.vehicleType),
+                  vin: backendVehicle.vin ?? undefined,
+                  mileage: backendVehicle.mileage ?? 0,
+                };
+
+                setSelectedVehicle(newVehicle);
+                setSelectedVehicleType(newVehicle.vehicleType);
+                await utils.customer.getProfile.invalidate();
+                Alert.alert('Vehicle Added', 'Vehicle has been added to your profile.');
+              } catch (error) {
+                Alert.alert('Error', 'Failed to add vehicle. Please try again.');
+              }
             }
           }
         ]
       );
     } else {
-      setSelectedVehicle(existingVehicle);
-      setSelectedVehicleType(existingVehicle.vehicleType);
+      const normalizedVehicle: Vehicle = {
+        ...existingVehicle,
+        vehicleType: vinData.vehicleType,
+      };
+      setSelectedVehicle(normalizedVehicle);
+      setSelectedVehicleType(vinData.vehicleType);
       Alert.alert('Vehicle Found', 'This vehicle is already in your profile.');
     }
   };
@@ -250,71 +294,40 @@ Would you like to add this vehicle to your profile?`,
     setIsSubmitting(true);
 
     try {
-      // Get required tools for this service
-      const requiredTools = getRequiredToolsForService(selectedService).map(tool => tool.id);
-      
-      const request: ServiceRequest = {
-        id: Date.now().toString(),
-        type: selectedService,
+      const result = await createJobMutation.mutateAsync({
+        serviceType: selectedService,
         description: description.trim(),
-        urgency,
-        status: 'pending',
-        createdAt: new Date(),
         photos: photos.length > 0 ? photos : undefined,
-        location: currentLocation ? {
-          latitude: currentLocation.latitude,
-          longitude: currentLocation.longitude,
-          address: currentLocation.address
-        } : undefined,
-        vehicleId: selectedVehicle.id,
-        vehicleType: selectedVehicle.vehicleType,
-        vinNumber: vinNumber || selectedVehicle.vin || undefined,
-        aiDiagnosis: aiDiagnosis || undefined,
-        requiredTools, // Set required tools for this service
-        toolsChecked: {}, // Initialize empty tools check
-      };
+        vehicleInfo: {
+          make: selectedVehicle.make,
+          model: selectedVehicle.model,
+          year: selectedVehicle.year,
+          vin: vinNumber || selectedVehicle.vin || undefined,
+        },
+        location: {
+          address: currentLocation?.address || 'Location provided',
+          latitude: currentLocation?.latitude,
+          longitude: currentLocation?.longitude,
+        },
+      });
 
-      addServiceRequest(request);
+      await utils.job.getAll.invalidate();
 
       // Production logging
       logProductionEvent('service_request_created', {
-        requestId: request.id,
+        requestId: result.job.id,
         serviceType: selectedService,
         urgency,
         hasAIDiagnosis: !!aiDiagnosis,
         vehicleId: selectedVehicle.id,
-        vehicleType: selectedVehicle.vehicleType,
-        toolsCount: requiredTools.length
-      });
-
-      // Generate smart quote automatically
-      const quote = generateSmartQuote(request.id, {
-        serviceType: selectedService,
-        urgency,
-        description: description.trim(),
-        selectedParts: selectedParts.length > 0 ? selectedParts : undefined,
-        aiDiagnosis,
-        vehicle: selectedVehicle,
-      });
-
-      addQuote(quote);
-      updateServiceRequest(request.id, { status: 'quoted' });
-
-      // Production logging
-      logProductionEvent('quote_generated', {
-        quoteId: quote.id,
-        requestId: request.id,
-        totalCost: quote.totalCost,
-        laborCost: quote.laborCost,
-        partsCost: quote.partsCost,
-        vehicleType: selectedVehicle.vehicleType
+        vehicleType: selectedVehicleType,
       });
 
       Alert.alert(
         'Request Submitted',
-        'Your service request has been submitted and a quote has been generated automatically.',
+        'Your service request has been submitted. We will notify you when a quote is ready.',
         [
-          { text: 'View Quote', onPress: () => router.push('/quotes') }
+          { text: 'View Requests', onPress: () => router.push('/quotes') }
         ]
       );
 
@@ -393,7 +406,11 @@ Would you like to add this vehicle to your profile?`,
           <Text style={styles.sectionSubtitle}>
             We service cars, trucks, motorcycles, and scooters
           </Text>
-          {vehicles.length > 0 ? (
+          {profileLoading ? (
+            <View style={styles.noVehicleCard}>
+              <Text style={styles.noVehicleText}>Loading vehicles...</Text>
+            </View>
+          ) : vehicles.length > 0 ? (
             <View style={styles.vehicleSelector}>
               {vehicles.map((vehicle) => {
                 const IconComponent = Icons[getVehicleTypeIcon(vehicle.vehicleType) as keyof typeof Icons] as any;
@@ -463,6 +480,21 @@ Would you like to add this vehicle to your profile?`,
               />
             </View>
           )}
+
+          <View style={styles.vehicleTypeSelector}>
+            <Text style={styles.vehicleTypeSelectorLabel}>Vehicle Type for This Request</Text>
+            <View style={styles.vehicleTypeSelectorOptions}>
+              {(['car', 'motorcycle', 'scooter'] as VehicleType[]).map((type) => (
+                <Button
+                  key={type}
+                  title={getVehicleTypeLabel(type)}
+                  size="small"
+                  variant={selectedVehicleType === type ? 'primary' : 'outline'}
+                  onPress={() => setSelectedVehicleType(type)}
+                />
+              ))}
+            </View>
+          </View>
         </View>
 
         {/* AI Assistant */}
@@ -662,6 +694,7 @@ Would you like to add this vehicle to your profile?`,
             photos={photos}
             onPhotosChange={setPhotos}
             maxPhotos={5}
+            uploadPathPrefix={`requests/${user?.id ?? 'anonymous'}`}
           />
         </View>
 
@@ -841,6 +874,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textSecondary,
     marginBottom: 12,
+  },
+  vehicleTypeSelector: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+  },
+  vehicleTypeSelectorLabel: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  vehicleTypeSelectorOptions: {
+    flexDirection: 'row',
+    gap: 8,
   },
   aiHeader: {
     flexDirection: 'row',

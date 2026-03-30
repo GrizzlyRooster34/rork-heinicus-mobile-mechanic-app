@@ -1,53 +1,101 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
-import { Colors } from '@/constants/colors';
-import { useAppStore } from '@/stores/app-store';
-import { SERVICE_CATEGORIES } from '@/constants/services';
 import * as Icons from 'lucide-react-native';
+import { Colors } from '@/constants/colors';
+import { SERVICE_CATEGORIES } from '@/constants/services';
+import { trpc } from '@/lib/trpc';
+import { useAuthStore } from '@/stores/auth-store';
+
+type CustomerJob = {
+  id: string;
+  type: string;
+  status: string;
+  createdAt: Date;
+};
+
+type CustomerRecord = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  requests: CustomerJob[];
+  totalSpent: number;
+  lastService: Date;
+};
+
+const toUiStatus = (status: string, hasPendingQuote: boolean) => {
+  if (status === 'PENDING' && hasPendingQuote) return 'quoted';
+  return status.toLowerCase();
+};
 
 export default function MechanicCustomersScreen() {
-  const { serviceRequests, quotes } = useAppStore();
+  const { user } = useAuthStore();
+  const { data: jobsData, isLoading } = trpc.job.getAll.useQuery();
+  const jobs = jobsData?.jobs ?? [];
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Group requests by customer (using a simple approach for demo)
-  const customerData = serviceRequests.reduce((acc, request) => {
-    const customerId = `customer-${request.id.slice(0, 3)}`; // Mock customer grouping
-    const customerName = `Customer ${request.id.slice(0, 3)}`;
-    
-    if (!acc[customerId]) {
-      acc[customerId] = {
-        id: customerId,
-        name: customerName,
-        email: `${customerName.toLowerCase().replace(' ', '')}@example.com`,
-        phone: '(555) 123-4567',
-        requests: [],
-        totalSpent: 0,
-        lastService: new Date(request.createdAt),
-      };
-    }
-    
-    acc[customerId].requests.push(request);
-    
-    // Calculate total spent
-    const customerQuotes = quotes.filter(q => q.serviceRequestId === request.id && q.status === 'accepted');
-    acc[customerId].totalSpent += customerQuotes.reduce((sum, q) => sum + q.totalCost, 0);
-    
-    // Update last service date
-    if (new Date(request.createdAt) > acc[customerId].lastService) {
-      acc[customerId].lastService = new Date(request.createdAt);
-    }
-    
-    return acc;
-  }, {} as Record<string, any>);
+  const customers = useMemo(() => {
+    const mechanicId = user?.id;
+    const ownedJobs = jobs.filter((job) => !mechanicId || job.mechanicId === mechanicId);
 
-  const customers = Object.values(customerData).filter(customer =>
-    customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    const grouped = ownedJobs.reduce((acc, job) => {
+      const customerName = `${job.customer.firstName} ${job.customer.lastName}`.trim();
+      const customerId = job.customerId;
+      const paidOrAcceptedQuotes = (job.quotes ?? []).filter((quote) => (
+        quote.status === 'PAID' || quote.status === 'ACCEPTED'
+      ));
+
+      if (!acc[customerId]) {
+        acc[customerId] = {
+          id: customerId,
+          name: customerName || 'Customer',
+          email: job.customer.email,
+          phone: 'Not provided',
+          requests: [],
+          totalSpent: 0,
+          lastService: new Date(job.createdAt),
+        };
+      }
+
+      const hasPendingQuote = (job.quotes ?? []).some((quote) => quote.status === 'PENDING');
+      acc[customerId].requests.push({
+        id: job.id,
+        type: job.serviceType,
+        status: toUiStatus(job.status, hasPendingQuote),
+        createdAt: new Date(job.createdAt),
+      });
+      acc[customerId].totalSpent += paidOrAcceptedQuotes.reduce((sum, quote) => sum + quote.totalCost, 0);
+
+      const createdAt = new Date(job.createdAt);
+      if (createdAt > acc[customerId].lastService) {
+        acc[customerId].lastService = createdAt;
+      }
+
+      return acc;
+    }, {} as Record<string, CustomerRecord>);
+
+    const list = Object.values(grouped).map((customer) => ({
+      ...customer,
+      requests: [...customer.requests].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+    }));
+
+    return list.filter((customer) =>
+      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [jobs, searchQuery, user?.id]);
 
   const getServiceTitle = (type: string) => {
-    return SERVICE_CATEGORIES.find(s => s.id === type)?.title || type;
+    return SERVICE_CATEGORIES.find((service) => service.id === type)?.title || type;
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyTitle}>Loading customers...</Text>
+      </View>
+    );
+  }
 
   if (customers.length === 0 && searchQuery === '') {
     return (
@@ -63,7 +111,6 @@ export default function MechanicCustomersScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Icons.Search size={20} color={Colors.textMuted} />
         <TextInput
@@ -75,7 +122,6 @@ export default function MechanicCustomersScreen() {
         />
       </View>
 
-      {/* Customers List */}
       <ScrollView style={styles.customersList} showsVerticalScrollIndicator={false}>
         {customers.length === 0 ? (
           <View style={styles.noResultsContainer}>
@@ -92,7 +138,7 @@ export default function MechanicCustomersScreen() {
 }
 
 interface CustomerCardProps {
-  customer: any;
+  customer: CustomerRecord;
   getServiceTitle: (type: string) => string;
 }
 
@@ -101,32 +147,34 @@ function CustomerCard({ customer, getServiceTitle }: CustomerCardProps) {
 
   return (
     <View style={styles.customerCard}>
-      <TouchableOpacity 
-        style={styles.customerHeader}
-        onPress={() => setIsExpanded(!isExpanded)}
-      >
+      <TouchableOpacity style={styles.customerHeader} onPress={() => setIsExpanded(!isExpanded)}>
         <View style={styles.customerInfo}>
           <View style={styles.customerAvatar}>
             <Text style={styles.customerInitials}>
-              {customer.name.split(' ').map((n: string) => n[0]).join('')}
+              {customer.name
+                .split(' ')
+                .map((part) => part[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase()}
             </Text>
           </View>
-          
+
           <View style={styles.customerDetails}>
             <Text style={styles.customerName}>{customer.name}</Text>
             <Text style={styles.customerEmail}>{customer.email}</Text>
             <Text style={styles.customerPhone}>{customer.phone}</Text>
           </View>
         </View>
-        
+
         <View style={styles.customerStats}>
-          <Text style={styles.statValue}>${customer.totalSpent}</Text>
+          <Text style={styles.statValue}>${customer.totalSpent.toFixed(2)}</Text>
           <Text style={styles.statLabel}>Total Spent</Text>
           <Text style={styles.serviceCount}>{customer.requests.length} services</Text>
         </View>
-        
-        <Icons.ChevronDown 
-          size={20} 
+
+        <Icons.ChevronDown
+          size={20}
           color={Colors.textMuted}
           style={[styles.expandIcon, isExpanded && styles.expandIconRotated]}
         />
@@ -140,9 +188,9 @@ function CustomerCard({ customer, getServiceTitle }: CustomerCardProps) {
               Last service: {customer.lastService.toLocaleDateString()}
             </Text>
           </View>
-          
+
           <View style={styles.serviceHistory}>
-            {customer.requests.slice(0, 3).map((request: any) => (
+            {customer.requests.slice(0, 3).map((request) => (
               <View key={request.id} style={styles.serviceItem}>
                 <View style={styles.serviceInfo}>
                   <Text style={styles.serviceName}>{getServiceTitle(request.type)}</Text>
@@ -157,25 +205,25 @@ function CustomerCard({ customer, getServiceTitle }: CustomerCardProps) {
                 </View>
               </View>
             ))}
-            
+
             {customer.requests.length > 3 && (
               <Text style={styles.moreServices}>
                 +{customer.requests.length - 3} more services
               </Text>
             )}
           </View>
-          
+
           <View style={styles.customerActions}>
             <TouchableOpacity style={styles.actionButton}>
               <Icons.Phone size={16} color={Colors.mechanic} />
               <Text style={styles.actionButtonText}>Call</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.actionButton}>
               <Icons.MessageCircle size={16} color={Colors.mechanic} />
               <Text style={styles.actionButtonText}>Message</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.actionButton}>
               <Icons.Mail size={16} color={Colors.mechanic} />
               <Text style={styles.actionButtonText}>Email</Text>
@@ -194,6 +242,7 @@ function getStatusColor(status: string) {
     case 'accepted': return Colors.success;
     case 'in_progress': return Colors.mechanic;
     case 'completed': return Colors.success;
+    case 'cancelled': return Colors.error;
     default: return Colors.textMuted;
   }
 }

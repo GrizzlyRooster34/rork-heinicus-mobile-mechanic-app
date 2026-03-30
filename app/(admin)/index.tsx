@@ -2,40 +2,48 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth-store';
-import { useAppStore } from '@/stores/app-store';
 import { useThemeStore } from '@/stores/theme-store';
+import { trpc } from '@/lib/trpc';
+import { SERVICE_CATEGORIES } from '@/constants/services';
 import * as Icons from 'lucide-react-native';
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
-  const { user, getAllUsers } = useAuthStore();
-  const { serviceRequests, quotes } = useAppStore();
+  const { user } = useAuthStore();
   const { colors } = useThemeStore();
+  const { data: statsData } = trpc.admin.getSystemStats.useQuery();
+  const { data: jobsData } = trpc.job.getAll.useQuery();
+  const { data: quotesData } = trpc.quote.listAll.useQuery();
+  const jobs = jobsData?.jobs ?? [];
+  const quotes = quotesData?.quotes ?? [];
+  type JobItem = typeof jobs[number];
+  type QuoteItem = typeof quotes[number];
 
-  const allUsers = getAllUsers();
-  const totalCustomers = allUsers.filter(u => u.role === 'customer').length;
-  const totalMechanics = allUsers.filter(u => u.role === 'mechanic').length;
+  const getServiceTitle = (type: string) => {
+    return SERVICE_CATEGORIES.find(s => s.id === type)?.title || type;
+  };
+
+  const totalCustomers = statsData?.totalCustomers ?? 0;
+  const totalMechanics = statsData?.totalMechanics ?? 0;
   const totalQuotes = quotes.length;
-  const totalJobs = serviceRequests.length;
-  const completedJobs = serviceRequests.filter(r => r.status === 'completed').length;
-  const totalRevenue = quotes
-    .filter(q => q.status === 'paid' && q.paidAt)
-    .reduce((sum, q) => sum + q.totalCost, 0);
+  const totalJobs = statsData?.totalJobs ?? 0;
+  const completedJobs = statsData?.completedJobs ?? 0;
+  const totalRevenue = statsData?.totalRevenue ?? 0;
 
   const recentActivity = [
-    ...serviceRequests.slice(-5).map(r => ({
-      id: r.id,
+    ...jobs.slice(-5).map((job: JobItem) => ({
+      id: job.id,
       type: 'job',
-      title: `New service request: ${r.type}`,
-      time: r.createdAt,
-      status: r.status
+      title: `New service request: ${getServiceTitle(job.serviceType)}`,
+      time: job.createdAt,
+      status: job.status
     })),
-    ...quotes.slice(-5).map(q => ({
-      id: q.id,
+    ...quotes.slice(-5).map((quote: QuoteItem) => ({
+      id: quote.id,
       type: 'quote',
-      title: `Quote ${q.status}: $${q.totalCost}`,
-      time: q.createdAt,
-      status: q.status
+      title: `Quote ${quote.status}: $${quote.totalCost}`,
+      time: quote.createdAt,
+      status: quote.status
     }))
   ].sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 10);
 
@@ -199,7 +207,8 @@ export default function AdminDashboardScreen() {
 }
 
 function getStatusColor(status: string, colors: any) {
-  switch (status) {
+  const normalized = status.toLowerCase();
+  switch (normalized) {
     case 'pending': return colors.warning;
     case 'quoted': return colors.primary;
     case 'accepted': return colors.success;

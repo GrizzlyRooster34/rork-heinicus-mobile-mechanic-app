@@ -5,11 +5,13 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Icons from 'lucide-react-native';
 import { Platform } from 'react-native';
 import { JobPhoto } from '@/types/service';
+import { uploadImageAsync } from '@/lib/storage';
 
 interface JobPhotoUploadProps {
   jobId: string;
   photos: JobPhoto[];
   onPhotosChange: (photos: JobPhoto[]) => void;
+  uploadedBy: string;
   maxPhotos?: number;
   allowedTypes?: JobPhoto['type'][];
 }
@@ -18,6 +20,7 @@ export function JobPhotoUpload({
   jobId, 
   photos, 
   onPhotosChange, 
+  uploadedBy,
   maxPhotos = 10,
   allowedTypes = ['before', 'during', 'after', 'parts', 'damage']
 }: JobPhotoUploadProps) {
@@ -59,18 +62,20 @@ export function JobPhotoUpload({
       });
 
       if (!result.canceled && result.assets[0]) {
+        const uploadPath = `jobs/${jobId}/${selectedPhotoType}/${Date.now()}`;
+        const { url } = await uploadImageAsync(result.assets[0].uri, uploadPath);
         const newPhoto: JobPhoto = {
           id: `photo-${Date.now()}`,
-          url: result.assets[0].uri,
+          url,
           type: selectedPhotoType,
           uploadedAt: new Date(),
-          uploadedBy: 'mechanic-cody',
+          uploadedBy,
         };
         onPhotosChange([...photos, newPhoto]);
         setShowTypeSelector(false);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
+      Alert.alert('Error', 'Failed to upload image. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -104,18 +109,20 @@ export function JobPhotoUpload({
       });
 
       if (!result.canceled && result.assets[0]) {
+        const uploadPath = `jobs/${jobId}/${selectedPhotoType}/${Date.now()}`;
+        const { url } = await uploadImageAsync(result.assets[0].uri, uploadPath);
         const newPhoto: JobPhoto = {
           id: `photo-${Date.now()}`,
-          url: result.assets[0].uri,
+          url,
           type: selectedPhotoType,
           uploadedAt: new Date(),
-          uploadedBy: 'mechanic-cody',
+          uploadedBy,
         };
         onPhotosChange([...photos, newPhoto]);
         setShowTypeSelector(false);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to take photo. Please try again.');
+      Alert.alert('Error', 'Failed to upload photo. Please try again.');
     } finally {
       setIsUploading(false);
     }

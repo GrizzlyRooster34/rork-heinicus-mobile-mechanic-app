@@ -1,24 +1,55 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { SERVICE_CATEGORIES, SERVICE_TOOLS } from '@/constants/services';
-import { ServiceRequest, ServiceStatus, JobPhoto } from '@/types/service';
+import { SERVICE_CATEGORIES } from '@/constants/services';
+import { JobLog, JobPhoto, Quote, ServiceRequest, ServiceStatus } from '@/types/service';
 import { ChatComponent } from '@/components/ChatComponent';
 import WorkTimer from '@/components/WorkTimer';
 import { SignatureCapture } from '@/components/SignatureCapture';
 import { PaymentModal } from '@/components/PaymentModal';
 import { JobPhotoUpload } from '@/components/JobPhotoUpload';
 import { JobTimeline } from '@/components/JobTimeline';
+import { trpc } from '@/lib/trpc';
 import * as Icons from 'lucide-react-native';
+
+const mapPhotoType = (description?: string | null): JobPhoto['type'] => {
+  const normalizedDescription = description?.toLowerCase() || '';
+  if (normalizedDescription.includes('before')) return 'before';
+  if (normalizedDescription.includes('after')) return 'after';
+  if (normalizedDescription.includes('parts')) return 'parts';
+  if (normalizedDescription.includes('damage')) return 'damage';
+  return 'during';
+};
+
+const mapBackendStatus = (params: {
+  status: 'PENDING' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  scheduledDate?: Date | null;
+  timePaused?: Date | null;
+  hasPendingQuote: boolean;
+}): ServiceStatus => {
+  if (params.status === 'PENDING' && params.hasPendingQuote) return 'quoted';
+  if (params.status === 'PENDING') return 'pending';
+  if (params.status === 'ACCEPTED' && params.scheduledDate) return 'scheduled';
+  if (params.status === 'ACCEPTED') return 'accepted';
+  if (params.status === 'IN_PROGRESS' && params.timePaused) return 'paused';
+  if (params.status === 'IN_PROGRESS') return 'in_progress';
+  if (params.status === 'COMPLETED') return 'completed';
+  return 'cancelled';
+};
+
+const toBackendStatus = (status: ServiceStatus): 'pending' | 'accepted' | 'in-progress' | 'completed' | 'cancelled' => {
+  if (status === 'pending') return 'pending';
+  if (status === 'accepted' || status === 'scheduled') return 'accepted';
+  if (status === 'in_progress' || status === 'paused') return 'in-progress';
+  if (status === 'completed') return 'completed';
+  return 'cancelled';
+};
 
 export default function MechanicJobsScreen() {
   const { 
-    serviceRequests, 
-    quotes,
     updateServiceRequest, 
-    updateJobStatus,
     addJobLog, 
     getJobLogs, 
     getActiveJobTimer,
@@ -26,7 +57,6 @@ export default function MechanicJobsScreen() {
     completeToolsCheck,
     getJobToolsStatus,
     logEvent,
-    cancelJob,
     addJobParts,
     updateJobParts,
     getJobParts,
@@ -36,6 +66,14 @@ export default function MechanicJobsScreen() {
     getJobDuration
   } = useAppStore();
   const { user } = useAuthStore();
+  const utils = trpc.useUtils();
+  const jobsQuery = trpc.job.getAll.useQuery();
+  const updateStatusMutation = trpc.job.updateStatus.useMutation();
+  const captureSignatureMutation = trpc.job.captureSignature.useMutation();
+  const addPhotoMutation = trpc.job.addPhoto.useMutation();
+  const updateTimeLogMutation = trpc.job.updateTimeLog.useMutation();
+  const updatePartsMutation = trpc.job.updatePartsApproval.useMutation();
+  const claimJobMutation = trpc.job.claim.useMutation();
   const [selectedTab, setSelectedTab] = useState<'pending' | 'active' | 'completed'>('pending');
   const [selectedRequestForChat, setSelectedRequestForChat] = useState<string | null>(null);
   const [selectedRequestForTimer, setSelectedRequestForTimer] = useState<string | null>(null);
@@ -47,12 +85,111 @@ export default function MechanicJobsScreen() {
   const [selectedRequestForPayment, setSelectedRequestForPayment] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState<string | null>(null);
 
-  // Production: Filter jobs for Cody only
-  const mechanicId = 'mechanic-cody';
+  const mechanicId = user?.id ?? 'mechanic-unknown';
+  const backendJobs = jobsQuery.data?.jobs ?? [];
+  const serviceRequests = useMemo<ServiceRequest[]>(
+    () =>
+      backendJobs.map((job) => {
+        const latestQuote = [...job.quotes].sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        )[0];
+
+        return {
+          id: job.id,
+          type: job.serviceType as ServiceRequest['type'],
+          description: job.description,
+          urgency: 'medium',
+          status: mapBackendStatus({
+            status: job.status,
+            scheduledDate: job.scheduledDate,
+            timePaused: job.timePaused,
+            hasPendingQuote: latestQuote?.status === 'PENDING',
+          }),
+          createdAt: job.createdAt,
+          updatedAt: job.updatedAt,
+          photos: job.customerPhotos,
+          jobPhotos: job.photos.map((photo) => ({
+            id: photo.id,
+            url: photo.url,
+            type: mapPhotoType(photo.description),
+            caption: photo.description || undefined,
+            uploadedAt: photo.timestamp,
+            uploadedBy: photo.mechanicId,
+          })),
+          location: {
+            latitude: job.latitude ?? 0,
+            longitude: job.longitude ?? 0,
+            address: job.address,
+          },
+          vehicleId: job.id,
+          mechanicId: job.mechanicId || undefined,
+          signatureUrl: job.signatureUrl || undefined,
+          signatureCapturedAt: job.signatureCapturedAt || undefined,
+          signatureCapturedBy: job.signatureCapturedBy || undefined,
+          partsApproved: job.partsApproved,
+          partsEstimate: job.estimatedPartsCost || undefined,
+        };
+      }),
+    [backendJobs]
+  );
+
+  const paymentQuotes = useMemo<Quote[]>(
+    () =>
+      backendJobs.flatMap((job) =>
+        job.quotes.map((quote) => ({
+          id: quote.id,
+          serviceRequestId: job.id,
+          description: quote.description,
+          laborCost: quote.laborCost,
+          partsCost: quote.partsCost,
+          totalCost: quote.totalCost,
+          estimatedDuration: quote.estimatedDuration,
+          validUntil: quote.validUntil,
+          status: quote.status.toLowerCase() as Quote['status'],
+          createdAt: quote.createdAt,
+          createdBy: quote.createdBy,
+        }))
+      ),
+    [backendJobs]
+  );
+
   const mechanicJobs = serviceRequests.filter(job => {
-    // In production, only show jobs assigned to Cody or unassigned jobs
     return !job.mechanicId || job.mechanicId === mechanicId;
   });
+  const getBackendJobById = (jobId: string) => backendJobs.find((job) => job.id === jobId);
+  const getCombinedJobLogs = (jobId: string): JobLog[] => {
+    const backendLogs: JobLog[] = (getBackendJobById(jobId)?.activityLog ?? []).map((log) => ({
+      id: log.id,
+      jobId,
+      mechanicId: log.mechanicId,
+      startTime: log.timestamp,
+      endTime: undefined,
+      duration: log.duration || undefined,
+      activity: log.activity,
+      notes: log.notes || undefined,
+      createdAt: log.timestamp,
+    }));
+
+    return [...backendLogs, ...getJobLogs(jobId)];
+  };
+  const getCombinedJobPhotos = (jobId: string): JobPhoto[] => {
+    const backendPhotoSet: JobPhoto[] = (getBackendJobById(jobId)?.photos ?? []).map((photo) => ({
+      id: photo.id,
+      url: photo.url,
+      type: mapPhotoType(photo.description),
+      caption: photo.description || undefined,
+      uploadedAt: photo.timestamp,
+      uploadedBy: photo.mechanicId,
+    }));
+    const localPhotoSet = getJobPhotos(jobId);
+
+    const deduped = new Map<string, JobPhoto>();
+    [...backendPhotoSet, ...localPhotoSet].forEach((photo) => {
+      deduped.set(`${photo.url}:${photo.type}`, photo);
+    });
+
+    return Array.from(deduped.values());
+  };
 
   const getServiceTitle = (type: string) => {
     return SERVICE_CATEGORIES.find(s => s.id === type)?.title || type;
@@ -93,23 +230,27 @@ export default function MechanicJobsScreen() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Claim',
-          onPress: () => {
+          onPress: async () => {
             logEvent('job_claimed', { jobId, mechanicId });
             
-            // Set up required tools for this job
-            const job = serviceRequests.find(j => j.id === jobId);
-            if (job) {
-              const serviceCategory = SERVICE_CATEGORIES.find(s => s.id === job.type);
-              const requiredTools = serviceCategory?.requiredTools.map(tool => tool.id) || [];
-              
-              updateJobStatus(jobId, 'accepted', mechanicId, 'Job claimed by mechanic');
-              updateServiceRequest(jobId, { 
-                mechanicId: mechanicId,
-                requiredTools
-              });
+            try {
+              await claimJobMutation.mutateAsync({ jobId });
+
+              const job = serviceRequests.find((entry) => entry.id === jobId);
+              if (job) {
+                const serviceCategory = SERVICE_CATEGORIES.find((s) => s.id === job.type);
+                const requiredTools = serviceCategory?.requiredTools.map((tool) => tool.id) || [];
+                updateServiceRequest(jobId, {
+                  mechanicId,
+                  requiredTools,
+                });
+              }
+
+              await utils.job.getAll.invalidate();
+              Alert.alert('Job Claimed', 'You have successfully claimed this job. Check your tools before starting work.');
+            } catch (error) {
+              Alert.alert('Claim Failed', 'Unable to claim this job right now.');
             }
-            
-            Alert.alert('Job Claimed', 'You have successfully claimed this job. Check your tools before starting work.');
           }
         }
       ]
@@ -137,12 +278,28 @@ export default function MechanicJobsScreen() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Confirm',
-          onPress: () => {
-            updateJobStatus(jobId, newStatus, mechanicId, notes);
-            
-            if (newStatus === 'completed') {
-              // Trigger payment flow
-              setSelectedRequestForPayment(jobId);
+          onPress: async () => {
+            try {
+              await updateStatusMutation.mutateAsync({
+                jobId,
+                status: toBackendStatus(newStatus),
+              });
+
+              if (newStatus === 'completed') {
+                const paymentQuote = paymentQuotes.find((quote) => quote.serviceRequestId === jobId);
+                if (!paymentQuote) {
+                  Alert.alert(
+                    'Quote Required',
+                    'Cannot complete payment flow because this job has no quote yet.'
+                  );
+                  return;
+                }
+                setSelectedRequestForPayment(jobId);
+              }
+
+              await utils.job.getAll.invalidate();
+            } catch (error) {
+              Alert.alert('Status Update Failed', 'Unable to update job status right now.');
             }
           }
         }
@@ -151,10 +308,10 @@ export default function MechanicJobsScreen() {
   };
 
   const handleCompleteJob = (jobId: string) => {
-    const jobLogs = getJobLogs(jobId);
+    const jobLogs = getCombinedJobLogs(jobId);
     const activeTimer = getActiveJobTimer(jobId);
     const job = serviceRequests.find(j => j.id === jobId);
-    const jobPhotos = getJobPhotos(jobId);
+    const jobPhotos = getCombinedJobPhotos(jobId);
     
     // Check if there are work logs
     if (jobLogs.length === 0) {
@@ -177,7 +334,7 @@ export default function MechanicJobsScreen() {
     }
 
     // Check if signature is required and present
-    if (!job?.signatureData) {
+    if (!job?.signatureUrl) {
       Alert.alert(
         'Signature Required',
         'Customer signature is required to complete this job.',
@@ -220,33 +377,68 @@ export default function MechanicJobsScreen() {
     handleStatusUpdate(jobId, 'completed', 'Job completed with all requirements met');
   };
 
-  const handleCancelJob = (jobId: string, reason: string) => {
+  const handleCancelJob = async (jobId: string, reason: string) => {
     logEvent('job_cancelled', { jobId, mechanicId, reason });
-    
-    cancelJob(jobId, reason, mechanicId);
-    setShowCancelModal(null);
-    
-    Alert.alert('Job Cancelled', 'Job has been cancelled and customer will be notified.');
+
+    try {
+      await updateStatusMutation.mutateAsync({
+        jobId,
+        status: 'cancelled',
+      });
+
+      setShowCancelModal(null);
+      await utils.job.getAll.invalidate();
+      Alert.alert('Job Cancelled', 'Job has been cancelled and customer will be notified.');
+    } catch (error) {
+      Alert.alert('Cancel Failed', 'Unable to cancel this job right now.');
+    }
   };
 
-  const handleWorkComplete = (jobId: string, workLog: any) => {
+  const handleWorkComplete = async (jobId: string, workLog: JobLog) => {
     logEvent('work_timer_stopped', { 
       jobId, 
       mechanicId, 
       duration: workLog.endTime ? (workLog.endTime.getTime() - workLog.startTime.getTime()) / (1000 * 60) : 0
     });
-    
+
+    try {
+      await updateTimeLogMutation.mutateAsync({
+        jobId,
+        mechanicId,
+        timeStarted: workLog.startTime,
+        timeEnded: workLog.endTime,
+        duration: workLog.duration,
+        activity: workLog.activity || 'Work completed',
+        notes: workLog.notes,
+      });
+
+      await utils.job.getAll.invalidate();
+    } catch (error) {
+      Alert.alert('Work Log Failed', 'Unable to sync work log to backend.');
+    }
+
     addJobLog(workLog);
     setSelectedRequestForTimer(null);
     
     Alert.alert('Work Logged', 'Work time has been logged successfully.');
   };
 
-  const handleSignatureComplete = (jobId: string, signatureData: string) => {
+  const handleSignatureComplete = async (jobId: string, signatureUrl: string) => {
     logEvent('signature_captured', { jobId, mechanicId });
-    
+
+    try {
+      await captureSignatureMutation.mutateAsync({
+        jobId,
+        signatureUrl,
+      });
+      await utils.job.getAll.invalidate();
+    } catch (error) {
+      Alert.alert('Signature Failed', 'Unable to save signature to backend.');
+      return;
+    }
+
     updateServiceRequest(jobId, { 
-      signatureData,
+      signatureUrl,
       signatureCapturedAt: new Date(),
       signatureCapturedBy: mechanicId
     });
@@ -255,14 +447,28 @@ export default function MechanicJobsScreen() {
     Alert.alert('Signature Captured', 'Customer signature has been captured.');
   };
 
-  const handlePhotosUpdate = (jobId: string, photos: JobPhoto[]) => {
-    const job = serviceRequests.find(j => j.id === jobId);
-    const currentPhotos = job?.jobPhotos || [];
+  const handlePhotosUpdate = async (jobId: string, photos: JobPhoto[]) => {
+    const currentPhotos = getCombinedJobPhotos(jobId);
     
     // Find new photos
     const newPhotos = photos.filter(p => !currentPhotos.find(cp => cp.id === p.id));
     
     if (newPhotos.length > 0) {
+      try {
+        await Promise.all(
+          newPhotos.map((photo) =>
+            addPhotoMutation.mutateAsync({
+              jobId,
+              photoUrl: photo.url,
+              description: `type:${photo.type}${photo.caption ? ` ${photo.caption}` : ''}`,
+              mechanicId,
+            })
+          )
+        );
+        await utils.job.getAll.invalidate();
+      } catch (error) {
+        Alert.alert('Photo Sync Failed', 'Some photos could not be saved to backend.');
+      }
       addJobPhotos(jobId, newPhotos);
     }
     
@@ -321,7 +527,7 @@ export default function MechanicJobsScreen() {
         <ChatComponent
           serviceRequestId={selectedRequestForChat}
           currentUserId={mechanicId}
-          currentUserName="Cody Owner"
+          currentUserName={user ? `${user.firstName} ${user.lastName}` : 'Mechanic'}
           currentUserType="mechanic"
         />
       </View>
@@ -344,6 +550,7 @@ export default function MechanicJobsScreen() {
         </View>
         <WorkTimer
           jobId={selectedRequestForTimer}
+          mechanicId={mechanicId}
           jobTitle={job ? getServiceTitle(job.type) : 'Service'}
           onWorkComplete={handleWorkComplete}
         />
@@ -368,6 +575,8 @@ export default function MechanicJobsScreen() {
         <SignatureCapture
           jobId={selectedRequestForSignature}
           jobTitle={job ? getServiceTitle(job.type) : 'Service'}
+          mechanicId={mechanicId}
+          mechanicName={user ? `${user.firstName} ${user.lastName}` : 'Mechanic'}
           onSignatureComplete={handleSignatureComplete}
           onCancel={() => setSelectedRequestForSignature(null)}
         />
@@ -378,7 +587,7 @@ export default function MechanicJobsScreen() {
   // Photos Manager View
   if (selectedRequestForPhotos) {
     const job = serviceRequests.find(j => j.id === selectedRequestForPhotos);
-    const jobPhotos = getJobPhotos(selectedRequestForPhotos);
+    const jobPhotos = getCombinedJobPhotos(selectedRequestForPhotos);
     
     return (
       <View style={styles.container}>
@@ -396,6 +605,7 @@ export default function MechanicJobsScreen() {
           <JobPhotoUpload
             jobId={selectedRequestForPhotos}
             photos={jobPhotos}
+            uploadedBy={mechanicId}
             onPhotosChange={(photos) => handlePhotosUpdate(selectedRequestForPhotos, photos)}
             maxPhotos={15}
             allowedTypes={['before', 'during', 'after', 'parts', 'damage']}
@@ -590,9 +800,23 @@ export default function MechanicJobsScreen() {
                       <Text style={styles.partTotal}>${(part.price * part.quantity).toFixed(2)}</Text>
                       <TouchableOpacity
                         style={styles.removePartButton}
-                        onPress={() => {
+                        onPress={async () => {
                           const updatedParts = jobParts.filter((_, i) => i !== index);
                           updateJobParts(selectedRequestForParts, updatedParts);
+                          const totalEstimate = updatedParts.reduce(
+                            (sum, part) => sum + part.price * part.quantity,
+                            0
+                          );
+                          try {
+                            await updatePartsMutation.mutateAsync({
+                              jobId: selectedRequestForParts,
+                              partsApproved: updatedParts.length > 0,
+                              estimatedPartsCost: totalEstimate || undefined,
+                            });
+                            await utils.job.getAll.invalidate();
+                          } catch (error) {
+                            Alert.alert('Parts Sync Failed', 'Unable to update parts estimate in backend.');
+                          }
                         }}
                       >
                         <Icons.Trash2 size={16} color={Colors.error} />
@@ -605,7 +829,7 @@ export default function MechanicJobsScreen() {
             
             <TouchableOpacity
               style={styles.addPartButton}
-              onPress={() => {
+              onPress={async () => {
                 // Mock adding a part - in production this would be a form
                 const newPart = {
                   name: 'Oil Filter',
@@ -614,8 +838,24 @@ export default function MechanicJobsScreen() {
                   quantity: 1,
                   source: 'AutoZone'
                 };
+                const updatedParts = [...jobParts, newPart];
                 addJobParts(selectedRequestForParts, [newPart]);
-                Alert.alert('Part Added', 'Oil filter has been added to this job.');
+                const totalEstimate = updatedParts.reduce(
+                  (sum, part) => sum + part.price * part.quantity,
+                  0
+                );
+
+                try {
+                  await updatePartsMutation.mutateAsync({
+                    jobId: selectedRequestForParts,
+                    partsApproved: true,
+                    estimatedPartsCost: totalEstimate,
+                  });
+                  await utils.job.getAll.invalidate();
+                  Alert.alert('Part Added', 'Oil filter has been added to this job.');
+                } catch (error) {
+                  Alert.alert('Parts Sync Failed', 'Part was added locally but backend sync failed.');
+                }
               }}
             >
               <Icons.Plus size={20} color={Colors.primary} />
@@ -627,12 +867,29 @@ export default function MechanicJobsScreen() {
     );
   }
 
+  if (jobsQuery.isLoading) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyTitle}>Loading jobs...</Text>
+      </View>
+    );
+  }
+
+  if (jobsQuery.error) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyTitle}>Unable to load jobs</Text>
+        <Text style={styles.emptyText}>Check API connectivity and try again.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Mechanic Info Header */}
       <View style={styles.mechanicHeader}>
         <Text style={styles.mechanicName}>
-          Cody Owner - Mobile Mechanic
+          {user ? `${user.firstName} ${user.lastName}` : 'Mechanic'} - Mobile Mechanic
         </Text>
         <Text style={styles.mechanicSubtext}>
           Production Environment - Cody Only Access
@@ -688,11 +945,11 @@ export default function MechanicJobsScreen() {
                 onOpenTimeline={openTimeline}
                 getServiceTitle={getServiceTitle}
                 getStatusColor={getStatusColor}
-                getJobLogs={getJobLogs}
+                getJobLogs={getCombinedJobLogs}
                 getActiveJobTimer={getActiveJobTimer}
                 getJobToolsStatus={getJobToolsStatus}
                 getJobParts={getJobParts}
-                getJobPhotos={getJobPhotos}
+                getJobPhotos={getCombinedJobPhotos}
                 getJobTimeline={getJobTimeline}
               />
             ))}
@@ -712,14 +969,21 @@ export default function MechanicJobsScreen() {
       )}
 
       {/* Payment Modal */}
-      {selectedRequestForPayment && (
-        <PaymentModal
-          quote={quotes.find(q => q.serviceRequestId === selectedRequestForPayment)!}
-          paymentType="full"
-          onSuccess={handlePaymentComplete}
-          onCancel={() => setSelectedRequestForPayment(null)}
-        />
-      )}
+      {selectedRequestForPayment && (() => {
+        const selectedQuote = paymentQuotes.find((quote) => quote.serviceRequestId === selectedRequestForPayment);
+        if (!selectedQuote) {
+          return null;
+        }
+
+        return (
+          <PaymentModal
+            quote={selectedQuote}
+            paymentType="full"
+            onSuccess={handlePaymentComplete}
+            onCancel={() => setSelectedRequestForPayment(null)}
+          />
+        );
+      })()}
     </View>
   );
 }
@@ -775,7 +1039,7 @@ function JobCard({
   const timeline = getJobTimeline(job.id);
   
   const hasWorkLogs = jobLogs.length > 0;
-  const hasSignature = !!job.signatureData;
+  const hasSignature = !!job.signatureUrl;
   const hasToolsCheck = !!job.toolsCheckCompletedAt;
   const afterPhotos = jobPhotos.filter(p => p.type === 'after');
   const hasAfterPhotos = afterPhotos.length > 0;

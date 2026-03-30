@@ -1,9 +1,15 @@
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect } from 'expo-router';
 import { useThemeStore } from '@/stores/theme-store';
+import { useAuthStore } from '@/stores/auth-store';
 import * as Icons from 'lucide-react-native';
 
 export default function AdminLayout() {
   const { colors } = useThemeStore();
+  const { user, isAuthenticated } = useAuthStore();
+
+  if (!isAuthenticated || !user || user.role !== 'admin') {
+    return <Redirect href="/auth" />;
+  }
 
   return (
     <Tabs

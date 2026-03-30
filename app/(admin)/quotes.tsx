@@ -1,14 +1,23 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
-import { useAppStore } from '@/stores/app-store';
 import { SERVICE_CATEGORIES } from '@/constants/services';
+import { trpc } from '@/lib/trpc';
 import * as Icons from 'lucide-react-native';
 
 export default function AdminQuotesScreen() {
   const { user } = useAuthStore();
-  const { serviceRequests, quotes, updateQuote, updateServiceRequest, addQuote } = useAppStore();
+  const utils = trpc.useUtils();
+  const { data: jobsData, isLoading: jobsLoading } = trpc.job.getAll.useQuery();
+  const { data: quotesData, isLoading: quotesLoading } = trpc.quote.listAll.useQuery();
+  const createQuoteMutation = trpc.quote.create.useMutation();
+  const updateQuoteStatusMutation = trpc.quote.updateStatus.useMutation();
+  const jobs = jobsData?.jobs ?? [];
+  const quotes = quotesData?.quotes ?? [];
+  const isLoading = jobsLoading || quotesLoading;
+  type JobItem = typeof jobs[number];
+  type QuoteItem = typeof quotes[number];
   const [selectedTab, setSelectedTab] = useState<'pending' | 'accepted' | 'all'>('pending');
 
   const getServiceTitle = (type: string) => {
@@ -16,19 +25,27 @@ export default function AdminQuotesScreen() {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    const normalized = status.toLowerCase();
+    switch (normalized) {
       case 'pending': return Colors.warning;
-      case 'quoted': return Colors.primary;
       case 'accepted': return Colors.success;
-      case 'rejected': return Colors.error;
+      case 'approved': return Colors.primary;
+      case 'declined': return Colors.error;
       case 'paid': return Colors.success;
       default: return Colors.textMuted;
     }
   };
 
-  const handleCreateQuote = (requestId: string) => {
-    const request = serviceRequests.find(r => r.id === requestId);
-    if (!request) return;
+  const formatStatus = (status: string) => status.toLowerCase().replace(/_/g, ' ');
+
+  const getLatestQuoteForJob = (jobId: string) => {
+    const jobQuotes = quotes.filter((q: QuoteItem) => q.jobId === jobId);
+    return jobQuotes.sort((a: QuoteItem, b: QuoteItem) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+  };
+
+  const handleCreateQuote = (jobId: string) => {
+    const job = jobs.find((j: JobItem) => j.id === jobId);
+    if (!job) return;
 
     Alert.prompt(
       'Create Quote',
@@ -37,29 +54,29 @@ export default function AdminQuotesScreen() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Create',
-          onPress: (totalCost) => {
+          onPress: async (totalCost) => {
             if (!totalCost || isNaN(Number(totalCost))) {
               Alert.alert('Error', 'Please enter a valid amount');
               return;
             }
 
-            const newQuote = {
-              id: `quote-${Date.now()}`,
-              serviceRequestId: requestId,
-              description: `Professional ${getServiceTitle(request.type)} service`,
-              laborCost: Number(totalCost) * 0.7,
-              partsCost: Number(totalCost) * 0.3,
-              totalCost: Number(totalCost),
-              estimatedDuration: 2,
-              validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-              status: 'pending' as const,
-              createdAt: new Date(),
-              createdBy: user?.id || 'admin',
-            };
+            try {
+              await createQuoteMutation.mutateAsync({
+                jobId,
+                description: `Professional ${getServiceTitle(job.serviceType)} service`,
+                laborCost: Number(totalCost) * 0.7,
+                partsCost: Number(totalCost) * 0.3,
+                totalCost: Number(totalCost),
+                estimatedDuration: 2,
+                validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+              });
 
-            addQuote(newQuote);
-            updateServiceRequest(requestId, { status: 'quoted' });
-            Alert.alert('Success', 'Quote created successfully');
+              await utils.quote.listAll.invalidate();
+              await utils.job.getAll.invalidate();
+              Alert.alert('Success', 'Quote created successfully');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to create quote');
+            }
           }
         }
       ],
@@ -69,32 +86,37 @@ export default function AdminQuotesScreen() {
     );
   };
 
-  const handleAcceptQuote = (quoteId: string) => {
-    updateQuote(quoteId, { status: 'accepted' });
-    const quote = quotes.find(q => q.id === quoteId);
-    if (quote) {
-      updateServiceRequest(quote.serviceRequestId, { status: 'accepted' });
+  const handleAcceptQuote = async (quoteId: string) => {
+    try {
+      await updateQuoteStatusMutation.mutateAsync({ quoteId, status: 'accepted' });
+      await utils.quote.listAll.invalidate();
+      await utils.job.getAll.invalidate();
+      Alert.alert('Success', 'Quote accepted');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to accept quote');
     }
-    Alert.alert('Success', 'Quote accepted and job scheduled');
   };
 
-  const handleRejectQuote = (quoteId: string) => {
-    updateQuote(quoteId, { status: 'rejected' });
-    const quote = quotes.find(q => q.id === quoteId);
-    if (quote) {
-      updateServiceRequest(quote.serviceRequestId, { status: 'pending' });
+  const handleRejectQuote = async (quoteId: string) => {
+    try {
+      await updateQuoteStatusMutation.mutateAsync({ quoteId, status: 'declined' });
+      await utils.quote.listAll.invalidate();
+      await utils.job.getAll.invalidate();
+      Alert.alert('Quote Rejected', 'Quote has been declined');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to reject quote');
     }
-    Alert.alert('Quote Rejected', 'Quote has been rejected');
   };
 
-  const filteredRequests = serviceRequests.filter(request => {
-    const hasQuote = quotes.some(q => q.serviceRequestId === request.id);
+  const filteredRequests = jobs.filter((job: JobItem) => {
+    const latestQuote = getLatestQuoteForJob(job.id);
+    const jobStatus = job.status.toLowerCase();
     
     switch (selectedTab) {
       case 'pending':
-        return !hasQuote && request.status === 'pending';
+        return !latestQuote && jobStatus === 'pending';
       case 'accepted':
-        return hasQuote && quotes.find(q => q.serviceRequestId === request.id)?.status === 'accepted';
+        return latestQuote?.status.toLowerCase() === 'accepted';
       case 'all':
         return true;
       default:
@@ -127,9 +149,9 @@ export default function AdminQuotesScreen() {
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
         {[
-          { key: 'pending', label: 'Pending Quotes', count: serviceRequests.filter(r => !quotes.some(q => q.serviceRequestId === r.id) && r.status === 'pending').length },
-          { key: 'accepted', label: 'Accepted', count: quotes.filter(q => q.status === 'accepted').length },
-          { key: 'all', label: 'All Requests', count: serviceRequests.length },
+          { key: 'pending', label: 'Pending Quotes', count: jobs.filter((job: JobItem) => !getLatestQuoteForJob(job.id) && job.status.toLowerCase() === 'pending').length },
+          { key: 'accepted', label: 'Accepted', count: quotes.filter((q: QuoteItem) => q.status.toLowerCase() === 'accepted').length },
+          { key: 'all', label: 'All Requests', count: jobs.length },
         ].map((tab) => (
           <TouchableOpacity
             key={tab.key}
@@ -146,7 +168,11 @@ export default function AdminQuotesScreen() {
       {/* Requests List */}
       <ScrollView style={styles.requestsList} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          {filteredRequests.length === 0 ? (
+          {isLoading ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>Loading quotes...</Text>
+            </View>
+          ) : filteredRequests.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Icons.FileText size={64} color={Colors.textMuted} />
               <Text style={styles.emptyTitle}>No {selectedTab} requests</Text>
@@ -157,42 +183,36 @@ export default function AdminQuotesScreen() {
               </Text>
             </View>
           ) : (
-            filteredRequests.map((request) => {
-              const requestQuote = quotes.find(q => q.serviceRequestId === request.id);
+            filteredRequests.map((job: JobItem) => {
+              const requestQuote = getLatestQuoteForJob(job.id);
               
               return (
-                <View key={request.id} style={styles.requestCard}>
+                <View key={job.id} style={styles.requestCard}>
                   <View style={styles.requestHeader}>
                     <Text style={styles.requestTitle}>
-                      {getServiceTitle(request.type)}
+                      {getServiceTitle(job.serviceType)}
                     </Text>
                     <View style={[
                       styles.statusBadge,
-                      { backgroundColor: getStatusColor(request.status) + '20' }
+                      { backgroundColor: getStatusColor(job.status) + '20' }
                     ]}>
                       <Text style={[
                         styles.statusText,
-                        { color: getStatusColor(request.status) }
+                        { color: getStatusColor(job.status) }
                       ]}>
-                        {request.status}
+                        {formatStatus(job.status)}
                       </Text>
                     </View>
                   </View>
 
                   <Text style={styles.requestDescription} numberOfLines={2}>
-                    {request.description}
+                    {job.description}
                   </Text>
 
                   <View style={styles.requestMeta}>
                     <Text style={styles.requestDate}>
-                      {request.createdAt.toLocaleDateString()}
+                      {job.createdAt.toLocaleDateString()}
                     </Text>
-                    {request.urgency === 'emergency' && (
-                      <View style={styles.urgencyBadge}>
-                        <Icons.AlertTriangle size={12} color={Colors.error} />
-                        <Text style={styles.urgencyText}>Emergency</Text>
-                      </View>
-                    )}
                   </View>
 
                   {/* Quote Section */}
@@ -213,7 +233,7 @@ export default function AdminQuotesScreen() {
                         </Text>
                       </View>
 
-                      {requestQuote.status === 'pending' && (
+                      {requestQuote.status.toLowerCase() === 'pending' && (
                         <View style={styles.quoteActions}>
                           <TouchableOpacity
                             style={styles.acceptButton}
@@ -233,7 +253,7 @@ export default function AdminQuotesScreen() {
                         </View>
                       )}
 
-                      {requestQuote.status !== 'pending' && (
+                      {requestQuote.status.toLowerCase() !== 'pending' && (
                         <View style={[
                           styles.quoteStatusBadge,
                           { backgroundColor: getStatusColor(requestQuote.status) + '20' }
@@ -242,7 +262,7 @@ export default function AdminQuotesScreen() {
                             styles.quoteStatusText,
                             { color: getStatusColor(requestQuote.status) }
                           ]}>
-                            {requestQuote.status.toUpperCase()}
+                            {formatStatus(requestQuote.status).toUpperCase()}
                           </Text>
                         </View>
                       )}
@@ -251,7 +271,7 @@ export default function AdminQuotesScreen() {
                     <View style={styles.actionSection}>
                       <TouchableOpacity
                         style={styles.createQuoteButton}
-                        onPress={() => handleCreateQuote(request.id)}
+                        onPress={() => handleCreateQuote(job.id)}
                       >
                         <Icons.FileText size={16} color={Colors.primary} />
                         <Text style={styles.createQuoteButtonText}>Create Quote</Text>

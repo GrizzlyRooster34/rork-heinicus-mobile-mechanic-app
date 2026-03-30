@@ -4,14 +4,16 @@ import { Colors } from '@/constants/colors';
 import * as ImagePicker from 'expo-image-picker';
 import * as Icons from 'lucide-react-native';
 import { Platform } from 'react-native';
+import { uploadImageAsync } from '@/lib/storage';
 
 interface PhotoUploadProps {
   photos: string[];
   onPhotosChange: (photos: string[]) => void;
   maxPhotos?: number;
+  uploadPathPrefix?: string;
 }
 
-export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 5 }: PhotoUploadProps) {
+export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 5, uploadPathPrefix }: PhotoUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
 
   const requestPermissions = async () => {
@@ -25,6 +27,17 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 5 }: PhotoUplo
       return false;
     }
     return true;
+  };
+
+  const uploadAndStore = async (uri: string) => {
+    if (!uploadPathPrefix) {
+      onPhotosChange([...photos, uri]);
+      return;
+    }
+
+    const path = `${uploadPathPrefix}/${Date.now()}`;
+    const { url } = await uploadImageAsync(uri, path);
+    onPhotosChange([...photos, url]);
   };
 
   const pickImage = async () => {
@@ -48,10 +61,10 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 5 }: PhotoUplo
 
       if (!result.canceled && result.assets[0]) {
         const newPhoto = result.assets[0].uri;
-        onPhotosChange([...photos, newPhoto]);
+        await uploadAndStore(newPhoto);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
+      Alert.alert('Error', 'Failed to upload image. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -86,10 +99,10 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 5 }: PhotoUplo
 
       if (!result.canceled && result.assets[0]) {
         const newPhoto = result.assets[0].uri;
-        onPhotosChange([...photos, newPhoto]);
+        await uploadAndStore(newPhoto);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to take photo. Please try again.');
+      Alert.alert('Error', 'Failed to upload photo. Please try again.');
     } finally {
       setIsUploading(false);
     }

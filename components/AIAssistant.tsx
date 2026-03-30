@@ -7,6 +7,7 @@ import { trpc } from '@/lib/trpc';
 import { Vehicle, DiagnosticResult, ServiceType } from '@/types/service';
 import { SERVICE_CATEGORIES } from '@/constants/services';
 import { generateSmartQuote } from '@/utils/quote-generator';
+import { useAuthStore } from '@/stores/auth-store';
 import * as Icons from 'lucide-react-native';
 import { router } from 'expo-router';
 
@@ -22,21 +23,64 @@ export function AIAssistant({ vehicle, onDiagnosisComplete, initialSymptoms = ''
   const [diagnosis, setDiagnosis] = useState<DiagnosticResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [estimatedCost, setEstimatedCost] = useState<{ min: number; max: number } | null>(null);
+  const { user } = useAuthStore();
+
+  const normalizeConfidence = (confidence: string): DiagnosticResult['confidence'] => {
+    const value = confidence.toLowerCase();
+    if (value === 'high' || value === 'medium' || value === 'low') {
+      return value;
+    }
+    return 'medium';
+  };
+
+  const normalizeUrgency = (urgency: string): DiagnosticResult['urgencyLevel'] => {
+    const value = urgency.toLowerCase();
+    if (value === 'emergency' || value === 'high' || value === 'medium' || value === 'low') {
+      return value;
+    }
+    return 'medium';
+  };
+
+  const mapDiagnosisResult = (result: any): DiagnosticResult => ({
+    id: result.id,
+    vehicleInfo: {
+      make: result.vehicleMake,
+      model: result.vehicleModel,
+      year: result.vehicleYear,
+      mileage: result.vehicleMileage ?? undefined,
+      engine: result.vehicleEngine ?? undefined,
+      vin: result.vehicleVin ?? undefined,
+    },
+    symptoms: result.symptoms,
+    additionalContext: result.additionalContext ?? undefined,
+    confidence: normalizeConfidence(result.confidence),
+    likelyCauses: result.likelyCauses ?? [],
+    diagnosticSteps: result.diagnosticSteps ?? [],
+    urgencyLevel: normalizeUrgency(result.urgencyLevel),
+    estimatedCost:
+      result.estimatedCostMin !== null && result.estimatedCostMax !== null
+        ? { min: result.estimatedCostMin, max: result.estimatedCostMax }
+        : undefined,
+    matchedServices: result.matchedServices ?? [],
+    recommendedServiceTypes: result.recommendedServiceTypes ?? [],
+    createdAt: result.createdAt,
+  });
 
   const diagnosisMutation = trpc.diagnosis.diagnose.useMutation({
-    onSuccess: (result: DiagnosticResult) => {
-      setDiagnosis(result);
-      onDiagnosisComplete?.(result);
+    onSuccess: (result) => {
+      const mappedResult = mapDiagnosisResult(result);
+      setDiagnosis(mappedResult);
+      onDiagnosisComplete?.(mappedResult);
       setIsAnalyzing(false);
       
       // Generate cost estimate based on AI diagnosis
-      if (result.recommendedServiceTypes && result.recommendedServiceTypes.length > 0) {
-        const serviceType = result.recommendedServiceTypes[0] as ServiceType;
+      if (mappedResult.recommendedServiceTypes && mappedResult.recommendedServiceTypes.length > 0) {
+        const serviceType = mappedResult.recommendedServiceTypes[0] as ServiceType;
         const mockQuote = generateSmartQuote('temp-id', {
           serviceType,
-          urgency: result.urgencyLevel as any,
+          urgency: mappedResult.urgencyLevel as any,
           description: symptoms.trim(),
-          aiDiagnosis: result,
+          aiDiagnosis: mappedResult,
           vehicle,
         });
         
@@ -59,6 +103,11 @@ export function AIAssistant({ vehicle, onDiagnosisComplete, initialSymptoms = ''
   const handleAnalyze = async () => {
     if (!vehicle) {
       Alert.alert('Vehicle Required', 'Please select or add a vehicle first.');
+      return;
+    }
+
+    if (!user?.id) {
+      Alert.alert('Sign In Required', 'Please sign in to run an AI diagnosis.');
       return;
     }
 

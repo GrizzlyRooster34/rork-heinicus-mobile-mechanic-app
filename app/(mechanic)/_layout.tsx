@@ -13,8 +13,7 @@ export default function MechanicTabLayout() {
   const { user, isAuthenticated } = useAuthStore();
   const { colors } = useThemeStore();
 
-  // Production security: Only allow Cody as mechanic
-  if (!isAuthenticated || !user || user.role !== 'mechanic' || user.id !== 'mechanic-cody') {
+  if (!isAuthenticated || !user || user.role !== 'mechanic') {
     console.warn('Unauthorized mechanic access attempt:', { 
       isAuthenticated, 
       userId: user?.id, 

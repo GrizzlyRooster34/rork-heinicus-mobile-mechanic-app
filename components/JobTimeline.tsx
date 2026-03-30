@@ -153,7 +153,7 @@ export function JobTimeline({ timeline, currentStatus, estimatedDuration, actual
                     
                     {event.mechanicId && (
                       <Text style={styles.timelineMechanic}>
-                        by {event.mechanicId === 'mechanic-cody' ? 'Cody Owner' : event.mechanicId}
+                        by {event.mechanicId}
                       </Text>
                     )}
                     

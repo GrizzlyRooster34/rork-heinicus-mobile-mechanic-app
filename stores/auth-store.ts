@@ -5,6 +5,7 @@ import { User, AuthState } from '@/types/auth';
 import { MechanicVerificationStatus } from '@/types/service';
 import { trpcClient } from '@/lib/trpc';
 import { devMode, isDevCredentials, getDevUser } from '@/utils/dev';
+import { setAuthTokens, clearAuthTokens } from '@/lib/auth-token';
 
 interface AuthStore extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;
@@ -13,17 +14,19 @@ interface AuthStore extends AuthState {
   setUser: (user: User) => void;
   updateUserRole: (userId: string, role: 'customer' | 'mechanic' | 'admin') => Promise<boolean>;
   getAllUsers: () => User[];
+  token: string | null;
+  refreshToken: string | null;
   
   // Verification status
   verificationStatus: MechanicVerificationStatus | null;
   setVerificationStatus: (status: MechanicVerificationStatus | null) => void;
 }
 
-// Production configuration - Admin and Mechanic users
-const PRODUCTION_USERS = {
+// Local dev-only users for UI fallback.
+const LOCAL_DEV_USERS = {
   admin: {
     id: 'admin-cody',
-    email: 'matthew.heinen.2014@gmail.com',
+    email: 'admin@example.com',
     firstName: 'Cody',
     lastName: 'Owner',
     role: 'admin' as const,
@@ -32,7 +35,7 @@ const PRODUCTION_USERS = {
   },
   mechanic: {
     id: 'mechanic-cody',
-    email: 'cody@heinicus.com',
+    email: 'mechanic@example.com',
     firstName: 'Cody',
     lastName: 'Mechanic',
     role: 'mechanic' as const,
@@ -41,7 +44,7 @@ const PRODUCTION_USERS = {
   }
 };
 
-// Store for registered customers (in production, this would be in a database)
+// Store for registered customers in local fallback mode.
 let registeredCustomers: User[] = [
   // Demo customer for testing
   {
@@ -61,6 +64,8 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       isLoading: false,
       isAuthenticated: false,
+      token: null,
+      refreshToken: null,
       verificationStatus: null,
 
       signup: async (email: string, password: string, firstName: string, lastName: string, phone?: string, role: 'customer' | 'mechanic' = 'customer') => {
@@ -68,13 +73,14 @@ export const useAuthStore = create<AuthStore>()(
         
         try {
           // Use TRPC client for signup
+          const backendRole = role.toUpperCase() as 'CUSTOMER' | 'MECHANIC';
           const result = await trpcClient.auth.signup.mutate({
             email,
             password,
             firstName,
             lastName,
             phone,
-            role,
+            role: backendRole,
           });
           
           if (result.success && result.user) {
@@ -85,19 +91,25 @@ export const useAuthStore = create<AuthStore>()(
               timestamp: new Date().toISOString() 
             });
             
-            // Use the user object as returned from the backend
-            const completeUser: User = result.user;
+            const completeUser: User = {
+              ...result.user,
+              phone: result.user.phone ?? undefined,
+              role: result.user.role.toLowerCase() as 'customer' | 'mechanic' | 'admin'
+            };
+            setAuthTokens(result.token ?? null, result.refreshToken ?? null);
             
             // Auto-login after successful signup
             set({ 
               user: completeUser, 
               isAuthenticated: true, 
-              isLoading: false 
+              isLoading: false,
+              token: result.token ?? null,
+              refreshToken: result.refreshToken ?? null
             });
             
             return true;
           } else {
-            console.log('Signup failed via TRPC:', result.error);
+            console.log('Signup failed via TRPC');
             set({ isLoading: false });
             return false;
           }
@@ -161,18 +173,24 @@ export const useAuthStore = create<AuthStore>()(
                 timestamp: new Date().toISOString() 
               });
               
-              // Use the user object as returned from the backend
-              const completeUser: User = result.user;
+              const completeUser: User = {
+                ...result.user,
+                phone: result.user.phone ?? undefined,
+                role: result.user.role.toLowerCase() as 'customer' | 'mechanic' | 'admin'
+              };
+              setAuthTokens(result.token ?? null, result.refreshToken ?? null);
               
               set({ 
                 user: completeUser, 
                 isAuthenticated: true, 
-                isLoading: false 
+                isLoading: false,
+                token: result.token ?? null,
+                refreshToken: result.refreshToken ?? null
               });
               
               return true;
             } else {
-              console.log('Login failed via TRPC:', result.error);
+              console.log('Login failed via TRPC');
             }
           } catch (trpcError) {
             console.warn('TRPC login failed, trying dev fallback:', trpcError);
@@ -217,34 +235,18 @@ export const useAuthStore = create<AuthStore>()(
           environment: 'production',
           timestamp: new Date().toISOString() 
         });
+        clearAuthTokens();
         
         set({ 
           user: null, 
           isAuthenticated: false,
+          token: null,
+          refreshToken: null,
           verificationStatus: null,
         });
       },
 
       setUser: (user: User) => {
-        // Production security: Validate user role
-        if (user.role === 'mechanic' && user.id !== 'mechanic-cody') {
-          console.warn('Unauthorized mechanic access attempt:', { 
-            userId: user.id, 
-            environment: 'production',
-            timestamp: new Date().toISOString() 
-          });
-          return;
-        }
-        
-        if (user.role === 'admin' && user.id !== 'admin-cody') {
-          console.warn('Unauthorized admin access attempt:', { 
-            userId: user.id, 
-            environment: 'production',
-            timestamp: new Date().toISOString() 
-          });
-          return;
-        }
-        
         // Production logging
         console.log('User set:', { 
           userId: user.id, 
@@ -275,9 +277,10 @@ export const useAuthStore = create<AuthStore>()(
         }
 
         try {
+          const backendRole = role.toUpperCase() as 'CUSTOMER' | 'MECHANIC' | 'ADMIN';
           const result = await trpcClient.admin.updateUserRole.mutate({
             userId,
-            role,
+            role: backendRole,
           });
           
           if (result.success) {
@@ -311,9 +314,13 @@ export const useAuthStore = create<AuthStore>()(
           return [];
         }
 
+        if (!devMode) {
+          return [];
+        }
+
         return [
-          PRODUCTION_USERS.admin,
-          PRODUCTION_USERS.mechanic,
+          LOCAL_DEV_USERS.admin,
+          LOCAL_DEV_USERS.mechanic,
           ...registeredCustomers
         ];
       },
@@ -328,8 +335,15 @@ export const useAuthStore = create<AuthStore>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        token: state.token,
+        refreshToken: state.refreshToken,
         verificationStatus: state.verificationStatus,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.token || state?.refreshToken) {
+          setAuthTokens(state.token ?? null, state.refreshToken ?? null);
+        }
+      },
     }
   )
 );

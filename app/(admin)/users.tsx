@@ -2,23 +2,34 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
+import { trpc } from '@/lib/trpc';
 import { User } from '@/types/auth';
 import * as Icons from 'lucide-react-native';
 
 export default function AdminUsersScreen() {
-  const { user, getAllUsers, updateUserRole } = useAuthStore();
+  const { user } = useAuthStore();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
 
-  const allUsers = getAllUsers();
+  const { data: usersData, isLoading } = trpc.admin.getAllUsers.useQuery();
+  const updateUserRoleMutation = trpc.admin.updateUserRole.useMutation();
+  type RawUser = NonNullable<typeof usersData>['users'][number];
+  const allUsers: User[] = (usersData?.users ?? []).map((userData: RawUser) => ({
+    ...userData,
+    phone: userData.phone ?? undefined,
+    role: userData.role.toLowerCase() as User['role'],
+  }));
 
   const handleRoleChange = async (userId: string, newRole: 'customer' | 'mechanic' | 'admin') => {
-    const success = await updateUserRole(userId, newRole);
-    if (success) {
+    try {
+      await updateUserRoleMutation.mutateAsync({
+        userId,
+        role: newRole.toUpperCase() as 'CUSTOMER' | 'MECHANIC' | 'ADMIN',
+      });
       Alert.alert('Success', 'User role updated successfully');
       setShowRoleModal(false);
       setSelectedUser(null);
-    } else {
+    } catch (error) {
       Alert.alert('Error', 'Failed to update user role');
     }
   };
@@ -49,6 +60,14 @@ export default function AdminUsersScreen() {
         <Text style={styles.unauthorizedText}>
           You do not have permission to manage users.
         </Text>
+      </View>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <View style={styles.unauthorizedContainer}>
+        <Text style={styles.unauthorizedTitle}>Loading users...</Text>
       </View>
     );
   }

@@ -1,83 +1,153 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, Alert, TouchableOpacity } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { Button } from '@/components/Button';
-import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { Contact, Vehicle } from '@/types/service';
+import { trpc } from '@/lib/trpc';
+import { VehicleType } from '@/types/service';
 import * as Icons from 'lucide-react-native';
 
 export default function CustomerProfileScreen() {
-  const { contact, vehicles, setContact, addVehicle, removeVehicle } = useAppStore();
-  const { user, logout } = useAuthStore();
-  
-  // Contact form state
-  const [firstName, setFirstName] = useState(contact?.firstName || user?.firstName || '');
-  const [lastName, setLastName] = useState(contact?.lastName || user?.lastName || '');
-  const [phone, setPhone] = useState(contact?.phone || user?.phone || '');
-  const [email, setEmail] = useState(contact?.email || user?.email || '');
-  const [address, setAddress] = useState(contact?.address || '');
-  
-  // Vehicle form state
+  const { user, logout, setUser } = useAuthStore();
+  const utils = trpc.useUtils();
+  const { data: profileData, isLoading } = trpc.customer.getProfile.useQuery(undefined, {
+    enabled: !!user,
+  });
+  const updateProfileMutation = trpc.customer.updateProfile.useMutation();
+  const addVehicleMutation = trpc.customer.addVehicle.useMutation();
+  const removeVehicleMutation = trpc.customer.removeVehicle.useMutation();
+
+  const profile = profileData?.profile;
+  const vehicles = profile?.vehicles ?? [];
+
+  const [firstName, setFirstName] = useState(user?.firstName || '');
+  const [lastName, setLastName] = useState(user?.lastName || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [address, setAddress] = useState('');
+
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [vehicleMake, setVehicleMake] = useState('');
   const [vehicleModel, setVehicleModel] = useState('');
   const [vehicleYear, setVehicleYear] = useState('');
-  const [vehicleColor, setVehicleColor] = useState('');
   const [vehicleMileage, setVehicleMileage] = useState('');
+  const [vehicleLicensePlate, setVehicleLicensePlate] = useState('');
+  const [vehicleVin, setVehicleVin] = useState('');
+  const [vehicleType, setVehicleType] = useState<VehicleType>('car');
 
-  const handleSaveContact = () => {
+  const mapVehicleType = (value: string): VehicleType => {
+    switch (value) {
+      case 'MOTORCYCLE':
+        return 'motorcycle';
+      case 'SCOOTER':
+        return 'scooter';
+      case 'CAR':
+      default:
+        return 'car';
+    }
+  };
+
+  const vehicleTypeLabel = (type: VehicleType) => {
+    switch (type) {
+      case 'motorcycle':
+        return 'Motorcycle';
+      case 'scooter':
+        return 'Scooter';
+      case 'car':
+      default:
+        return 'Car/Truck';
+    }
+  };
+
+  useEffect(() => {
+    if (!profile) {
+      return;
+    }
+
+    setFirstName(profile.firstName || '');
+    setLastName(profile.lastName || '');
+    setPhone(profile.phone || '');
+    setEmail(profile.email || '');
+    setAddress(profile.address || '');
+  }, [profile]);
+
+  const handleSaveContact = async () => {
     if (!firstName.trim() || !lastName.trim() || !phone.trim() || !email.trim()) {
       Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
 
-    const contactData: Contact = {
-      id: contact?.id || Date.now().toString(),
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      address: address.trim() || undefined,
-    };
+    try {
+      const result = await updateProfileMutation.mutateAsync({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        address: address.trim() || undefined,
+      });
 
-    setContact(contactData);
-    Alert.alert('Success', 'Contact information saved.');
+      if (user) {
+        setUser({
+          ...user,
+          firstName: result.user.firstName,
+          lastName: result.user.lastName,
+          email: result.user.email,
+          phone: result.user.phone ?? undefined,
+          role: result.user.role.toLowerCase() as 'customer' | 'mechanic' | 'admin',
+        });
+      }
+
+      await utils.customer.getProfile.invalidate();
+      Alert.alert('Success', 'Contact information saved.');
+    } catch (error: any) {
+      Alert.alert('Error', error?.message || 'Failed to save contact information.');
+    }
   };
 
-  const handleAddVehicle = () => {
+  const handleAddVehicle = async () => {
     if (!vehicleMake.trim() || !vehicleModel.trim() || !vehicleYear.trim()) {
       Alert.alert('Error', 'Please fill in make, model, and year.');
       return;
     }
 
-    const year = parseInt(vehicleYear);
-    if (isNaN(year) || year < 1900 || year > new Date().getFullYear() + 1) {
+    const year = parseInt(vehicleYear, 10);
+    if (Number.isNaN(year) || year < 1900 || year > new Date().getFullYear() + 1) {
       Alert.alert('Error', 'Please enter a valid year.');
       return;
     }
 
-    const vehicle: Vehicle = {
-      id: Date.now().toString(),
-      make: vehicleMake.trim(),
-      model: vehicleModel.trim(),
-      year,
-      vehicleType: 'car',
-      color: vehicleColor.trim() || undefined,
-      mileage: vehicleMileage.trim() ? parseInt(vehicleMileage, 10) : 0,
-    };
+    const parsedMileage = vehicleMileage.trim() ? parseInt(vehicleMileage.trim(), 10) : 0;
+    if (Number.isNaN(parsedMileage) || parsedMileage < 0) {
+      Alert.alert('Error', 'Please enter a valid mileage.');
+      return;
+    }
 
-    addVehicle(vehicle);
-    
-    // Reset form
-    setVehicleMake('');
-    setVehicleModel('');
-    setVehicleYear('');
-    setVehicleColor('');
-    setVehicleMileage('');
-    setShowVehicleForm(false);
-    
-    Alert.alert('Success', 'Vehicle added to your profile.');
+    try {
+      await addVehicleMutation.mutateAsync({
+        make: vehicleMake.trim(),
+        model: vehicleModel.trim(),
+        year,
+        vehicleType,
+        mileage: parsedMileage,
+        licensePlate: vehicleLicensePlate.trim() || undefined,
+        vin: vehicleVin.trim() || undefined,
+      });
+
+      await utils.customer.getProfile.invalidate();
+
+      setVehicleMake('');
+      setVehicleModel('');
+      setVehicleYear('');
+      setVehicleMileage('');
+      setVehicleLicensePlate('');
+      setVehicleVin('');
+      setVehicleType('car');
+      setShowVehicleForm(false);
+
+      Alert.alert('Success', 'Vehicle added to your profile.');
+    } catch (error: any) {
+      Alert.alert('Error', error?.message || 'Failed to add vehicle.');
+    }
   };
 
   const handleRemoveVehicle = (vehicleId: string) => {
@@ -86,7 +156,18 @@ export default function CustomerProfileScreen() {
       'Are you sure you want to remove this vehicle?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => removeVehicle(vehicleId) },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await removeVehicleMutation.mutateAsync({ vehicleId });
+              await utils.customer.getProfile.invalidate();
+            } catch (error: any) {
+              Alert.alert('Error', error?.message || 'Failed to remove vehicle.');
+            }
+          },
+        },
       ]
     );
   };
@@ -102,14 +183,21 @@ export default function CustomerProfileScreen() {
     );
   };
 
+  if (isLoading && !profile) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
-        {/* User Info Header */}
         <View style={styles.userHeader}>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.firstName} {user?.lastName}</Text>
-            <Text style={styles.userEmail}>{user?.email}</Text>
+            <Text style={styles.userName}>{firstName} {lastName}</Text>
+            <Text style={styles.userEmail}>{email}</Text>
             <View style={styles.roleBadge}>
               <Icons.User size={12} color={Colors.primary} />
               <Text style={styles.roleText}>Customer</Text>
@@ -120,10 +208,9 @@ export default function CustomerProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Contact Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Contact Information</Text>
-          
+
           <View style={styles.inputRow}>
             <View style={styles.inputHalf}>
               <Text style={styles.inputLabel}>First Name *</Text>
@@ -184,13 +271,13 @@ export default function CustomerProfileScreen() {
           </View>
 
           <Button
-            title="Save Contact Info"
+            title={updateProfileMutation.isPending ? 'Saving...' : 'Save Contact Info'}
             onPress={handleSaveContact}
             style={styles.saveButton}
+            disabled={updateProfileMutation.isPending}
           />
         </View>
 
-        {/* Vehicles */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Your Vehicles</Text>
@@ -218,10 +305,16 @@ export default function CustomerProfileScreen() {
                     <Text style={styles.vehicleTitle}>
                       {vehicle.year} {vehicle.make} {vehicle.model}
                     </Text>
-                    {vehicle.color && (
-                      <Text style={styles.vehicleDetail}>Color: {vehicle.color}</Text>
+                    <Text style={styles.vehicleDetail}>
+                      Type: {vehicleTypeLabel(mapVehicleType(vehicle.vehicleType))}
+                    </Text>
+                    {vehicle.vin && (
+                      <Text style={styles.vehicleDetail}>VIN: {vehicle.vin}</Text>
                     )}
-                    {vehicle.mileage && (
+                    {vehicle.licensePlate && (
+                      <Text style={styles.vehicleDetail}>Plate: {vehicle.licensePlate}</Text>
+                    )}
+                    {typeof vehicle.mileage === 'number' && (
                       <Text style={styles.vehicleDetail}>Mileage: {vehicle.mileage.toLocaleString()}</Text>
                     )}
                   </View>
@@ -232,6 +325,7 @@ export default function CustomerProfileScreen() {
                     onPress={() => handleRemoveVehicle(vehicle.id)}
                     textStyle={{ color: Colors.error }}
                     style={{ borderColor: Colors.error }}
+                    disabled={removeVehicleMutation.isPending}
                   />
                 </View>
               ))}
@@ -241,7 +335,7 @@ export default function CustomerProfileScreen() {
           {showVehicleForm && (
             <View style={styles.vehicleForm}>
               <Text style={styles.formTitle}>Add New Vehicle</Text>
-              
+
               <View style={styles.inputRow}>
                 <View style={styles.inputHalf}>
                   <Text style={styles.inputLabel}>Make *</Text>
@@ -278,26 +372,54 @@ export default function CustomerProfileScreen() {
                   />
                 </View>
                 <View style={styles.inputHalf}>
-                  <Text style={styles.inputLabel}>Color</Text>
+                  <Text style={styles.inputLabel}>Mileage</Text>
                   <TextInput
                     style={styles.input}
-                    value={vehicleColor}
-                    onChangeText={setVehicleColor}
-                    placeholder="Silver"
+                    value={vehicleMileage}
+                    onChangeText={setVehicleMileage}
+                    placeholder="50000"
                     placeholderTextColor={Colors.textMuted}
+                    keyboardType="numeric"
                   />
                 </View>
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Mileage</Text>
+                <Text style={styles.inputLabel}>Vehicle Type</Text>
+                <View style={styles.vehicleTypeButtons}>
+                  {(['car', 'motorcycle', 'scooter'] as VehicleType[]).map((type) => (
+                    <Button
+                      key={type}
+                      title={vehicleTypeLabel(type)}
+                      size="small"
+                      variant={vehicleType === type ? 'primary' : 'outline'}
+                      onPress={() => setVehicleType(type)}
+                    />
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>License Plate</Text>
                 <TextInput
                   style={styles.input}
-                  value={vehicleMileage}
-                  onChangeText={setVehicleMileage}
-                  placeholder="50000"
+                  value={vehicleLicensePlate}
+                  onChangeText={setVehicleLicensePlate}
+                  placeholder="ABC1234"
                   placeholderTextColor={Colors.textMuted}
-                  keyboardType="numeric"
+                  autoCapitalize="characters"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>VIN</Text>
+                <TextInput
+                  style={styles.input}
+                  value={vehicleVin}
+                  onChangeText={setVehicleVin}
+                  placeholder="17-character VIN"
+                  placeholderTextColor={Colors.textMuted}
+                  autoCapitalize="characters"
                 />
               </View>
 
@@ -307,11 +429,13 @@ export default function CustomerProfileScreen() {
                   variant="outline"
                   onPress={() => setShowVehicleForm(false)}
                   style={styles.formButton}
+                  disabled={addVehicleMutation.isPending}
                 />
                 <Button
-                  title="Add Vehicle"
+                  title={addVehicleMutation.isPending ? 'Adding...' : 'Add Vehicle'}
                   onPress={handleAddVehicle}
                   style={styles.formButton}
+                  disabled={addVehicleMutation.isPending}
                 />
               </View>
             </View>
@@ -329,6 +453,16 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.background,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: Colors.textSecondary,
   },
   userHeader: {
     flexDirection: 'row',
@@ -485,5 +619,9 @@ const styles = StyleSheet.create({
   },
   formButton: {
     flex: 1,
+  },
+  vehicleTypeButtons: {
+    flexDirection: 'row',
+    gap: 8,
   },
 });

@@ -7,6 +7,7 @@ import * as Icons from 'lucide-react-native';
 
 interface WorkTimerProps {
   jobId: string;
+  mechanicId: string;
   jobTitle?: string;
   onTimeUpdate?: (timeData: TimeData) => void;
   onWorkComplete?: (jobId: string, workLog: JobLog) => void;
@@ -22,7 +23,7 @@ interface TimeData {
   pausedDuration: number;
 }
 
-export default function WorkTimer({ jobId, jobTitle, onTimeUpdate, onWorkComplete, initialTime = 0 }: WorkTimerProps) {
+export default function WorkTimer({ jobId, mechanicId, jobTitle, onTimeUpdate, onWorkComplete, initialTime = 0 }: WorkTimerProps) {
   const [timeData, setTimeData] = useState<TimeData>({
     jobId,
     startTime: null,
@@ -121,7 +122,7 @@ export default function WorkTimer({ jobId, jobTitle, onTimeUpdate, onWorkComplet
             const workLog: JobLog = {
               id: Date.now().toString(),
               jobId,
-              mechanicId: 'mechanic-cody',
+              mechanicId,
               startTime: newTimeData.startTime || now,
               endTime: now,
               duration: Math.round(finalTotalSeconds / 60),

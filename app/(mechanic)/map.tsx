@@ -1,20 +1,55 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAppStore } from '@/stores/app-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { SERVICE_CATEGORIES } from '@/constants/services';
+import { trpc } from '@/lib/trpc';
 import * as Icons from 'lucide-react-native';
 import { Platform } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
 export default function MechanicMapScreen() {
-  const { serviceRequests, currentLocation } = useAppStore();
+  const { currentLocation } = useAppStore();
+  const { user } = useAuthStore();
+  const { data: jobsData, isLoading } = trpc.job.getAll.useQuery();
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
+  const jobs = jobsData?.jobs ?? [];
 
-  const activeRequests = serviceRequests.filter(r => 
-    ['pending', 'quoted', 'accepted', 'in_progress'].includes(r.status) && r.location
-  );
+  const activeRequests = useMemo(() => {
+    const mechanicId = user?.id;
+    return jobs
+      .filter((job) => !mechanicId || !job.mechanicId || job.mechanicId === mechanicId)
+      .map((job) => {
+        const latestQuote = [...(job.quotes ?? [])].sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        )[0];
+        const mappedStatus =
+          job.status === 'PENDING' && latestQuote?.status === 'PENDING'
+            ? 'quoted'
+            : job.status.toLowerCase();
+
+        return {
+          id: job.id,
+          type: job.serviceType,
+          status: mappedStatus,
+          urgency: job.serviceType.toLowerCase().includes('emergency') ? 'emergency' : 'medium',
+          description: job.description,
+          location: {
+            latitude: job.latitude ?? 0,
+            longitude: job.longitude ?? 0,
+            address: job.address,
+          },
+        };
+      })
+      .filter((request) =>
+        ['pending', 'quoted', 'accepted', 'in_progress'].includes(request.status) &&
+        request.location &&
+        request.location.latitude !== 0 &&
+        request.location.longitude !== 0
+      );
+  }, [jobs, user?.id]);
 
   const getServiceTitle = (type: string) => {
     return SERVICE_CATEGORIES.find(s => s.id === type)?.title || type;
@@ -53,6 +88,14 @@ export default function MechanicMapScreen() {
       console.log('Open maps:', { latitude, longitude, label });
     }
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyTitle}>Loading locations...</Text>
+      </View>
+    );
+  }
 
   if (activeRequests.length === 0) {
     return (

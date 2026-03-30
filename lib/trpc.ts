@@ -3,8 +3,26 @@ import { httpLink } from "@trpc/client";
 import superjson from "superjson";
 import type { AppRouter } from "@/backend/trpc/app-router";
 import { Platform } from "react-native";
+import Constants from "expo-constants";
+import { getAuthToken } from "@/lib/auth-token";
 
+// @ts-expect-error Package resolution can load incompatible internal tRPC types despite matching public versions.
 export const trpc = createTRPCReact<AppRouter>();
+
+const readExpoHost = () => {
+  const expoHost =
+    Constants.expoConfig?.hostUri ||
+    (Constants as unknown as { manifest2?: { extra?: { expoGo?: { debuggerHost?: string } } } })
+      .manifest2?.extra?.expoGo?.debuggerHost ||
+    null;
+
+  if (!expoHost) {
+    return null;
+  }
+
+  const host = expoHost.split(":")[0];
+  return host || null;
+};
 
 const getBaseUrl = () => {
   // Check for Rork environment first
@@ -26,10 +44,19 @@ const getBaseUrl = () => {
 
   // Development fallback with platform-specific URLs
   if (__DEV__) {
+    const expoHost = readExpoHost();
+    if (expoHost) {
+      const deviceUrl = `http://${expoHost}:3000`;
+      console.log('Using Expo host API URL:', deviceUrl);
+      return deviceUrl;
+    }
+
     const devUrl = Platform.select({
       web: 'http://localhost:3000',
+      android: 'http://10.0.2.2:3000',
       default: 'http://localhost:3000',
     });
+
     console.log('Using development API URL:', devUrl);
     return devUrl;
   }
@@ -49,7 +76,10 @@ export const trpcClient = trpc.createClient({
           'Content-Type': 'application/json',
         };
 
-        if (process.env.EXPO_PUBLIC_API_KEY) {
+        const token = getAuthToken();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        } else if (process.env.EXPO_PUBLIC_API_KEY) {
           headers['Authorization'] = `Bearer ${process.env.EXPO_PUBLIC_API_KEY}`;
         }
 
@@ -71,35 +101,7 @@ export const trpcClient = trpc.createClient({
               statusText: response.statusText,
               url: urlString
             });
-            
-            // Return a mock response for development to prevent crashes
-            if (__DEV__) {
-              // Check if this is a verification status query
-              if (urlString.includes('getVerificationStatus')) {
-                return new Response(JSON.stringify({ 
-                  result: {
-                    data: {
-                      verified: false,
-                      status: null
-                    }
-                  }
-                }), {
-                  status: 200,
-                  headers: { 'Content-Type': 'application/json' }
-                });
-              }
-              
-              return new Response(JSON.stringify({ 
-                error: { 
-                  message: 'tRPC server not available - using dev fallback',
-                  code: 'INTERNAL_SERVER_ERROR' 
-                } 
-              }), {
-                status: 500,
-                headers: { 'Content-Type': 'application/json' }
-              });
-            }
-            
+
             throw new Error(`Server returned HTML instead of JSON. Check if tRPC server is running at ${urlString}`);
           }
           
@@ -119,20 +121,7 @@ export const trpcClient = trpc.createClient({
               timestamp: new Date().toISOString()
             });
           }
-          
-          // In development, return a fallback response instead of crashing
-          if (__DEV__) {
-            return new Response(JSON.stringify({ 
-              error: { 
-                message: 'Network error - using dev fallback',
-                code: 'INTERNAL_SERVER_ERROR' 
-              } 
-            }), {
-              status: 500,
-              headers: { 'Content-Type': 'application/json' }
-            });
-          }
-          
+
           throw error;
         }
       },

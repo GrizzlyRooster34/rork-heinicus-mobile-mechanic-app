@@ -11,13 +11,6 @@ export default function MechanicSelfSwitch() {
     return null;
   }
 
-  const canSwitchRoles = user.id === 'admin-cody' || user.id === 'mechanic-cody' || 
-                        user.id === 'admin-dev-id' || user.id === 'mechanic-dev-id';
-
-  if (!canSwitchRoles) {
-    return null;
-  }
-
   const currentRole = user.role;
   const nextRole = currentRole === 'admin' ? 'mechanic' : 'admin';
 
@@ -25,9 +18,6 @@ export default function MechanicSelfSwitch() {
     const switchedUser = {
       ...user,
       role: nextRole as 'admin' | 'mechanic',
-      id: nextRole === 'admin' ? 
-          (user.id.includes('dev') ? 'admin-dev-id' : 'admin-cody') : 
-          (user.id.includes('dev') ? 'mechanic-dev-id' : 'mechanic-cody'),
     };
 
     console.log('Role switch:', {

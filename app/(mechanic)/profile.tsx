@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
-import { useAppStore } from '@/stores/app-store';
 import * as Icons from 'lucide-react-native';
 import { NotificationSettings } from '@/components/NotificationSettings';
 import { AvailabilitySettings } from '@/components/AvailabilitySettings';
@@ -17,23 +16,29 @@ type SettingsScreen = 'main' | 'availability' | 'notifications' | 'pricing' | 't
 
 export default function MechanicProfileScreen() {
   const { user, logout } = useAuthStore();
-  const { serviceRequests, quotes } = useAppStore();
   const [currentScreen, setCurrentScreen] = useState<SettingsScreen>('main');
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType>('car');
+  const { data: jobsData } = trpc.job.getAll.useQuery(undefined, {
+    enabled: !!user?.id,
+  });
+  const jobs = jobsData?.jobs ?? [];
 
   // Get verification status
   const { data: verificationStatus, refetch: refetchVerificationStatus } = trpc.mechanic.getVerificationStatus.useQuery(
     undefined,
     {
+      enabled: !!user?.id,
       retry: false,
       refetchOnWindowFocus: false,
     }
   );
 
-  const completedJobs = serviceRequests.filter(r => r.status === 'completed').length;
-  const totalRevenue = quotes
-    .filter(q => q.status === 'paid' && q.paidAt)
-    .reduce((sum, q) => sum + q.totalCost, 0);
+  const mechanicJobs = jobs.filter((job) => job.mechanicId === user?.id);
+  const completedJobs = mechanicJobs.filter((job) => job.status === 'COMPLETED').length;
+  const totalRevenue = mechanicJobs
+    .flatMap((job) => job.quotes)
+    .filter((quote) => quote.status === 'PAID')
+    .reduce((sum, quote) => sum + quote.totalCost, 0);
   const averageRating = 4.8; // Mock rating
 
   const handleLogout = () => {
@@ -80,14 +85,14 @@ export default function MechanicProfileScreen() {
     }
 
     switch (status) {
-      case 'pending':
+      case 'PENDING':
         return {
           icon: 'Clock',
           text: 'Verification Pending',
           color: Colors.warning,
           bgColor: Colors.warning + '20',
         };
-      case 'rejected':
+      case 'REJECTED':
         return {
           icon: 'XCircle',
           text: 'Verification Rejected',
@@ -203,7 +208,7 @@ export default function MechanicProfileScreen() {
       case 'reports':
         return (
           <ReportsAnalytics 
-            mechanicId={user?.id || 'mechanic-cody'}
+            mechanicId={user?.id ?? 'mechanic-unknown'}
           />
         );
       case 'verification':
@@ -272,12 +277,12 @@ export default function MechanicProfileScreen() {
                     Tap to complete identity verification
                   </Text>
                 )}
-                {verificationStatus?.status === 'pending' && (
+                {verificationStatus?.status === 'PENDING' && (
                   <Text style={styles.verificationSubtitle}>
                     Your verification is being reviewed
                   </Text>
                 )}
-                {verificationStatus?.status === 'rejected' && (
+                {verificationStatus?.status === 'REJECTED' && (
                   <Text style={styles.verificationSubtitle}>
                     Please resubmit your verification documents
                   </Text>

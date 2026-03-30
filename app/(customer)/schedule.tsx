@@ -3,17 +3,21 @@ import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { Button } from '@/components/Button';
 import { AvailabilityCalendar } from '@/components/AvailabilityCalendar';
-import { useAppStore } from '@/stores/app-store';
 import { router } from 'expo-router';
 import * as Icons from 'lucide-react-native';
+import { trpc } from '@/lib/trpc';
 
 export default function ScheduleScreen() {
-  const { serviceRequests, updateServiceRequest } = useAppStore();
+  const utils = trpc.useUtils();
+  const { data: jobsData, isLoading } = trpc.job.getAll.useQuery();
+  const scheduleMutation = trpc.job.schedule.useMutation();
+  const jobs = jobsData?.jobs ?? [];
+  type JobItem = typeof jobs[number];
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>('');
 
-  const pendingRequests = serviceRequests.filter(r => 
-    r.status === 'accepted' && !r.scheduledAt
+  const pendingRequests = jobs.filter((job: JobItem) =>
+    job.status.toLowerCase() === 'accepted' && !job.scheduledDate
   );
 
   const handleDateTimeSelect = (date: Date, timeSlot: string) => {
@@ -21,7 +25,7 @@ export default function ScheduleScreen() {
     setSelectedTime(timeSlot);
   };
 
-  const handleScheduleConfirm = () => {
+  const handleScheduleConfirm = async () => {
     if (!selectedDate || !selectedTime || pendingRequests.length === 0) {
       Alert.alert('Error', 'Please select a date and time for scheduling.');
       return;
@@ -42,19 +46,31 @@ export default function ScheduleScreen() {
 
     // Schedule the first pending request
     const requestToSchedule = pendingRequests[0];
-    updateServiceRequest(requestToSchedule.id, {
-      scheduledAt: scheduledDateTime,
-      status: 'in_progress'
-    });
-
-    Alert.alert(
-      'Service Scheduled',
-      `Your service has been scheduled for ${selectedDate.toLocaleDateString()} at ${selectedTime}`,
-      [
-        { text: 'OK', onPress: () => router.back() }
-      ]
-    );
+    try {
+      await scheduleMutation.mutateAsync({
+        jobId: requestToSchedule.id,
+        scheduledDate: scheduledDateTime.toISOString(),
+      });
+      await utils.job.getAll.invalidate();
+      Alert.alert(
+        'Service Scheduled',
+        `Your service has been scheduled for ${selectedDate.toLocaleDateString()} at ${selectedTime}`,
+        [
+          { text: 'OK', onPress: () => router.back() }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to schedule service. Please try again.');
+    }
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyTitle}>Loading schedules...</Text>
+      </View>
+    );
+  }
 
   if (pendingRequests.length === 0) {
     return (
@@ -85,7 +101,7 @@ export default function ScheduleScreen() {
           
           <View style={styles.serviceCard}>
             <Text style={styles.serviceName}>
-              {pendingRequests[0].type.replace('_', ' ').toUpperCase()}
+              {pendingRequests[0].serviceType.replace('_', ' ').toUpperCase()}
             </Text>
             <Text style={styles.serviceDetails}>
               {pendingRequests[0].description}

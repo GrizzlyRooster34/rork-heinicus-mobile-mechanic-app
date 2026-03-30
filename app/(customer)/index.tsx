@@ -5,18 +5,22 @@ import { useThemeStore } from '@/stores/theme-store';
 import { SERVICE_CATEGORIES } from '@/constants/services';
 import { ServiceCard } from '@/components/ServiceCard';
 import { MaintenanceReminders } from '@/components/MaintenanceReminders';
-import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
+import { trpc } from '@/lib/trpc';
 import * as Icons from 'lucide-react-native';
 
 export default function CustomerHomeScreen() {
   const { colors } = useThemeStore();
-  const { serviceRequests, vehicles } = useAppStore();
   const { user, logout } = useAuthStore();
+  const { data: jobsData } = trpc.job.getAll.useQuery();
+  const { data: profileData } = trpc.customer.getProfile.useQuery();
+  const jobs = jobsData?.jobs ?? [];
+  const vehicles = profileData?.profile.vehicles ?? [];
+  type JobItem = typeof jobs[number];
   
-  const pendingRequests = serviceRequests.filter(r => r.status === 'pending').length;
-  const activeRequests = serviceRequests.filter(r => ['quoted', 'accepted', 'in_progress'].includes(r.status)).length;
-  const completedRequests = serviceRequests.filter(r => r.status === 'completed').length;
+  const pendingRequests = jobs.filter((job: JobItem) => job.status === 'PENDING').length;
+  const activeRequests = jobs.filter((job: JobItem) => ['ACCEPTED', 'IN_PROGRESS'].includes(job.status)).length;
+  const completedRequests = jobs.filter((job: JobItem) => job.status === 'COMPLETED').length;
 
   const handleServicePress = (serviceId: string) => {
     router.push({

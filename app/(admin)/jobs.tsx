@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, Image } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
-import { useAppStore } from '@/stores/app-store';
+import { trpc } from '@/lib/trpc';
 import { SERVICE_CATEGORIES } from '@/constants/services';
 import { JobPhoto } from '@/types/service';
 import * as Icons from 'lucide-react-native';
@@ -10,7 +10,9 @@ import { useState } from 'react';
 
 export default function AdminJobsScreen() {
   const { user } = useAuthStore();
-  const { serviceRequests, quotes, getJobPhotos, getJobTimeline } = useAppStore();
+  const { data: jobsData, isLoading } = trpc.job.getAll.useQuery();
+  const jobs = jobsData?.jobs ?? [];
+  type JobItem = typeof jobs[number];
   const [selectedJobPhotos, setSelectedJobPhotos] = useState<JobPhoto[] | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<JobPhoto | null>(null);
 
@@ -19,7 +21,8 @@ export default function AdminJobsScreen() {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    const normalized = status.toLowerCase();
+    switch (normalized) {
       case 'pending': return Colors.warning;
       case 'quoted': return Colors.primary;
       case 'accepted': return Colors.success;
@@ -54,6 +57,19 @@ export default function AdminJobsScreen() {
     }
   };
 
+  const formatStatus = (status: string) => status.toLowerCase().replace(/_/g, ' ');
+
+  const mapJobPhotos = (photos: Array<{ id: string; url: string; description: string | null; mechanicId: string; timestamp: Date }>) => {
+    return photos.map((photo) => ({
+      id: photo.id,
+      url: photo.url,
+      type: 'after' as const,
+      caption: photo.description ?? undefined,
+      uploadedAt: photo.timestamp,
+      uploadedBy: photo.mechanicId,
+    }));
+  };
+
   if (user?.role !== 'admin') {
     return (
       <View style={styles.unauthorizedContainer}>
@@ -77,7 +93,11 @@ export default function AdminJobsScreen() {
 
       <ScrollView style={styles.jobsList} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          {serviceRequests.length === 0 ? (
+          {isLoading ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>Loading jobs...</Text>
+            </View>
+          ) : jobs.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Icons.Briefcase size={64} color={Colors.textMuted} />
               <Text style={styles.emptyTitle}>No Jobs</Text>
@@ -86,16 +106,19 @@ export default function AdminJobsScreen() {
               </Text>
             </View>
           ) : (
-            serviceRequests.map((job) => {
-              const jobQuote = quotes.find(q => q.serviceRequestId === job.id);
-              const jobPhotos = getJobPhotos(job.id);
-              const timeline = getJobTimeline(job.id);
+            jobs.map((job: JobItem) => {
+              const sortedQuotes = [...(job.quotes ?? [])].sort((a, b) => (
+                b.createdAt.getTime() - a.createdAt.getTime()
+              ));
+              const jobQuote = sortedQuotes[0];
+              const jobPhotos = mapJobPhotos(job.photos ?? []);
+              const timelineCount = job.activityLog?.length ?? 0;
               
               return (
                 <View key={job.id} style={styles.jobCard}>
                   <View style={styles.jobHeader}>
                     <Text style={styles.jobTitle}>
-                      {getServiceTitle(job.type)}
+                      {getServiceTitle(job.serviceType)}
                     </Text>
                     <View style={[
                       styles.statusBadge,
@@ -105,7 +128,7 @@ export default function AdminJobsScreen() {
                         styles.statusText,
                         { color: getStatusColor(job.status) }
                       ]}>
-                        {job.status.replace('_', ' ')}
+                        {formatStatus(job.status)}
                       </Text>
                     </View>
                   </View>
@@ -122,29 +145,20 @@ export default function AdminJobsScreen() {
                       </Text>
                     </View>
                     
-                    {job.urgency === 'emergency' && (
-                      <View style={styles.metaRow}>
-                        <Icons.AlertTriangle size={14} color={Colors.error} />
-                        <Text style={[styles.metaText, { color: Colors.error }]}>
-                          Emergency
-                        </Text>
-                      </View>
-                    )}
-                    
                     {job.mechanicId && (
                       <View style={styles.metaRow}>
                         <Icons.User size={14} color={Colors.mechanic} />
                         <Text style={styles.metaText}>
-                          Assigned to {job.mechanicId === 'mechanic-cody' ? 'Cody Owner' : job.mechanicId}
+                          Assigned to {job.mechanicId}
                         </Text>
                       </View>
                     )}
 
-                    {timeline.length > 0 && (
+                    {timelineCount > 0 && (
                       <View style={styles.metaRow}>
                         <Icons.Activity size={14} color={Colors.secondary} />
                         <Text style={styles.metaText}>
-                          {timeline.length} status update{timeline.length !== 1 ? 's' : ''}
+                          {timelineCount} status update{timelineCount !== 1 ? 's' : ''}
                         </Text>
                       </View>
                     )}
@@ -196,7 +210,7 @@ export default function AdminJobsScreen() {
                   )}
 
                   {/* Signature Status */}
-                  {job.signatureData && (
+                  {job.signatureUrl && (
                     <View style={styles.signatureSection}>
                       <Icons.CheckCircle size={16} color={Colors.success} />
                       <Text style={styles.signatureText}>Customer signature captured</Text>
@@ -219,39 +233,18 @@ export default function AdminJobsScreen() {
                           styles.quoteValue,
                           { color: getStatusColor(jobQuote.status) }
                         ]}>
-                          {jobQuote.status}
+                          {formatStatus(jobQuote.status)}
                         </Text>
                       </View>
-                      {jobQuote.paidAt && (
-                        <View style={styles.quoteRow}>
-                          <Text style={styles.quoteLabel}>Paid:</Text>
-                          <Text style={[styles.quoteValue, { color: Colors.success }]}>
-                            {jobQuote.paidAt.toLocaleDateString()}
-                          </Text>
-                        </View>
-                      )}
                     </View>
                   )}
 
                   {/* Progress Indicators */}
-                  {job.status === 'in_progress' || job.status === 'paused' || job.status === 'completed' ? (
+                  {job.status === 'IN_PROGRESS' || job.status === 'COMPLETED' ? (
                     <View style={styles.progressSection}>
                       <View style={styles.progressDivider} />
                       <Text style={styles.progressTitle}>Job Progress</Text>
                       <View style={styles.progressItems}>
-                        <View style={styles.progressItem}>
-                          <Icons.CheckCircle 
-                            size={16} 
-                            color={job.toolsCheckCompletedAt ? Colors.success : Colors.textMuted} 
-                          />
-                          <Text style={[
-                            styles.progressText,
-                            { color: job.toolsCheckCompletedAt ? Colors.success : Colors.textMuted }
-                          ]}>
-                            Tools Checked
-                          </Text>
-                        </View>
-                        
                         <View style={styles.progressItem}>
                           <Icons.CheckCircle 
                             size={16} 
@@ -268,11 +261,11 @@ export default function AdminJobsScreen() {
                         <View style={styles.progressItem}>
                           <Icons.CheckCircle 
                             size={16} 
-                            color={job.signatureData ? Colors.success : Colors.textMuted} 
+                            color={job.signatureUrl ? Colors.success : Colors.textMuted} 
                           />
                           <Text style={[
                             styles.progressText,
-                            { color: job.signatureData ? Colors.success : Colors.textMuted }
+                            { color: job.signatureUrl ? Colors.success : Colors.textMuted }
                           ]}>
                             Customer Signature
                           </Text>
@@ -281,11 +274,11 @@ export default function AdminJobsScreen() {
                         <View style={styles.progressItem}>
                           <Icons.CheckCircle 
                             size={16} 
-                            color={job.status === 'completed' ? Colors.success : Colors.textMuted} 
+                            color={job.status === 'COMPLETED' ? Colors.success : Colors.textMuted} 
                           />
                           <Text style={[
                             styles.progressText,
-                            { color: job.status === 'completed' ? Colors.success : Colors.textMuted }
+                            { color: job.status === 'COMPLETED' ? Colors.success : Colors.textMuted }
                           ]}>
                             Job Completed
                           </Text>
@@ -370,7 +363,7 @@ export default function AdminJobsScreen() {
                 Uploaded: {selectedPhoto.uploadedAt.toLocaleDateString()} at {selectedPhoto.uploadedAt.toLocaleTimeString()}
               </Text>
               <Text style={styles.photoViewerUploader}>
-                By: {selectedPhoto.uploadedBy === 'mechanic-cody' ? 'Cody Owner' : selectedPhoto.uploadedBy}
+                By: {selectedPhoto.uploadedBy}
               </Text>
             </View>
           </View>

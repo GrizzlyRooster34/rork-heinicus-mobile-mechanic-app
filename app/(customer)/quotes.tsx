@@ -1,56 +1,95 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
 import { Colors } from '@/constants/colors';
-import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { SERVICE_CATEGORIES } from '@/constants/services';
 import { Quote } from '@/types/service';
 import { ChatComponent } from '@/components/ChatComponent';
 import { PaymentModal } from '@/components/PaymentModal';
+import { trpc } from '@/lib/trpc';
 import * as Icons from 'lucide-react-native';
 
 export default function CustomerQuotesScreen() {
-  const { serviceRequests, quotes, updateServiceRequest, updateQuote, addQuote } = useAppStore();
   const { user } = useAuthStore();
+  const utils = trpc.useUtils();
+  const { data: jobsData, isLoading: jobsLoading } = trpc.job.getAll.useQuery();
+  const { data: quotesData, isLoading: quotesLoading } = trpc.quote.listMine.useQuery();
+  const markPaidMutation = trpc.quote.markPaid.useMutation();
+  const declineQuoteMutation = trpc.quote.decline.useMutation();
+  const jobs = jobsData?.jobs ?? [];
+  const quotes = quotesData?.quotes ?? [];
+  const isLoading = jobsLoading || quotesLoading;
+  type JobItem = typeof jobs[number];
+  type QuoteItem = typeof quotes[number];
   const [selectedRequestForChat, setSelectedRequestForChat] = React.useState<string | null>(null);
   const [selectedQuoteForPayment, setSelectedQuoteForPayment] = React.useState<Quote | null>(null);
+  const [selectedBackendQuoteId, setSelectedBackendQuoteId] = React.useState<string | null>(null);
 
   const getServiceTitle = (type: string) => {
     return SERVICE_CATEGORIES.find(s => s.id === type)?.title || type;
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    const normalized = status.toLowerCase();
+    switch (normalized) {
       case 'pending': return Colors.warning;
       case 'quoted': return Colors.primary;
       case 'accepted': return Colors.success;
       case 'in_progress': return Colors.primary;
       case 'completed': return Colors.success;
+      case 'approved': return Colors.primary;
+      case 'declined': return Colors.error;
+      case 'paid': return Colors.success;
       default: return Colors.textMuted;
     }
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
+    const normalized = status.toLowerCase();
+    switch (normalized) {
       case 'pending': return 'Awaiting Quote';
       case 'quoted': return 'Quote Ready';
       case 'accepted': return 'Accepted';
+      case 'approved': return 'Approved';
+      case 'declined': return 'Declined';
+      case 'paid': return 'Paid';
       case 'in_progress': return 'In Progress';
       case 'completed': return 'Completed';
-      default: return status;
+      default: return normalized;
     }
   };
 
-  const getUrgencyIcon = (urgency: string) => {
-    switch (urgency) {
-      case 'emergency': return <Icons.AlertTriangle size={16} color={Colors.error} />;
-      case 'high': return <Icons.Clock size={16} color={Colors.warning} />;
-      default: return null;
-    }
+  const getLatestQuoteForJob = (jobId: string) => {
+    const jobQuotes = quotes.filter((quote: QuoteItem) => quote.jobId === jobId);
+    return jobQuotes.sort((a: QuoteItem, b: QuoteItem) => b.createdAt.getTime() - a.createdAt.getTime())[0];
   };
+
+  const getDisplayStatus = (job: JobItem, quote?: QuoteItem) => {
+    if (!quote) {
+      return job.status;
+    }
+    if (quote.status.toLowerCase() === 'pending') {
+      return 'quoted';
+    }
+    return quote.status;
+  };
+
+  const mapQuoteForPayment = (quote: QuoteItem): Quote => ({
+    id: quote.id,
+    serviceRequestId: quote.jobId ?? '',
+    description: quote.description ?? undefined,
+    laborCost: quote.laborCost,
+    partsCost: quote.partsCost,
+    totalCost: quote.totalCost,
+    estimatedDuration: quote.estimatedDuration,
+    validUntil: quote.validUntil,
+    status: quote.status.toLowerCase() as Quote['status'],
+    createdAt: quote.createdAt,
+    createdBy: quote.createdBy,
+  });
 
   const handleAcceptQuote = (quoteId: string) => {
-    const quote = quotes.find(q => q.id === quoteId);
+    const quote = quotes.find((q: QuoteItem) => q.id === quoteId);
     if (!quote) return;
 
     Alert.alert(
@@ -61,29 +100,31 @@ export default function CustomerQuotesScreen() {
         {
           text: 'Accept & Pay',
           onPress: () => {
-            setSelectedQuoteForPayment(quote);
+            setSelectedBackendQuoteId(quote.id);
+            setSelectedQuoteForPayment(mapQuoteForPayment(quote));
           }
         }
       ]
     );
   };
 
-  const handlePaymentSuccess = (quoteId: string) => {
-    const quote = quotes.find(q => q.id === quoteId);
-    if (!quote) return;
+  const handlePaymentSuccess = async () => {
+    if (!selectedBackendQuoteId) return;
 
-    updateQuote(quoteId, { 
-      status: 'accepted',
-      paidAt: new Date(),
-    });
-    updateServiceRequest(quote.serviceRequestId, { status: 'accepted' });
-    setSelectedQuoteForPayment(null);
-    
-    Alert.alert('Payment Successful', 'Your quote has been accepted and payment processed. We will contact you to schedule the service.');
+    try {
+      await markPaidMutation.mutateAsync({ quoteId: selectedBackendQuoteId });
+      await utils.quote.listMine.invalidate();
+      await utils.job.getAll.invalidate();
+      setSelectedBackendQuoteId(null);
+      setSelectedQuoteForPayment(null);
+      Alert.alert('Payment Successful', 'Your payment has been processed. We will contact you to schedule the service.');
+    } catch (error) {
+      Alert.alert('Payment Failed', 'Unable to finalize payment. Please try again.');
+    }
   };
 
   const handleDeclineQuote = (quoteId: string) => {
-    const quote = quotes.find(q => q.id === quoteId);
+    const quote = quotes.find((q: QuoteItem) => q.id === quoteId);
     if (!quote) return;
 
     Alert.alert(
@@ -94,9 +135,14 @@ export default function CustomerQuotesScreen() {
         {
           text: 'Decline',
           style: 'destructive',
-          onPress: () => {
-            updateQuote(quoteId, { status: 'declined' });
-            updateServiceRequest(quote.serviceRequestId, { status: 'pending' });
+          onPress: async () => {
+            try {
+              await declineQuoteMutation.mutateAsync({ quoteId });
+              await utils.quote.listMine.invalidate();
+              await utils.job.getAll.invalidate();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to decline quote');
+            }
           }
         }
       ]
@@ -129,7 +175,15 @@ export default function CustomerQuotesScreen() {
     );
   }
 
-  if (serviceRequests.length === 0) {
+  if (isLoading) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyTitle}>Loading requests...</Text>
+      </View>
+    );
+  }
+
+  if (jobs.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <Icons.FileText size={64} color={Colors.textMuted} />
@@ -145,36 +199,36 @@ export default function CustomerQuotesScreen() {
     <>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          {serviceRequests.map((request) => {
-            const requestQuote = quotes.find(q => q.serviceRequestId === request.id);
+          {jobs.map((job: JobItem) => {
+            const requestQuote = getLatestQuoteForJob(job.id);
+            const displayStatus = getDisplayStatus(job, requestQuote);
             
             return (
-              <View key={request.id} style={styles.requestCard}>
+              <View key={job.id} style={styles.requestCard}>
                 <View style={styles.requestHeader}>
                   <View style={styles.requestTitleRow}>
                     <Text style={styles.requestTitle}>
-                      {getServiceTitle(request.type)}
+                      {getServiceTitle(job.serviceType)}
                     </Text>
-                    {getUrgencyIcon(request.urgency)}
                   </View>
                   
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(request.status) + '20' }]}>
-                    <Text style={[styles.statusText, { color: getStatusColor(request.status) }]}>
-                      {getStatusText(request.status)}
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(displayStatus) + '20' }]}>
+                    <Text style={[styles.statusText, { color: getStatusColor(displayStatus) }]}>
+                      {getStatusText(displayStatus)}
                     </Text>
                   </View>
                 </View>
 
                 <Text style={styles.requestDescription} numberOfLines={2}>
-                  {request.description}
+                  {job.description}
                 </Text>
 
                 {/* Photos */}
-                {request.photos && request.photos.length > 0 && (
+                {job.customerPhotos && job.customerPhotos.length > 0 && (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photosContainer}>
-                    {request.photos.map((photo, index) => (
+                    {job.customerPhotos.map((photo: string, index: number) => (
                       <View key={index} style={styles.photoWrapper}>
-                        <Text style={styles.photoPlaceholder}>📷 Photo {index + 1}</Text>
+                        <Image source={{ uri: photo }} style={styles.photo} />
                       </View>
                     ))}
                   </ScrollView>
@@ -182,13 +236,13 @@ export default function CustomerQuotesScreen() {
 
                 <View style={styles.requestMeta}>
                   <Text style={styles.requestDate}>
-                    {new Date(request.createdAt).toLocaleDateString()}
+                    {job.createdAt.toLocaleDateString()}
                   </Text>
-                  {request.location && (
+                  {job.address && (
                     <View style={styles.locationRow}>
                       <Icons.MapPin size={12} color={Colors.textMuted} />
                       <Text style={styles.locationText}>
-                        {request.location.address || 'Location provided'}
+                        {job.address || 'Location provided'}
                       </Text>
                     </View>
                   )}
@@ -198,7 +252,7 @@ export default function CustomerQuotesScreen() {
                 <View style={styles.actionButtons}>
                   <TouchableOpacity 
                     style={styles.chatButton}
-                    onPress={() => openChat(request.id)}
+                    onPress={() => openChat(job.id)}
                   >
                     <Icons.MessageCircle size={16} color={Colors.primary} />
                     <Text style={styles.chatButtonText}>Chat</Text>
@@ -237,7 +291,7 @@ export default function CustomerQuotesScreen() {
                       </View>
                     </View>
 
-                    {request.status === 'quoted' && requestQuote.status === 'pending' && (
+                    {displayStatus.toLowerCase() === 'quoted' && requestQuote.status.toLowerCase() === 'pending' && (
                       <View style={styles.quoteActions}>
                         <TouchableOpacity 
                           style={styles.acceptButton}
@@ -254,11 +308,11 @@ export default function CustomerQuotesScreen() {
                       </View>
                     )}
 
-                    {requestQuote.paidAt && (
+                    {requestQuote.status.toLowerCase() === 'paid' && (
                       <View style={styles.paidIndicator}>
                         <Icons.CheckCircle size={16} color={Colors.success} />
                         <Text style={styles.paidText}>
-                          Paid on {new Date(requestQuote.paidAt).toLocaleDateString()}
+                          Payment received
                         </Text>
                       </View>
                     )}
@@ -274,8 +328,11 @@ export default function CustomerQuotesScreen() {
       {selectedQuoteForPayment && (
         <PaymentModal
           quote={selectedQuoteForPayment}
-          onSuccess={() => handlePaymentSuccess(selectedQuoteForPayment.id)}
-          onCancel={() => setSelectedQuoteForPayment(null)}
+          onSuccess={handlePaymentSuccess}
+          onCancel={() => {
+            setSelectedQuoteForPayment(null);
+            setSelectedBackendQuoteId(null);
+          }}
         />
       )}
     </>
@@ -372,11 +429,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
     backgroundColor: Colors.surface,
     borderRadius: 8,
-    padding: 8,
+    overflow: 'hidden',
   },
-  photoPlaceholder: {
-    fontSize: 12,
-    color: Colors.textMuted,
+  photo: {
+    width: 72,
+    height: 72,
+    backgroundColor: Colors.card,
   },
   requestMeta: {
     flexDirection: 'row',

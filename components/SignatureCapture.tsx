@@ -5,21 +5,32 @@ import { Button } from '@/components/Button';
 import { PRODUCTION_CONFIG, logProductionEvent } from '@/utils/firebase-config';
 import * as Icons from 'lucide-react-native';
 import { Platform } from 'react-native';
+import { uploadSvgStringAsync } from '@/lib/storage';
 
 interface SignatureCaptureProps {
   jobId: string;
   jobTitle: string;
-  onSignatureComplete: (jobId: string, signatureData: string) => void;
+  mechanicId: string;
+  mechanicName?: string;
+  onSignatureComplete: (jobId: string, signatureUrl: string) => void;
   onCancel: () => void;
 }
 
 const { width: screenWidth } = Dimensions.get('window');
 
-export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCancel }: SignatureCaptureProps) {
+export function SignatureCapture({
+  jobId,
+  jobTitle,
+  mechanicId,
+  mechanicName = 'Mechanic',
+  onSignatureComplete,
+  onCancel,
+}: SignatureCaptureProps) {
   const [hasSignature, setHasSignature] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [signaturePaths, setSignaturePaths] = useState<Array<{ x: number; y: number }[]>>([]);
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   
   const canvasRef = useRef<View>(null);
 
@@ -35,7 +46,7 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
       // Production logging
       logProductionEvent('signature_started', {
         jobId,
-        mechanicId: 'mechanic-cody',
+        mechanicId,
         platform: Platform.OS
       });
     },
@@ -55,7 +66,7 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
         // Production logging
         logProductionEvent('signature_drawn', {
           jobId,
-          mechanicId: 'mechanic-cody',
+          mechanicId,
           pathLength: currentPath.length
         });
       }
@@ -70,7 +81,7 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
     
     logProductionEvent('signature_cleared', {
       jobId,
-      mechanicId: 'mechanic-cody'
+      mechanicId
     });
     
     Alert.alert('Signature Cleared', 'Please sign again.');
@@ -92,28 +103,32 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
     
     logProductionEvent('signature_simulated', {
       jobId,
-      mechanicId: 'mechanic-cody',
+      mechanicId,
       reason: 'demo_signature'
     });
     
     Alert.alert('Signature Captured', 'Customer signature has been recorded.');
   };
 
-  const generateSignatureData = () => {
-    // In production, this would convert the signature paths to an image
-    // For now, we'll create a mock base64 string with signature metadata
-    const signatureMetadata = {
-      jobId,
-      timestamp: new Date().toISOString(),
-      mechanicId: 'mechanic-cody',
-      customerName,
-      pathCount: signaturePaths.length,
-      platform: Platform.OS,
-    };
-    
-    // Mock base64 signature data
-    const mockSignatureData = `data:image/png;base64,${btoa(JSON.stringify(signatureMetadata))}`;
-    return mockSignatureData;
+  const buildSignatureSvg = () => {
+    const canvasWidth = Math.max(320, screenWidth - 40);
+    const canvasHeight = 200;
+    const pathElements = signaturePaths
+      .filter((path) => path.length > 1)
+      .map((path) => {
+        const d = path
+          .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
+          .join(' ');
+        return `<path d="${d}" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />`;
+      })
+      .join('');
+
+    return [
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${canvasWidth}" height="${canvasHeight}" viewBox="0 0 ${canvasWidth} ${canvasHeight}">`,
+      `<rect width="100%" height="100%" fill="#ffffff" />`,
+      pathElements,
+      `</svg>`
+    ].join('');
   };
 
   const handleComplete = () => {
@@ -132,6 +147,28 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
       return;
     }
 
+    const handleConfirm = async () => {
+      setIsUploading(true);
+      try {
+        const svg = buildSignatureSvg();
+        const uploadPath = `signatures/${jobId}/${Date.now()}.svg`;
+        const { url } = await uploadSvgStringAsync(svg, uploadPath);
+        
+        logProductionEvent('signature_completed', {
+          jobId,
+          mechanicId,
+          customerName,
+          signatureUrlLength: url.length
+        });
+        
+        onSignatureComplete(jobId, url);
+      } catch (error) {
+        Alert.alert('Upload Failed', 'Unable to upload signature. Please try again.');
+      } finally {
+        setIsUploading(false);
+      }
+    };
+
     Alert.alert(
       'Complete Job',
       'Confirm job completion with customer signature?',
@@ -139,18 +176,7 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Complete',
-          onPress: () => {
-            const signatureData = generateSignatureData();
-            
-            logProductionEvent('signature_completed', {
-              jobId,
-              mechanicId: 'mechanic-cody',
-              customerName,
-              signatureLength: signatureData.length
-            });
-            
-            onSignatureComplete(jobId, signatureData);
-          }
+          onPress: () => { void handleConfirm(); }
         }
       ]
     );
@@ -221,7 +247,7 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
           Service has been completed according to the agreed specifications. 
           Customer signature confirms satisfaction with the work performed.
         </Text>
-        <Text style={styles.mechanicInfo}>Completed by: Cody Owner</Text>
+        <Text style={styles.mechanicInfo}>Completed by: {mechanicName}</Text>
       </View>
 
       {/* Signature Canvas Area */}
@@ -298,7 +324,7 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
         <Text style={styles.agreementItem}>• Work has been completed satisfactorily</Text>
         <Text style={styles.agreementItem}>• All services have been explained</Text>
         <Text style={styles.agreementItem}>• Payment terms are understood</Text>
-        <Text style={styles.agreementItem}>• Service performed by Cody Owner</Text>
+        <Text style={styles.agreementItem}>• Service performed by {mechanicName}</Text>
       </View>
 
       {/* Production Requirements */}
@@ -319,14 +345,15 @@ export function SignatureCapture({ jobId, jobTitle, onSignatureComplete, onCance
           variant="outline"
           onPress={onCancel}
           style={styles.cancelButton}
+          disabled={isUploading}
         />
         <Button
-          title="Complete Job"
+          title={isUploading ? 'Uploading...' : 'Complete Job'}
           onPress={handleComplete}
-          disabled={!hasSignature}
+          disabled={!hasSignature || isUploading}
           style={[
             styles.completeButton,
-            !hasSignature && styles.completeButtonDisabled
+            (!hasSignature || isUploading) && styles.completeButtonDisabled
           ]}
         />
       </View>

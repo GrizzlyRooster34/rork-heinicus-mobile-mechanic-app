@@ -1,9 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import { Colors } from '@/constants/colors';
-import { ChatMessage } from '@/types/service';
-import { useAppStore } from '@/stores/app-store';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import * as Icons from 'lucide-react-native';
+import { Colors } from '@/constants/colors';
+import { trpc } from '@/lib/trpc';
+import { ChatMessage } from '@/types/service';
 
 interface ChatComponentProps {
   serviceRequestId: string;
@@ -12,74 +23,80 @@ interface ChatComponentProps {
   currentUserType: 'customer' | 'mechanic';
 }
 
-export function ChatComponent({ serviceRequestId, currentUserId, currentUserName, currentUserType }: ChatComponentProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export function ChatComponent({
+  serviceRequestId,
+  currentUserId,
+  currentUserName,
+  currentUserType,
+}: ChatComponentProps) {
   const [newMessage, setNewMessage] = useState('');
-  const [isSending, setIsSending] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const utils = trpc.useUtils();
+  const chatQuery = trpc.chat.listByJob.useQuery(
+    { jobId: serviceRequestId },
+    {
+      enabled: Boolean(serviceRequestId),
+      refetchInterval: 4000,
+    }
+  );
+  const sendMessageMutation = trpc.chat.send.useMutation();
+  const markReadMutation = trpc.chat.markRead.useMutation();
 
-  // Mock messages for demo - in real app this would come from Firestore
   useEffect(() => {
-    const mockMessages: ChatMessage[] = [
+    const hasUnreadMessagesFromOthers = (chatQuery.data?.messages ?? []).some(
+      (message) => !message.isRead && message.senderId !== currentUserId
+    );
+
+    if (!hasUnreadMessagesFromOthers || markReadMutation.isPending) {
+      return;
+    }
+
+    markReadMutation.mutate(
+      { jobId: serviceRequestId },
       {
-        id: '1',
+        onSuccess: () => {
+          void utils.chat.listByJob.invalidate({ jobId: serviceRequestId });
+        },
+      }
+    );
+  }, [chatQuery.data?.messages, currentUserId, markReadMutation, serviceRequestId, utils.chat.listByJob]);
+
+  const messages = useMemo<ChatMessage[]>(
+    () =>
+      (chatQuery.data?.messages ?? []).map((message) => ({
+        id: message.id,
         serviceRequestId,
-        senderId: 'mechanic-1',
-        senderName: 'Mike (Mechanic)',
-        senderType: 'mechanic',
-        message: 'Hi! I received your service request. I can be there within 2 hours. Does that work for you?',
-        timestamp: new Date(Date.now() - 3600000), // 1 hour ago
-        isRead: true,
-      },
-      {
-        id: '2',
-        serviceRequestId,
-        senderId: currentUserId,
-        senderName: currentUserName,
-        senderType: currentUserType,
-        message: 'Yes, that works perfectly! Thank you.',
-        timestamp: new Date(Date.now() - 3000000), // 50 minutes ago
-        isRead: true,
-      },
-      {
-        id: '3',
-        serviceRequestId,
-        senderId: 'mechanic-1',
-        senderName: 'Mike (Mechanic)',
-        senderType: 'mechanic',
-        message: 'Great! I am on my way. I will send you a message when I arrive.',
-        timestamp: new Date(Date.now() - 2400000), // 40 minutes ago
-        isRead: true,
-      },
-    ];
-    setMessages(mockMessages);
-  }, [serviceRequestId, currentUserId, currentUserName, currentUserType]);
+        senderId: message.senderId,
+        senderName: message.senderName,
+        senderType: message.senderType.toLowerCase() as ChatMessage['senderType'],
+        message: message.message,
+        timestamp: message.createdAt,
+        isRead: message.isRead,
+      })),
+    [chatQuery.data?.messages, serviceRequestId]
+  );
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || isSending) return;
+    const trimmedMessage = newMessage.trim();
+    if (!trimmedMessage || sendMessageMutation.isPending) {
+      return;
+    }
 
-    setIsSending(true);
-    
-    const message: ChatMessage = {
-      id: Date.now().toString(),
-      serviceRequestId,
-      senderId: currentUserId,
-      senderName: currentUserName,
-      senderType: currentUserType,
-      message: newMessage.trim(),
-      timestamp: new Date(),
-      isRead: false,
-    };
+    try {
+      await sendMessageMutation.mutateAsync({
+        jobId: serviceRequestId,
+        message: trimmedMessage,
+      });
 
-    setMessages(prev => [...prev, message]);
-    setNewMessage('');
-    
-    // Scroll to bottom
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+      setNewMessage('');
+      await utils.chat.listByJob.invalidate({ jobId: serviceRequestId });
 
-    setIsSending(false);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    } catch (error) {
+      Alert.alert('Message Failed', 'Unable to send message. Please try again.');
+    }
   };
 
   const formatTime = (date: Date) => {
@@ -90,76 +107,98 @@ export function ChatComponent({ serviceRequestId, currentUserId, currentUserName
     }).format(date);
   };
 
-  const isMyMessage = (message: ChatMessage) => {
-    return message.senderId === currentUserId;
-  };
+  const isMyMessage = (message: ChatMessage) => message.senderId === currentUserId;
+  const headerTitle = currentUserType === 'mechanic' ? 'Chat with Customer' : 'Chat with Mechanic';
+  const placeholder = currentUserName ? `Message as ${currentUserName}` : 'Type a message...';
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.header}>
         <Icons.MessageCircle size={20} color={Colors.primary} />
-        <Text style={styles.headerTitle}>Chat with Mechanic</Text>
+        <Text style={styles.headerTitle}>{headerTitle}</Text>
       </View>
 
-      <ScrollView 
-        ref={scrollViewRef}
-        style={styles.messagesContainer}
-        showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-      >
-        {messages.map((message) => (
-          <View
-            key={message.id}
-            style={[
-              styles.messageWrapper,
-              isMyMessage(message) ? styles.myMessageWrapper : styles.otherMessageWrapper,
-            ]}
-          >
-            <View
-              style={[
-                styles.messageBubble,
-                isMyMessage(message) ? styles.myMessage : styles.otherMessage,
-              ]}
-            >
-              {!isMyMessage(message) && (
-                <Text style={styles.senderName}>{message.senderName}</Text>
-              )}
-              <Text style={[
-                styles.messageText,
-                isMyMessage(message) ? styles.myMessageText : styles.otherMessageText,
-              ]}>
-                {message.message}
-              </Text>
-              <Text style={[
-                styles.messageTime,
-                isMyMessage(message) ? styles.myMessageTime : styles.otherMessageTime,
-              ]}>
-                {formatTime(message.timestamp)}
-              </Text>
+      {chatQuery.isLoading ? (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="small" color={Colors.primary} />
+          <Text style={styles.emptyStateText}>Loading messages...</Text>
+        </View>
+      ) : chatQuery.error ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>Unable to load chat messages.</Text>
+        </View>
+      ) : (
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.messagesContainer}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+        >
+          {messages.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No messages yet. Start the conversation.</Text>
             </View>
-          </View>
-        ))}
-      </ScrollView>
+          ) : (
+            messages.map((message) => (
+              <View
+                key={message.id}
+                style={[
+                  styles.messageWrapper,
+                  isMyMessage(message) ? styles.myMessageWrapper : styles.otherMessageWrapper,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.messageBubble,
+                    isMyMessage(message) ? styles.myMessage : styles.otherMessage,
+                  ]}
+                >
+                  {!isMyMessage(message) && <Text style={styles.senderName}>{message.senderName}</Text>}
+                  <Text
+                    style={[
+                      styles.messageText,
+                      isMyMessage(message) ? styles.myMessageText : styles.otherMessageText,
+                    ]}
+                  >
+                    {message.message}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.messageTime,
+                      isMyMessage(message) ? styles.myMessageTime : styles.otherMessageTime,
+                    ]}
+                  >
+                    {formatTime(message.timestamp)}
+                  </Text>
+                </View>
+              </View>
+            ))
+          )}
+        </ScrollView>
+      )}
 
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.textInput}
           value={newMessage}
           onChangeText={setNewMessage}
-          placeholder="Type a message..."
+          placeholder={placeholder}
           placeholderTextColor={Colors.textMuted}
           multiline
           maxLength={500}
         />
         <TouchableOpacity
-          style={[styles.sendButton, (!newMessage.trim() || isSending) && styles.sendButtonDisabled]}
+          style={[
+            styles.sendButton,
+            (!newMessage.trim() || sendMessageMutation.isPending) && styles.sendButtonDisabled,
+          ]}
           onPress={sendMessage}
-          disabled={!newMessage.trim() || isSending}
+          disabled={!newMessage.trim() || sendMessageMutation.isPending}
         >
-          <Icons.Send size={20} color={(!newMessage.trim() || isSending) ? Colors.textMuted : Colors.white} />
+          <Icons.Send
+            size={20}
+            color={(!newMessage.trim() || sendMessageMutation.isPending) ? Colors.textMuted : Colors.white}
+          />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -184,6 +223,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: Colors.text,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 24,
+  },
+  emptyStateText: {
+    color: Colors.textMuted,
+    fontSize: 14,
+    textAlign: 'center',
   },
   messagesContainer: {
     flex: 1,

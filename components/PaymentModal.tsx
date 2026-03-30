@@ -3,29 +3,36 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, Alert, Platform, Scrol
 import { Colors } from '@/constants/colors';
 import { Button } from '@/components/Button';
 import { Quote } from '@/types/service';
-import { useAppStore } from '@/stores/app-store';
 import * as Icons from 'lucide-react-native';
 
 interface PaymentModalProps {
   quote: Quote;
   paymentType?: 'deposit' | 'full' | 'completion';
+  onProcessPayment?: (payload: {
+    quoteId: string;
+    paymentType: 'deposit' | 'full' | 'completion';
+    amount: number;
+    paymentMethod: 'card' | 'apple_pay' | 'google_pay';
+  }) => Promise<void>;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel }: PaymentModalProps) {
-  const { updateQuote, updateServiceRequest, getJobParts } = useAppStore();
+export function PaymentModal({
+  quote,
+  paymentType = 'full',
+  onProcessPayment,
+  onSuccess,
+  onCancel,
+}: PaymentModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'card' | 'apple_pay' | 'google_pay'>('card');
 
   const depositAmount = Math.round(quote.totalCost * 0.3); // 30% deposit
   const remainingAmount = quote.totalCost - depositAmount;
-  
-  // Calculate completion payment (includes parts if any)
-  const jobParts = getJobParts(quote.serviceRequestId);
-  const partsCost = jobParts.reduce((sum, part) => sum + (part.price * part.quantity), 0);
+
   const completionAmount = paymentType === 'completion' 
-    ? quote.totalCost + partsCost 
+    ? quote.finalAmount ?? quote.totalCost
     : paymentType === 'deposit' 
       ? depositAmount 
       : quote.totalCost;
@@ -34,82 +41,31 @@ export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel 
     setIsProcessing(true);
     
     try {
-      // Simulate Stripe payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // In a real app, this would integrate with Stripe
-      // const stripe = await getStripe();
-      // const { error } = await stripe.redirectToCheckout({
-      //   sessionId: quote.stripePaymentUrl
-      // });
-      
-      // Simulate payment success (90% success rate for demo)
-      const success = Math.random() > 0.1;
-      
-      if (success) {
-        // Update quote status
-        const now = new Date();
-        
-        if (paymentType === 'deposit') {
-          updateQuote(quote.id, {
-            status: 'deposit_paid',
-            depositPaidAt: now,
-            depositAmount: completionAmount,
-            remainingBalance: remainingAmount,
-          });
-          
-          // Update service request status
-          updateServiceRequest(quote.serviceRequestId, {
-            status: 'accepted'
-          });
-          
-          Alert.alert(
-            'Deposit Payment Successful',
-            `Deposit of $${completionAmount} has been processed. Remaining balance: $${remainingAmount}`,
-            [{ text: 'OK', onPress: onSuccess }]
-          );
-        } else if (paymentType === 'completion') {
-          updateQuote(quote.id, {
-            status: 'paid',
-            paidAt: now,
-            paymentMethod: selectedPaymentMethod,
-            finalAmount: completionAmount,
-            partsCost: partsCost,
-          });
-          
-          // Update service request status
-          updateServiceRequest(quote.serviceRequestId, {
-            status: 'completed',
-            paidAt: now
-          });
-          
-          Alert.alert(
-            'Payment Successful',
-            `Final payment of $${completionAmount} has been processed successfully.${partsCost > 0 ? ` (Includes $${partsCost} in parts)` : ''}`,
-            [{ text: 'OK', onPress: onSuccess }]
-          );
-        } else {
-          updateQuote(quote.id, {
-            status: 'paid',
-            paidAt: now,
-            paymentMethod: selectedPaymentMethod,
-          });
-          
-          // Update service request status
-          updateServiceRequest(quote.serviceRequestId, {
-            status: 'completed',
-            paidAt: now
-          });
-          
-          Alert.alert(
-            'Payment Successful',
-            `Payment of $${completionAmount} has been processed successfully.`,
-            [{ text: 'OK', onPress: onSuccess }]
-          );
-        }
+      if (onProcessPayment) {
+        await onProcessPayment({
+          quoteId: quote.id,
+          paymentType,
+          amount: completionAmount,
+          paymentMethod: selectedPaymentMethod,
+        });
       } else {
-        throw new Error('Payment failed');
+        await new Promise(resolve => setTimeout(resolve, 1200));
       }
+
+      if (paymentType === 'deposit') {
+        Alert.alert(
+          'Deposit Payment Successful',
+          `Deposit of $${completionAmount} has been processed. Remaining balance: $${remainingAmount}`,
+          [{ text: 'OK', onPress: onSuccess }]
+        );
+        return;
+      }
+
+      Alert.alert(
+        'Payment Successful',
+        `Payment of $${completionAmount} has been processed successfully.`,
+        [{ text: 'OK', onPress: onSuccess }]
+      );
     } catch (error) {
       Alert.alert(
         'Payment Failed', 
@@ -128,8 +84,6 @@ export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel 
     }
     
     setSelectedPaymentMethod('apple_pay');
-    // In a real app, integrate with Apple Pay
-    Alert.alert('Apple Pay', 'Apple Pay integration would be implemented here.');
   };
 
   const handleGooglePay = async () => {
@@ -139,8 +93,6 @@ export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel 
     }
     
     setSelectedPaymentMethod('google_pay');
-    // In a real app, integrate with Google Pay
-    Alert.alert('Google Pay', 'Google Pay integration would be implemented here.');
   };
 
   const getPaymentTitle = () => {
@@ -186,7 +138,7 @@ export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel 
               <View style={styles.completionText}>
                 <Text style={styles.completionTitle}>Job Completion Payment</Text>
                 <Text style={styles.completionDescription}>
-                  Final payment for completed work{partsCost > 0 ? ' including parts used' : ''}.
+                  Final payment for completed work.
                 </Text>
               </View>
             </View>
@@ -210,21 +162,14 @@ export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel 
                   <Text style={styles.breakdownLabel}>Original Parts</Text>
                   <Text style={styles.breakdownValue}>${quote.partsCost}</Text>
                 </View>
-                
-                {paymentType === 'completion' && partsCost > 0 && (
-                  <View style={styles.breakdownRow}>
-                    <Text style={styles.breakdownLabel}>Additional Parts Used</Text>
-                    <Text style={styles.breakdownValue}>${partsCost}</Text>
-                  </View>
-                )}
-                
+
                 <View style={styles.breakdownDivider} />
                 <View style={styles.breakdownRow}>
                   <Text style={styles.totalLabel}>
-                    {paymentType === 'completion' ? 'Total with Parts' : 'Original Quote'}
+                    Original Quote
                   </Text>
                   <Text style={styles.totalValue}>
-                    ${paymentType === 'completion' ? quote.totalCost + partsCost : quote.totalCost}
+                    ${quote.totalCost}
                   </Text>
                 </View>
                 
@@ -243,26 +188,6 @@ export function PaymentModal({ quote, paymentType = 'full', onSuccess, onCancel 
               </View>
             </View>
           </View>
-
-          {/* Parts Breakdown for Completion Payment */}
-          {paymentType === 'completion' && jobParts.length > 0 && (
-            <View style={styles.partsSection}>
-              <Text style={styles.sectionTitle}>Parts Used</Text>
-              <View style={styles.partsCard}>
-                {jobParts.map((part, index) => (
-                  <View key={index} style={styles.partRow}>
-                    <View style={styles.partInfo}>
-                      <Text style={styles.partName}>{part.name}</Text>
-                      <Text style={styles.partDescription}>{part.description}</Text>
-                    </View>
-                    <Text style={styles.partCost}>
-                      ${part.price} x {part.quantity} = ${(part.price * part.quantity).toFixed(2)}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
 
           {/* Payment Methods */}
           <View style={styles.paymentSection}>

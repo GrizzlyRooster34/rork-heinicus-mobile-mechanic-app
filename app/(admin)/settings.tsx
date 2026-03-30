@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Switch } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
@@ -11,7 +11,7 @@ import * as Icons from 'lucide-react-native';
 type ConfigKey = 'isProduction' | 'showVINDebug' | 'enableChatbot' | 'defaultLaborRate' | 'showScooterSupport' | 'showMotorcycleSupport' | 'enableVINCheck';
 
 export default function AdminSettingsScreen() {
-  const { user, logout, getAllUsers, updateUserRole } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const {
     system,
     notifications,
@@ -29,6 +29,8 @@ export default function AdminSettingsScreen() {
   } = useAdminSettingsStore();
 
   const config = useConfigStore();
+  const { data: configData } = trpc.config.getAll.useQuery();
+  const { data: usersData } = trpc.admin.getAllUsers.useQuery();
   const updateConfigMutation = trpc.admin.updateConfig.useMutation({
     onSuccess: (data: unknown) => {
       console.log('Config updated successfully:', data);
@@ -43,6 +45,38 @@ export default function AdminSettingsScreen() {
   const [isPerformingBackup, setIsPerformingBackup] = useState(false);
 
   const systemStatus = getSystemStatus();
+
+  useEffect(() => {
+    if (!configData) return;
+    const allowedKeys: ConfigKey[] = [
+      'isProduction',
+      'showVINDebug',
+      'enableChatbot',
+      'defaultLaborRate',
+      'showScooterSupport',
+      'showMotorcycleSupport',
+      'enableVINCheck',
+    ];
+
+    configData.forEach((entry: { key: string; value: string | boolean | number | null }) => {
+      const key = entry.key as ConfigKey;
+      if (!allowedKeys.includes(key) || entry.value === null) {
+        return;
+      }
+
+      if (key === 'defaultLaborRate' && typeof entry.value === 'string') {
+        const parsed = Number(entry.value);
+        if (!Number.isNaN(parsed)) {
+          config.updateSetting(key, parsed);
+        }
+        return;
+      }
+
+      if (typeof entry.value === 'boolean' || typeof entry.value === 'number') {
+        config.updateSetting(key, entry.value);
+      }
+    });
+  }, [configData, config]);
 
   const handleConfigUpdate = async (key: ConfigKey, value: any) => {
     try {
@@ -128,7 +162,7 @@ export default function AdminSettingsScreen() {
   };
 
   const handleUserRoleUpdate = () => {
-    const users = getAllUsers();
+    const users = usersData?.users ?? [];
     
     Alert.alert(
       'User Management',
