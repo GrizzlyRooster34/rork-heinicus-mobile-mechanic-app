@@ -10,7 +10,68 @@
 
 This repository includes comprehensive documentation to help you understand, develop, build, and deploy the Heinicus Mobile Mechanic application.
 
-### 1. **IMPORT_SUMMARY.md** ⭐ START HERE
+### 🚀 **PRIORITY 1: QUICK_START.md** — START HERE
+**Size:** 8 KB | **Read Time:** 10 minutes | **Priority:** ⭐⭐⭐
+
+5-minute setup guide to get the app running locally on any platform.
+
+**Contains:**
+- Prerequisites checklist
+- 5-minute setup steps (install → env → database → run)
+- Platform-specific commands (Android, iOS, Web)
+- Test credentials for all roles
+- Common workflows
+- Troubleshooting quick fixes
+- Useful links
+
+**Best for:** Getting up and running immediately in development
+
+---
+
+### 🔨 **PRIORITY 2: BUILD_AND_RUN.md** — BUILD GUIDE
+**Size:** 13 KB | **Read Time:** 15 minutes | **Priority:** ⭐⭐⭐
+
+Comprehensive step-by-step instructions for building and deploying to all platforms.
+
+**Contains:**
+- Prerequisites & verification
+- Installation steps (5 steps)
+- Environment setup
+- PostgreSQL database setup
+- Database migrations & seeding
+- Running in development mode (3 terminals)
+- **Building for Production:**
+  - **Android (EAS Cloud):**
+    - Development APK: `npm run build:android:dev`
+    - Preview APK: `npm run build:android:preview`
+    - Production APK: `npm run build:android:production`
+    - Standalone APK: `npm run build:android:apk`
+  - **Android (Local Gradle):**
+    - Prebuild: `npm run prebuild:android`
+    - Build: `npm run build:android`
+    - Install: `npm run install:android`
+  - **iOS (EAS Cloud):**
+    - Build: `npm run build:ios`
+    - Submit: `npm run submit:ios`
+  - **Web:**
+    - Build: `npm run build-web`
+    - Deploy: Vercel/Netlify
+- Version management (bump patch/minor/major)
+- Testing commands
+- Code quality checks
+- Database management (Prisma Studio, migrations, seeding)
+- Comprehensive troubleshooting
+- Development workflow
+- Security checklist
+- Performance optimization
+- Deployment platforms
+- Common commands reference
+
+**Best for:** Building and deploying the application to production
+
+---
+
+### 📖 **REFERENCE: IMPORT_SUMMARY.md**
 **Size:** 11 KB | **Read Time:** 5 minutes
 
 Quick overview of the imported repository with platform detection, project type, and key features.
@@ -29,25 +90,7 @@ Quick overview of the imported repository with platform detection, project type,
 
 ---
 
-### 2. **QUICK_START.md** 🚀 FASTEST PATH
-**Size:** 8 KB | **Read Time:** 10 minutes
-
-5-minute setup guide to get the app running locally.
-
-**Contains:**
-- Prerequisites checklist
-- 5-minute setup steps
-- Platform-specific commands (Android, iOS, Web)
-- Test credentials
-- Common workflows
-- Troubleshooting quick fixes
-- Useful links
-
-**Best for:** Getting up and running immediately
-
----
-
-### 3. **ARCHITECTURE_SUMMARY.md** 🏗️ COMPREHENSIVE
+### 🏗️ **REFERENCE: ARCHITECTURE_SUMMARY.md** — COMPREHENSIVE
 **Size:** 24 KB | **Read Time:** 20 minutes
 
 Complete architecture documentation with all technical details.
@@ -79,38 +122,7 @@ Complete architecture documentation with all technical details.
 
 ---
 
-### 4. **BUILD_AND_RUN.md** 🔨 DETAILED GUIDE
-**Size:** 13 KB | **Read Time:** 15 minutes
-
-Step-by-step instructions for building and running the application.
-
-**Contains:**
-- Prerequisites & verification
-- Installation steps (5 steps)
-- Environment setup
-- PostgreSQL database setup
-- Database migrations
-- Running in development mode
-- Building for production
-  - Android (EAS & Gradle)
-  - iOS
-  - Web
-- Version management
-- Testing commands
-- Code quality checks
-- Database management
-- Comprehensive troubleshooting
-- Development workflow
-- Security checklist
-- Performance optimization
-- Deployment platforms
-- Common commands reference
-
-**Best for:** Building and deploying the application
-
----
-
-### 5. **MODULES_AND_PACKAGES.md** 📦 REFERENCE
+### 📦 **REFERENCE: MODULES_AND_PACKAGES.md**
 **Size:** 16 KB | **Read Time:** 15 minutes
 
 Detailed breakdown of all modules, packages, and their interactions.
@@ -139,20 +151,36 @@ Detailed breakdown of all modules, packages, and their interactions.
 
 ### I want to...
 
-#### **Get started immediately**
-1. Read: **IMPORT_SUMMARY.md** (5 min)
-2. Follow: **QUICK_START.md** (10 min)
-3. Start coding!
+#### **Get started immediately (5 minutes)**
+1. **Follow:** **QUICK_START.md** (10 min)
+   - Install dependencies
+   - Setup database
+   - Run development environment
+2. Start coding!
+
+#### **Build for Android**
+1. **Follow:** **BUILD_AND_RUN.md** → Android Build section
+2. Choose your build type:
+   - **Development:** `npm run build:android:dev`
+   - **Preview:** `npm run build:android:preview`
+   - **Production:** `npm run build:android:production`
+   - **Standalone:** `npm run build:android:apk`
+3. Deploy to Google Play Store
+
+#### **Build for iOS**
+1. **Follow:** **BUILD_AND_RUN.md** → iOS Build section
+2. Run: `npm run build:ios`
+3. Submit: `npm run submit:ios`
+
+#### **Build for Web**
+1. **Follow:** **BUILD_AND_RUN.md** → Web Build section
+2. Run: `npm run build-web`
+3. Deploy to Vercel/Netlify
 
 #### **Understand the architecture**
 1. Read: **ARCHITECTURE_SUMMARY.md** (20 min)
 2. Review: **MODULES_AND_PACKAGES.md** (15 min)
 3. Explore: `expo/` directory
-
-#### **Build for production**
-1. Read: **BUILD_AND_RUN.md** (15 min)
-2. Follow: Step-by-step build instructions
-3. Deploy!
 
 #### **Debug an issue**
 1. Check: **QUICK_START.md** → Troubleshooting
@@ -203,20 +231,53 @@ Detailed breakdown of all modules, packages, and their interactions.
 - ✅ AI customer support
 
 ### Quick Commands
+
+**Setup & Development**
 ```bash
 # Setup
 cd expo && bun install && cp .env.example .env
 
 # Development (3 terminals)
-npm run backend:watch
-npm run websocket
-npm run start
+npm run backend:watch      # Terminal 1: Backend API
+npm run websocket          # Terminal 2: WebSocket server
+npm run start              # Terminal 3: Mobile app
+```
 
-# Build
-npm run build:android:production
+**Build Commands (EAS)**
+```bash
+# Android
+npm run build:android:dev          # Development APK
+npm run build:android:preview      # Preview APK
+npm run build:android:production   # Production APK
+npm run submit:android             # Submit to Play Store
 
-# Test
-npm run test:watch
+# iOS
+npm run build:ios                  # Build for App Store
+npm run submit:ios                 # Submit to App Store
+
+# Web
+npm run build-web                  # Build web bundle
+```
+
+**Build Commands (Local)**
+```bash
+# Android (Gradle)
+npm run prebuild:android           # Prebuild native modules
+npm run build:android              # Build APK locally
+npm run install:android            # Install on device
+
+# Version management
+npm run bump:patch                 # 1.0.0 → 1.0.1
+npm run bump:minor                 # 1.0.0 → 1.1.0
+npm run bump:major                 # 1.0.0 → 2.0.0
+```
+
+**Testing & Quality**
+```bash
+npm run test:watch                 # Run tests in watch mode
+npm run type-check                 # TypeScript checking
+npm run lint                       # Linting
+npm run lint:fix                   # Auto-fix linting issues
 ```
 
 ---
@@ -286,22 +347,25 @@ rork-heinicus-mobile-mechanic-app/
 ## 🎓 Learning Path
 
 ### Beginner (New to project)
-1. **IMPORT_SUMMARY.md** - Understand what this is
-2. **QUICK_START.md** - Get it running
+1. **QUICK_START.md** - Get it running (10 min)
+2. **IMPORT_SUMMARY.md** - Understand what this is (5 min)
 3. Explore `expo/app/` - See the UI
 4. Explore `expo/backend/` - See the API
 
 ### Intermediate (Want to contribute)
-1. **ARCHITECTURE_SUMMARY.md** - Understand the system
-2. **MODULES_AND_PACKAGES.md** - Understand the code
-3. **BUILD_AND_RUN.md** - Learn to build
+1. **QUICK_START.md** - Development setup (10 min)
+2. **ARCHITECTURE_SUMMARY.md** - Understand the system (20 min)
+3. **MODULES_AND_PACKAGES.md** - Understand the code (15 min)
 4. Read source code in `expo/`
 
 ### Advanced (Want to deploy)
-1. **BUILD_AND_RUN.md** - Build instructions
-2. **ARCHITECTURE_SUMMARY.md** - Deployment section
-3. **QUICK_START.md** - Security checklist
-4. Follow deployment steps
+1. **QUICK_START.md** - Development setup (10 min)
+2. **BUILD_AND_RUN.md** - Build instructions (15 min)
+   - Android: `npm run build:android:production`
+   - iOS: `npm run build:ios`
+   - Web: `npm run build-web`
+3. **ARCHITECTURE_SUMMARY.md** - Deployment section
+4. Follow platform-specific deployment steps
 
 ---
 
@@ -328,14 +392,28 @@ rork-heinicus-mobile-mechanic-app/
 
 | Document | Last Updated | Maintained By |
 |----------|--------------|---------------|
-| IMPORT_SUMMARY.md | Mar 29, 2025 | Rork Team |
-| QUICK_START.md | Mar 29, 2025 | Rork Team |
-| ARCHITECTURE_SUMMARY.md | Mar 29, 2025 | Rork Team |
-| BUILD_AND_RUN.md | Mar 29, 2025 | Rork Team |
-| MODULES_AND_PACKAGES.md | Mar 29, 2025 | Rork Team |
-| README_DOCUMENTATION_INDEX.md | Mar 29, 2025 | Rork Team |
+## 🎯 Next Steps
 
----
+### For Development
+1. **Follow:** QUICK_START.md (10 minutes)
+   - Install dependencies
+   - Setup database
+   - Run 3 terminals
+2. **Explore:** `expo/` directory
+3. **Start:** Making changes!
+
+### For Building & Deployment
+1. **Follow:** BUILD_AND_RUN.md (15 minutes)
+2. **Choose platform:**
+   - Android: `npm run build:android:production`
+   - iOS: `npm run build:ios`
+   - Web: `npm run build-web`
+3. **Deploy:** To your target store
+
+### For Understanding the System
+1. **Read:** ARCHITECTURE_SUMMARY.md (20 minutes)
+2. **Review:** MODULES_AND_PACKAGES.md (15 minutes)
+3. **Explore:** Source code in `expo/`
 
 ## 🎯 Next Steps
 
