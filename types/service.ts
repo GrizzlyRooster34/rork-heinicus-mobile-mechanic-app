@@ -158,7 +158,7 @@ export interface ServiceRequest {
   resumedAt?: Date;
   completedAt?: Date;
   paidAt?: Date;
-  signatureData?: string;
+  signatureUrl?: string;
   signatureCapturedAt?: Date;
   signatureCapturedBy?: string;
   statusTimeline?: StatusTimestamp[];

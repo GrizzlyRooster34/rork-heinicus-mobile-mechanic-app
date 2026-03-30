@@ -8,6 +8,12 @@ export default ({ config }) => {
     process.env.GOOGLE_SERVICES_JSON || androidConfig.googleServicesFile;
   const googleMapsApiKey =
     process.env.GOOGLE_MAPS_API_KEY || googleMapsConfig.apiKey;
+  const staticProjectId =
+    baseConfig.extra?.eas?.projectId &&
+    baseConfig.extra?.eas?.projectId !== "your-project-id"
+      ? baseConfig.extra?.eas?.projectId
+      : undefined;
+  const easProjectId = process.env.EAS_PROJECT_ID || staticProjectId;
 
   return {
     ...baseConfig,
@@ -25,10 +31,7 @@ export default ({ config }) => {
     extra: {
       ...baseConfig.extra,
       eas: {
-        projectId:
-          process.env.EAS_PROJECT_ID ||
-          baseConfig.extra?.eas?.projectId ||
-          "your-project-id",
+        projectId: easProjectId,
       },
     },
   };

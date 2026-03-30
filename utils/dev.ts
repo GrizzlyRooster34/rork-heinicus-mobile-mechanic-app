@@ -1,25 +1,30 @@
 import { User } from '@/types/auth';
 
-export const devMode = true; // Set to false for production
+// Dev auth is opt-in and only available in development builds.
+export const devMode = __DEV__ && process.env.EXPO_PUBLIC_ENABLE_DEV_AUTH === 'true';
 
 export const DEV_CREDENTIALS = {
   admin: {
-    email: 'matthew.heinen.2014@gmail.com',
-    password: 'RoosTer669072!@',
+    email: process.env.EXPO_PUBLIC_DEV_ADMIN_EMAIL || 'admin@example.com',
+    password: process.env.EXPO_PUBLIC_DEV_ADMIN_PASSWORD || '',
   },
   mechanic: {
-    email: 'cody@heinicus.com',
-    password: 'RoosTer669072!@',
+    email: process.env.EXPO_PUBLIC_DEV_MECHANIC_EMAIL || 'mechanic@example.com',
+    password: process.env.EXPO_PUBLIC_DEV_MECHANIC_PASSWORD || '',
   },
   customer: {
-    email: 'customer@example.com',
-    password: 'password',
+    email: process.env.EXPO_PUBLIC_DEV_CUSTOMER_EMAIL || 'customer@example.com',
+    password: process.env.EXPO_PUBLIC_DEV_CUSTOMER_PASSWORD || '',
   },
 };
 
 export function isDevCredentials(email: string, password: string): boolean {
+  if (!devMode) {
+    return false;
+  }
+
   return Object.values(DEV_CREDENTIALS).some(
-    cred => cred.email === email && cred.password === password
+    cred => cred.password.length > 0 && cred.email === email && cred.password === password
   );
 }
 

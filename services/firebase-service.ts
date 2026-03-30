@@ -2,6 +2,8 @@
 // This provides the interface for Firebase operations
 
 import { firebaseConfig, COLLECTIONS } from '@/utils/firebase-config';
+import { firebaseStorage as storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { User } from '@/types/auth';
 import { ServiceRequest, Quote, Vehicle, ChatMessage } from '@/types/service';
 
@@ -152,11 +154,28 @@ export class FirebaseService {
   }
 
   // File uploads
-  async uploadImage(file: File | Blob, path: string): Promise<string> {
+  async uploadImage(uri: string, path: string): Promise<string> {
     console.log('Firebase upload image:', { path });
-    // In production: firebase.storage().ref(path).put(file)
-    // Then: get download URL
-    return 'https://example.com/uploaded-image.jpg';
+    
+    if (!storage) {
+        console.warn("Firebase Storage not initialized");
+        return ""; // Fallback or throw error
+    }
+
+    try {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        
+        const storageRef = ref(storage, path);
+        await uploadBytes(storageRef, blob);
+        
+        const downloadUrl = await getDownloadURL(storageRef);
+        console.log("Upload successful, URL:", downloadUrl);
+        return downloadUrl;
+    } catch (error) {
+        console.error("Error uploading image:", error);
+        throw error;
+    }
   }
 
   // Push notifications

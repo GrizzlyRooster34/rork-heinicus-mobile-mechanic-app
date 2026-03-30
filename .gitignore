@@ -30,8 +30,19 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
 *.tsbuildinfo
 .vercel
+
+/lib/generated/prisma
+.serena/
+.claude/
+all_prs.json
+open_prs.json
+pr*.diff
+logs/
+android/
+scripts/sync-git.sh
