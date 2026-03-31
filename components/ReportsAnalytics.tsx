@@ -65,6 +65,22 @@ export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
 
   const averageJobTime = completedJobs.length > 0 ? totalWorkTime / completedJobs.length : 0;
 
+  // Calculate on-time rate
+  let onTimeJobs = 0;
+  let scheduledJobsCount = 0;
+
+  completedJobs.forEach(job => {
+    if (job.scheduledAt) {
+      scheduledJobsCount++;
+      const actualTime = job.startedAt || job.completedAt;
+      if (actualTime && (actualTime.getTime() - job.scheduledAt.getTime() <= 60 * 60 * 1000)) {
+        onTimeJobs++;
+      }
+    }
+  });
+
+  const onTimeRate = scheduledJobsCount > 0 ? Math.round((onTimeJobs / scheduledJobsCount) * 100) : 100;
+
   // Service type breakdown
   const serviceBreakdown = completedJobs.reduce((acc, job) => {
     acc[job.type] = (acc[job.type] || 0) + 1;
@@ -192,7 +208,7 @@ export function ReportsAnalytics({ mechanicId }: ReportsAnalyticsProps) {
             <View style={styles.performanceItem}>
               <Icons.Target size={20} color={Colors.mechanic} />
               <View style={styles.performanceContent}>
-                <Text style={styles.performanceValue}>95%</Text>
+                <Text style={styles.performanceValue}>{onTimeRate}%</Text>
                 <Text style={styles.performanceLabel}>On-Time Rate</Text>
               </View>
             </View>
