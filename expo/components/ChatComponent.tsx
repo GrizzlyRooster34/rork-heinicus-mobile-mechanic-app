@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { ChatMessage } from '@/types/service';
 import { useAppStore } from '@/stores/app-store';
@@ -19,7 +19,7 @@ export function ChatComponent({ serviceRequestId, currentUserId, currentUserName
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const flatListRef = useRef<FlatList<ChatMessage>>(null);
 
   // Mock messages for demo - in real app this would come from Firestore
   useEffect(() => {
@@ -90,7 +90,7 @@ export function ChatComponent({ serviceRequestId, currentUserId, currentUserName
     
     // Scroll to bottom
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
+      flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
     setIsSending(false);
@@ -108,6 +108,38 @@ export function ChatComponent({ serviceRequestId, currentUserId, currentUserName
     return message.senderId === currentUserId;
   };
 
+  const renderMessage = ({ item: message }: { item: ChatMessage }) => (
+    <View
+      style={[
+        styles.messageWrapper,
+        isMyMessage(message) ? styles.myMessageWrapper : styles.otherMessageWrapper,
+      ]}
+    >
+      <View
+        style={[
+          styles.messageBubble,
+          isMyMessage(message) ? styles.myMessage : styles.otherMessage,
+        ]}
+      >
+        {!isMyMessage(message) && (
+          <Text style={styles.senderName}>{message.senderName}</Text>
+        )}
+        <Text style={[
+          styles.messageText,
+          isMyMessage(message) ? styles.myMessageText : styles.otherMessageText,
+        ]}>
+          {message.message}
+        </Text>
+        <Text style={[
+          styles.messageTime,
+          isMyMessage(message) ? styles.myMessageTime : styles.otherMessageTime,
+        ]}>
+          {formatTime(message.timestamp)}
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <KeyboardAvoidingView 
       style={styles.container}
@@ -118,61 +150,38 @@ export function ChatComponent({ serviceRequestId, currentUserId, currentUserName
         <Text style={styles.headerTitle}>Chat with Mechanic</Text>
       </View>
 
-      <ScrollView 
-        ref={scrollViewRef}
-        style={styles.messagesContainer}
-        showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-      >
-        {isLoadingMessages ? (
-          <View style={styles.loadingContainer}>
-            {Array.from({ length: 3 }).map((_, index) => (
-              <View key={index} style={styles.skeletonMessage}>
-                <View style={[
-                  styles.skeletonBubble,
-                  index % 2 === 0 ? styles.skeletonOther : styles.skeletonMy
-                ]}>
-                  <View style={styles.skeletonLine} />
-                  <View style={[styles.skeletonLine, { width: '70%' }]} />
-                </View>
-              </View>
-            ))}
-          </View>
-        ) : (
-          messages.map((message) => (
-            <View
-              key={message.id}
-              style={[
-                styles.messageWrapper,
-                isMyMessage(message) ? styles.myMessageWrapper : styles.otherMessageWrapper,
-              ]}
-            >
-              <View
-                style={[
-                  styles.messageBubble,
-                  isMyMessage(message) ? styles.myMessage : styles.otherMessage,
-                ]}
-              >
-                {!isMyMessage(message) && (
-                  <Text style={styles.senderName}>{message.senderName}</Text>
-                )}
-                <Text style={[
-                  styles.messageText,
-                  isMyMessage(message) ? styles.myMessageText : styles.otherMessageText,
-                ]}>
-                  {message.message}
-                </Text>
-                <Text style={[
-                  styles.messageTime,
-                  isMyMessage(message) ? styles.myMessageTime : styles.otherMessageTime,
-                ]}>
-                  {formatTime(message.timestamp)}
-                </Text>
+      {isLoadingMessages ? (
+        <View style={[styles.messagesContainer, styles.messagesContentContainer, styles.loadingContainer]}>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <View key={index} style={styles.skeletonMessage}>
+              <View style={[
+                styles.skeletonBubble,
+                index % 2 === 0 ? styles.skeletonOther : styles.skeletonMy
+              ]}>
+                <View style={styles.skeletonLine} />
+                <View style={[styles.skeletonLine, { width: '70%' }]} />
               </View>
             </View>
-          ))
-        )}
-      </ScrollView>
+          ))}
+        </View>
+      ) : (
+        // ⚡ Bolt Performance Optimization:
+        // Replaced ScrollView + .map with FlatList for rendering chat messages.
+        // FlatList uses lazy rendering, only drawing items currently on or near the screen.
+        // This significantly reduces memory footprint and improves scrolling performance,
+        // especially for long conversation histories, compared to rendering all messages at once.
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          style={styles.messagesContainer}
+          contentContainerStyle={styles.messagesContentContainer}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        />
+      )}
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -217,7 +226,10 @@ const styles = StyleSheet.create({
   },
   messagesContainer: {
     flex: 1,
+  },
+  messagesContentContainer: {
     padding: 16,
+    paddingBottom: 8,
   },
   messageWrapper: {
     marginBottom: 12,
