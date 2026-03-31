@@ -3,6 +3,21 @@ const { withNativeWind } = require('nativewind/metro');
 
 const config = getDefaultConfig(__dirname);
 
+// Exclude Node.js-only server packages from the React Native bundle.
+// These packages are used by backend/server.ts and should never be
+// bundled by Metro into the mobile app.
+config.resolver.blockList = [
+  /backend\/server\.ts$/,
+  /node_modules\/pg\//,
+  /node_modules\/bcryptjs\//,
+  /node_modules\/jsonwebtoken\//,
+  /node_modules\/nodemailer\//,
+  /node_modules\/prisma\//,
+  /node_modules\/@prisma\/client\/runtime\/library\.js$/,
+  /node_modules\/otplib\//,
+  /node_modules\/qrcode\//,
+];
+
 // Enable Hermes for better Android performance
 config.transformer.hermesCommand = 'hermes';
 
