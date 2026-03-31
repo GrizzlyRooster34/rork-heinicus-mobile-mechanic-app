@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
+import { View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
@@ -916,8 +916,15 @@ export default function MechanicJobsScreen() {
       </View>
 
       {/* Jobs List */}
-      <ScrollView style={styles.jobsList} showsVerticalScrollIndicator={false}>
-        {filteredJobs.length === 0 ? (
+      {/* ⚡ Bolt Optimization: Using FlatList instead of ScrollView to lazily render job cards,
+          significantly improving performance and memory usage for long lists. */}
+      <FlatList
+        data={filteredJobs}
+        keyExtractor={(job) => job.id}
+        style={styles.jobsList}
+        contentContainerStyle={filteredJobs.length === 0 ? styles.emptyContainer : styles.content}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Icons.Briefcase size={64} color={Colors.textMuted} />
             <Text style={styles.emptyTitle}>No {selectedTab} jobs</Text>
@@ -927,35 +934,31 @@ export default function MechanicJobsScreen() {
               {selectedTab === 'completed' && 'Completed jobs will appear here'}
             </Text>
           </View>
-        ) : (
-          <View style={styles.content}>
-            {filteredJobs.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                onClaimJob={handleClaimJob}
-                onCompleteJob={handleCompleteJob}
-                onStatusUpdate={handleStatusUpdate}
-                onCancelJob={() => setShowCancelModal(job.id)}
-                onOpenChat={openChat}
-                onOpenTimer={openTimer}
-                onOpenToolsCheck={openToolsCheck}
-                onOpenPartsManager={openPartsManager}
-                onOpenPhotosManager={openPhotosManager}
-                onOpenTimeline={openTimeline}
-                getServiceTitle={getServiceTitle}
-                getStatusColor={getStatusColor}
-                getJobLogs={getCombinedJobLogs}
-                getActiveJobTimer={getActiveJobTimer}
-                getJobToolsStatus={getJobToolsStatus}
-                getJobParts={getJobParts}
-                getJobPhotos={getCombinedJobPhotos}
-                getJobTimeline={getJobTimeline}
-              />
-            ))}
-          </View>
         )}
-      </ScrollView>
+        renderItem={({ item: job }) => (
+          <JobCard
+            job={job}
+            onClaimJob={handleClaimJob}
+            onCompleteJob={handleCompleteJob}
+            onStatusUpdate={handleStatusUpdate}
+            onCancelJob={() => setShowCancelModal(job.id)}
+            onOpenChat={openChat}
+            onOpenTimer={openTimer}
+            onOpenToolsCheck={openToolsCheck}
+            onOpenPartsManager={openPartsManager}
+            onOpenPhotosManager={openPhotosManager}
+            onOpenTimeline={openTimeline}
+            getServiceTitle={getServiceTitle}
+            getStatusColor={getStatusColor}
+            getJobLogs={getCombinedJobLogs}
+            getActiveJobTimer={getActiveJobTimer}
+            getJobToolsStatus={getJobToolsStatus}
+            getJobParts={getJobParts}
+            getJobPhotos={getCombinedJobPhotos}
+            getJobTimeline={getJobTimeline}
+          />
+        )}
+      />
 
       {/* Cancel Job Modal */}
       {showCancelModal && (
