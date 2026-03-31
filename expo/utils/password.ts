@@ -4,6 +4,7 @@
  */
 
 import bcrypt from 'bcryptjs';
+import * as Crypto from 'expo-crypto';
 import { logger } from './logger';
 
 /**
@@ -112,33 +113,66 @@ export function isBcryptHash(str: string): boolean {
 }
 
 /**
+ * Generates a cryptographically secure random integer between 0 and max - 1
+ * Uses rejection sampling to avoid modulo bias
+ */
+function getSecureRandomInt(max: number): number {
+  if (max <= 0 || max > 256) {
+    throw new Error('max must be between 1 and 256');
+  }
+
+  // Find the largest multiple of max that fits in 256
+  // This avoids modulo bias by rejecting random numbers >= limit
+  const limit = 256 - (256 % max);
+  const buffer = new Uint8Array(1);
+
+  while (true) {
+    Crypto.getRandomValues(buffer);
+    const value = buffer[0];
+
+    // Reject values >= limit to avoid modulo bias
+    if (value < limit) {
+      return value % max;
+    }
+  }
+}
+
+/**
  * Generate a secure random password
  * @param length - Length of password (default 16)
  * @returns A secure random password
  */
 export function generateSecurePassword(length: number = 16): string {
+  if (length < 4 || length > 256) {
+    throw new Error('Password length must be between 4 and 256');
+  }
+
   const lowercase = 'abcdefghijklmnopqrstuvwxyz';
   const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const numbers = '0123456789';
   const special = '!@#$%^&*()_+-=[]{}|;:,.<>?';
   const allChars = lowercase + uppercase + numbers + special;
 
-  let password = '';
+  let passwordArr: string[] = [];
 
   // Ensure at least one of each type
-  password += lowercase[Math.floor(Math.random() * lowercase.length)];
-  password += uppercase[Math.floor(Math.random() * uppercase.length)];
-  password += numbers[Math.floor(Math.random() * numbers.length)];
-  password += special[Math.floor(Math.random() * special.length)];
+  passwordArr.push(lowercase[getSecureRandomInt(lowercase.length)]);
+  passwordArr.push(uppercase[getSecureRandomInt(uppercase.length)]);
+  passwordArr.push(numbers[getSecureRandomInt(numbers.length)]);
+  passwordArr.push(special[getSecureRandomInt(special.length)]);
 
   // Fill the rest randomly
-  for (let i = password.length; i < length; i++) {
-    password += allChars[Math.floor(Math.random() * allChars.length)];
+  for (let i = passwordArr.length; i < length; i++) {
+    passwordArr.push(allChars[getSecureRandomInt(allChars.length)]);
   }
 
-  // Shuffle the password
-  return password
-    .split('')
-    .sort(() => Math.random() - 0.5)
-    .join('');
+  // Fisher-Yates shuffle the password array
+  for (let i = passwordArr.length - 1; i > 0; i--) {
+    const j = getSecureRandomInt(i + 1);
+    const temp = passwordArr[i];
+    passwordArr[i] = passwordArr[j];
+    passwordArr[j] = temp;
+  }
+
+  return passwordArr.join('');
 }
