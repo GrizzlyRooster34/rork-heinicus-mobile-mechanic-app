@@ -433,7 +433,7 @@ export function debounceValidation(
   validationFunction: () => void,
   delay: number = 300
 ): () => void {
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: ReturnType<typeof setTimeout>;
 
   return () => {
     clearTimeout(timeoutId);
