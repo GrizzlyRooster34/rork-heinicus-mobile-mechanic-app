@@ -81,58 +81,63 @@ export default function AdminUsersScreen() {
         </Text>
       </View>
 
-      <ScrollView style={styles.usersList} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          {allUsers.map((userData) => (
-            <View key={userData.id} style={styles.userCard}>
-              <View style={styles.userInfo}>
-                <View style={styles.userAvatar}>
-                  <Text style={styles.userAvatarText}>
-                    {userData.firstName?.[0]}{userData.lastName?.[0]}
-                  </Text>
-                </View>
-                
-                <View style={styles.userDetails}>
-                  <Text style={styles.userName}>
-                    {userData.firstName} {userData.lastName}
-                  </Text>
-                  <Text style={styles.userEmail}>{userData.email}</Text>
-                  <Text style={styles.userDate}>
-                    Joined {userData.createdAt.toLocaleDateString()}
-                  </Text>
-                </View>
+      {/* ⚡ Bolt Optimization: Using FlatList instead of ScrollView to lazily render user cards,
+          significantly improving performance and memory usage for long lists. */}
+      <FlatList
+        data={allUsers}
+        keyExtractor={(userData) => userData.id}
+        style={styles.usersList}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item: userData }) => (
+          <View style={styles.userCard}>
+            <View style={styles.userInfo}>
+              <View style={styles.userAvatar}>
+                <Text style={styles.userAvatarText}>
+                  {userData.firstName?.[0]}{userData.lastName?.[0]}
+                </Text>
               </View>
-
-              <View style={styles.userActions}>
-                <View style={[
-                  styles.roleBadge,
-                  { backgroundColor: getRoleColor(userData.role) + '20' }
-                ]}>
-                  {getRoleIcon(userData.role)}
-                  <Text style={[
-                    styles.roleText,
-                    { color: getRoleColor(userData.role) }
-                  ]}>
-                    {userData.role}
-                  </Text>
-                </View>
-
-                {userData.id !== user.id && (
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() => {
-                      setSelectedUser(userData);
-                      setShowRoleModal(true);
-                    }}
-                  >
-                    <Icons.Edit2 size={16} color={Colors.primary} />
-                  </TouchableOpacity>
-                )}
+              
+              <View style={styles.userDetails}>
+                <Text style={styles.userName}>
+                  {userData.firstName} {userData.lastName}
+                </Text>
+                <Text style={styles.userEmail}>{userData.email}</Text>
+                <Text style={styles.userDate}>
+                  Joined {userData.createdAt.toLocaleDateString()}
+                </Text>
               </View>
             </View>
-          ))}
-        </View>
-      </ScrollView>
+
+            <View style={styles.userActions}>
+              <View style={[
+                styles.roleBadge,
+                { backgroundColor: getRoleColor(userData.role) + '20' }
+              ]}>
+                {getRoleIcon(userData.role)}
+                <Text style={[
+                  styles.roleText,
+                  { color: getRoleColor(userData.role) }
+                ]}>
+                  {userData.role}
+                </Text>
+              </View>
+
+              {userData.id !== user.id && (
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => {
+                    setSelectedUser(userData);
+                    setShowRoleModal(true);
+                  }}
+                >
+                  <Icons.Edit2 size={16} color={Colors.primary} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+      />
 
       {/* Role Change Modal */}
       <Modal
