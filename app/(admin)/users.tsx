@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
 import { trpc } from '@/lib/trpc';
@@ -85,7 +85,7 @@ export default function AdminUsersScreen() {
           significantly improving performance and memory usage for long lists. */}
       <FlatList
         data={allUsers}
-        keyExtractor={(userData) => userData.id}
+        keyExtractor={(userData: User) => userData.id}
         style={styles.usersList}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
