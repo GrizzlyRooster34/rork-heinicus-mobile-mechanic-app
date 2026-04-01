@@ -3,6 +3,7 @@ import { protectedProcedure, router } from '../../trpc';
 import { prisma } from '@/lib/prisma';
 import { JobStatus, UserRole } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
+import { createJobPhotoRecord } from '@/backend/services/storage';
 
 const isAdminOrMechanic = (role: UserRole) => role === UserRole.ADMIN || role === UserRole.MECHANIC;
 const isAdminOrCustomer = (role: UserRole) => role === UserRole.ADMIN || role === UserRole.CUSTOMER;
@@ -566,20 +567,14 @@ export const jobRouter = router({
       await ensureMechanicCanMutateJob(input.jobId, ctx.user.id, ctx.user.role);
 
       try {
-        const job = await prisma.job.update({
-          where: { id: input.jobId },
-          data: {
-            photos: {
-              create: {
-                url: input.photoUrl,
-                description: input.description,
-                mechanicId: input.mechanicId,
-              }
-            }
-          },
+        const photo = await createJobPhotoRecord({
+          jobId: input.jobId,
+          mechanicId: input.mechanicId,
+          photoUrl: input.photoUrl,
+          description: input.description,
         });
         
-        return { success: true, job };
+        return { success: true, photo };
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
