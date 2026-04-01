@@ -43,6 +43,10 @@ yarn-error.*
 all_prs.json
 open_prs.json
 pr*.diff
+*.diff
+*.log
 logs/
+coverage/
+*.backup
 android/
 scripts/sync-git.sh
