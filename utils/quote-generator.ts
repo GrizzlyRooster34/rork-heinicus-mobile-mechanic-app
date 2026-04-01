@@ -66,14 +66,16 @@ export function generateSmartQuote(
   // Location-based travel fee
   let travelFee = 0;
   if (options.location) {
-    // Mock calculation - in production, calculate distance from mechanic location
-    // For now, add a base travel fee
-    travelFee = 25; // Base $25 travel fee
+    // AI Studio Port: Travel Fee Tier System
+    // In production, calculate real distance. For now, mock it.
+    const mockDistance = Math.random() * 30; // 0-30 miles
     
-    // Add distance-based fee (mock calculation)
-    const mockDistance = Math.random() * 20; // 0-20 miles
-    if (mockDistance > 10) {
-      travelFee += (mockDistance - 10) * 2; // $2 per mile over 10 miles
+    if (mockDistance > 20) {
+      travelFee = 70; // Tier 3
+    } else if (mockDistance > 10) {
+      travelFee = 45; // Tier 2
+    } else {
+      travelFee = 25; // Tier 1
     }
   }
   
@@ -81,7 +83,7 @@ export function generateSmartQuote(
   switch (options.urgency) {
     case 'emergency':
       laborRate *= 1.5;
-      travelFee *= 1.5; // Emergency travel fee
+      travelFee *= 1.5; // Emergency travel fee markup
       break;
     case 'high':
       laborRate *= 1.25;

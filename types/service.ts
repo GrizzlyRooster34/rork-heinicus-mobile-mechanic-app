@@ -68,12 +68,16 @@ export type ServiceType =
 export type ServiceStatus = 
   | 'pending'
   | 'quoted'
-  | 'accepted'
-  | 'scheduled'
-  | 'in_progress'
-  | 'paused'
+  | 'assigned'
+  | 'en_route'
+  | 'working'
+  | 'awaiting_payment'
   | 'completed'
-  | 'cancelled';
+  | 'cancelled'
+  | 'scheduled'
+  | 'accepted'
+  | 'in_progress'
+  | 'paused';
 
 export type QuoteStatus = 
   | 'pending'
