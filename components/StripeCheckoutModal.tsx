@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { CardField, useConfirmPayment } from '@stripe/stripe-react-native';
+import { CardField, useConfirmPayment, CardFieldInput } from '@stripe/stripe-react-native';
 import * as Icons from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { trpc } from '@/lib/trpc';
@@ -130,7 +130,7 @@ export function StripeCheckoutModal({
                 borderRadius: 12,
               }}
               style={styles.cardField}
-              onCardChange={(card) => setIsCardComplete(Boolean(card.complete))}
+              onCardChange={(card: CardFieldInput.Details) => setIsCardComplete(Boolean(card.complete))}
             />
             <Text style={styles.cardHelpText}>
               Test card: 4242 4242 4242 4242, any future date, any CVC.
