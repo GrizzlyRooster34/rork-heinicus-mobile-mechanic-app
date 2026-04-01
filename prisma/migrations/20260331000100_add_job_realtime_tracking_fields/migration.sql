@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Job"
+ADD COLUMN "currentLatitude" DOUBLE PRECISION,
+ADD COLUMN "currentLongitude" DOUBLE PRECISION,
+ADD COLUMN "eta" TIMESTAMP(3);

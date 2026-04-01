@@ -136,6 +136,9 @@ model Job {
   address         String
   latitude        Float?
   longitude       Float?
+  currentLatitude Float?
+  currentLongitude Float?
+  eta             DateTime?
 
   scheduledDate   DateTime?
   partsApproved   Boolean   @default(false)

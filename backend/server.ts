@@ -1,6 +1,8 @@
-import { serve } from '@hono/node-server';
+import { getRequestListener } from '@hono/node-server';
+import { createServer } from 'node:http';
 import { Hono } from 'hono';
 import apiApp from './hono';
+import { createRealtimeServer } from './websocket/server';
 
 const app = new Hono();
 
@@ -16,10 +18,12 @@ app.get('/', (c) => {
 });
 
 const port = Number(process.env.PORT || 3000);
+const requestListener = getRequestListener(app.fetch);
+const server = createServer(requestListener);
 
-console.log(`Heinicus API listening on http://localhost:${port}`);
+createRealtimeServer(server);
 
-serve({
-  fetch: app.fetch,
-  port,
+server.listen(port, () => {
+  console.log(`Heinicus API listening on http://localhost:${port}`);
+  console.log(`Heinicus realtime server ready on ws://localhost:${port}`);
 });
