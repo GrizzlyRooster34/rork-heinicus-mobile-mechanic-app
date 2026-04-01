@@ -6,6 +6,7 @@ import * as Icons from 'lucide-react-native';
 import { Platform } from 'react-native';
 import { JobPhoto } from '@/types/service';
 import { uploadImageAsync } from '@/lib/storage';
+import { isFirebaseConfigured } from '@/utils/firebase-config';
 
 interface JobPhotoUploadProps {
   jobId: string;
@@ -43,6 +44,11 @@ export function JobPhotoUpload({
   };
 
   const pickImage = async () => {
+    if (!isFirebaseConfigured) {
+      Alert.alert('Uploads Unavailable', 'Configure Firebase Storage to enable job photo uploads.');
+      return;
+    }
+
     if (photos.length >= maxPhotos) {
       Alert.alert('Limit Reached', `You can only upload up to ${maxPhotos} photos.`);
       return;
@@ -82,6 +88,11 @@ export function JobPhotoUpload({
   };
 
   const takePhoto = async () => {
+    if (!isFirebaseConfigured) {
+      Alert.alert('Uploads Unavailable', 'Configure Firebase Storage to enable job photo uploads.');
+      return;
+    }
+
     if (photos.length >= maxPhotos) {
       Alert.alert('Limit Reached', `You can only upload up to ${maxPhotos} photos.`);
       return;
@@ -193,7 +204,9 @@ export function JobPhotoUpload({
       <View style={styles.header}>
         <Text style={styles.title}>Job Photos ({photos.length}/{maxPhotos})</Text>
         <Text style={styles.subtitle}>
-          Document your work progress with photos
+          {isFirebaseConfigured
+            ? 'Document your work progress with photos'
+            : 'Configure Firebase Storage to enable photo uploads'}
         </Text>
       </View>
 
@@ -249,14 +262,23 @@ export function JobPhotoUpload({
       <TouchableOpacity
         style={[styles.addButton, isUploading && styles.addButtonDisabled]}
         onPress={showPhotoOptions}
-        disabled={isUploading || photos.length >= maxPhotos}
+        disabled={isUploading || photos.length >= maxPhotos || !isFirebaseConfigured}
       >
-        <Icons.Camera size={24} color={photos.length >= maxPhotos ? Colors.textMuted : Colors.primary} />
+        <Icons.Camera
+          size={24}
+          color={photos.length >= maxPhotos || !isFirebaseConfigured ? Colors.textMuted : Colors.primary}
+        />
         <Text style={[
           styles.addButtonText,
-          photos.length >= maxPhotos && styles.addButtonTextDisabled
+          (photos.length >= maxPhotos || !isFirebaseConfigured) && styles.addButtonTextDisabled
         ]}>
-          {isUploading ? 'Uploading...' : photos.length >= maxPhotos ? 'Photo limit reached' : 'Add Job Photo'}
+          {isUploading
+            ? 'Uploading...'
+            : !isFirebaseConfigured
+              ? 'Uploads unavailable'
+              : photos.length >= maxPhotos
+                ? 'Photo limit reached'
+                : 'Add Job Photo'}
         </Text>
       </TouchableOpacity>
 

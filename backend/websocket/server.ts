@@ -4,6 +4,7 @@ import { UserRole } from '@prisma/client';
 import { extractToken, verifyToken, verifyUserStatus } from '../middleware/auth';
 import { registerJobTrackingEvents } from './events/job-tracking';
 import { registerMessageEvents } from './events/messaging';
+import { setRealtimeServer } from './runtime';
 
 type AuthenticatedSocketUser = {
   userId: string;
@@ -77,6 +78,8 @@ export function createRealtimeServer(httpServer: HttpServer) {
       console.log(`WebSocket client disconnected: ${user.email} (${reason})`);
     });
   });
+
+  setRealtimeServer(io);
 
   return io;
 }

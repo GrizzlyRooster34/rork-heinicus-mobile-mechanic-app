@@ -345,3 +345,6 @@ export async function sendNewMessageNotification(
     data: { jobId, messageId, senderName },
   });
 }
+
+export const savePushToken = registerPushToken;
+export const sendJobStatusNotification = sendJobUpdateNotification;

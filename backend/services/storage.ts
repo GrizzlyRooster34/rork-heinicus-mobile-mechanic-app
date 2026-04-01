@@ -62,3 +62,6 @@ export async function deleteJobPhoto(photoId: string, actorId: string, actorRole
 
   return { success: true };
 }
+
+export const uploadPhoto = createJobPhotoRecord;
+export const deletePhoto = deleteJobPhoto;

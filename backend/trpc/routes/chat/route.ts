@@ -3,6 +3,7 @@ import { protectedProcedure, router } from '../../trpc';
 import { prisma } from '@/lib/prisma';
 import { TRPCError } from '@trpc/server';
 import { UserRole } from '@prisma/client';
+import { emitToJobRoom } from '@/backend/websocket/runtime';
 
 const assertChatAccess = async (jobId: string, userId: string, role: UserRole) => {
   const job = await prisma.job.findUnique({
@@ -95,6 +96,11 @@ export const chatRouter = router({
           senderType: sender.role,
           message: input.message,
         },
+      });
+
+      emitToJobRoom(input.jobId, 'message:new', {
+        message,
+        timestamp: new Date().toISOString(),
       });
 
       return { success: true, message };

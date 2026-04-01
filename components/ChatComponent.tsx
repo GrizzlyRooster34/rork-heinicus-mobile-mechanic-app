@@ -15,6 +15,7 @@ import * as Icons from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { trpc } from '@/lib/trpc';
 import { ChatMessage } from '@/types/service';
+import { useRealTimeChat } from '@/hooks/useRealTimeChat';
 
 interface ChatComponentProps {
   serviceRequestId: string;
@@ -36,30 +37,10 @@ export function ChatComponent({
     { jobId: serviceRequestId },
     {
       enabled: Boolean(serviceRequestId),
-      refetchInterval: 4000,
     }
   );
   const sendMessageMutation = trpc.chat.send.useMutation();
   const markReadMutation = trpc.chat.markRead.useMutation();
-
-  useEffect(() => {
-    const hasUnreadMessagesFromOthers = (chatQuery.data?.messages ?? []).some(
-      (message) => !message.isRead && message.senderId !== currentUserId
-    );
-
-    if (!hasUnreadMessagesFromOthers || markReadMutation.isPending) {
-      return;
-    }
-
-    markReadMutation.mutate(
-      { jobId: serviceRequestId },
-      {
-        onSuccess: () => {
-          void utils.chat.listByJob.invalidate({ jobId: serviceRequestId });
-        },
-      }
-    );
-  }, [chatQuery.data?.messages, currentUserId, markReadMutation, serviceRequestId, utils.chat.listByJob]);
 
   const messages = useMemo<ChatMessage[]>(
     () =>
@@ -75,6 +56,30 @@ export function ChatComponent({
       })),
     [chatQuery.data?.messages, serviceRequestId]
   );
+  const { messages: liveMessages, isConnected, isOtherUserTyping, setTyping } = useRealTimeChat(
+    serviceRequestId,
+    messages,
+    currentUserId
+  );
+
+  useEffect(() => {
+    const hasUnreadMessagesFromOthers = liveMessages.some(
+      (message) => !message.isRead && message.senderId !== currentUserId
+    );
+
+    if (!hasUnreadMessagesFromOthers || markReadMutation.isPending) {
+      return;
+    }
+
+    markReadMutation.mutate(
+      { jobId: serviceRequestId },
+      {
+        onSuccess: () => {
+          void utils.chat.listByJob.invalidate({ jobId: serviceRequestId });
+        },
+      }
+    );
+  }, [currentUserId, liveMessages, markReadMutation, serviceRequestId, utils.chat.listByJob]);
 
   const sendMessage = async () => {
     const trimmedMessage = newMessage.trim();
@@ -89,6 +94,7 @@ export function ChatComponent({
       });
 
       setNewMessage('');
+      setTyping(false);
       await utils.chat.listByJob.invalidate({ jobId: serviceRequestId });
 
       setTimeout(() => {
@@ -134,12 +140,12 @@ export function ChatComponent({
           showsVerticalScrollIndicator={false}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
-          {messages.length === 0 ? (
+          {liveMessages.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>No messages yet. Start the conversation.</Text>
             </View>
           ) : (
-            messages.map((message) => (
+            liveMessages.map((message) => (
               <View
                 key={message.id}
                 style={[
@@ -174,6 +180,12 @@ export function ChatComponent({
               </View>
             ))
           )}
+          {isOtherUserTyping && (
+            <View style={styles.typingRow}>
+              <Icons.Ellipsis size={16} color={Colors.textMuted} />
+              <Text style={styles.typingText}>Typing...</Text>
+            </View>
+          )}
         </ScrollView>
       )}
 
@@ -181,7 +193,10 @@ export function ChatComponent({
         <TextInput
           style={styles.textInput}
           value={newMessage}
-          onChangeText={setNewMessage}
+          onChangeText={(value) => {
+            setNewMessage(value);
+            setTyping(value.trim().length > 0);
+          }}
           placeholder={placeholder}
           placeholderTextColor={Colors.textMuted}
           multiline
@@ -200,6 +215,12 @@ export function ChatComponent({
             color={(!newMessage.trim() || sendMessageMutation.isPending) ? Colors.textMuted : Colors.white}
           />
         </TouchableOpacity>
+      </View>
+      <View style={styles.connectionStatus}>
+        <Icons.Radio size={10} color={isConnected ? Colors.success : Colors.textMuted} />
+        <Text style={styles.connectionStatusText}>
+          {isConnected ? 'Realtime connected' : 'Realtime reconnecting'}
+        </Text>
       </View>
     </KeyboardAvoidingView>
   );
@@ -298,6 +319,16 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 12,
   },
+  typingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  typingText: {
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
   textInput: {
     flex: 1,
     backgroundColor: Colors.surface,
@@ -320,5 +351,17 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: Colors.surface,
+  },
+  connectionStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingBottom: 12,
+    backgroundColor: Colors.card,
+  },
+  connectionStatusText: {
+    fontSize: 12,
+    color: Colors.textMuted,
   },
 });

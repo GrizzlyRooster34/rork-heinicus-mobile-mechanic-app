@@ -5,6 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import { Colors } from '@/constants/colors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc, trpcClient } from '@/lib/trpc';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 export const unstable_settings = {
   initialRouteName: 'auth',
@@ -24,6 +26,7 @@ const queryClient = new QueryClient({
 
 function AppContent() {
   const [isReady, setIsReady] = useState(false);
+  usePushNotifications();
 
   useEffect(() => {
     async function prepare() {
@@ -70,11 +73,18 @@ function AppContent() {
 }
 
 export default function RootLayout() {
-  return (
+  const content = (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <AppContent />
       </QueryClientProvider>
     </trpc.Provider>
   );
+
+  const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  if (!stripePublishableKey) {
+    return content;
+  }
+
+  return <StripeProvider publishableKey={stripePublishableKey}>{content}</StripeProvider>;
 }

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { JobStatus, UserRole } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { createJobPhotoRecord } from '@/backend/services/storage';
+import { emitToJobRoom } from '@/backend/websocket/runtime';
 
 const isAdminOrMechanic = (role: UserRole) => role === UserRole.ADMIN || role === UserRole.MECHANIC;
 const isAdminOrCustomer = (role: UserRole) => role === UserRole.ADMIN || role === UserRole.CUSTOMER;
@@ -336,6 +337,18 @@ export const jobRouter = router({
           data: {
             status: statusMap[input.status],
           },
+        });
+
+        emitToJobRoom(input.jobId, 'job:status-updated', {
+          jobId: input.jobId,
+          status: job.status,
+          job,
+          updatedBy: {
+            userId: ctx.user.id,
+            email: ctx.user.email,
+            role: ctx.user.role,
+          },
+          timestamp: new Date().toISOString(),
         });
         
         return { success: true, job };
