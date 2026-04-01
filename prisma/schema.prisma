@@ -108,6 +108,8 @@ model User {
   diagnoses         DiagnosisResult[]
   chatMessages      ChatMessage[]
   customerPayments  Payment[] @relation("CustomerPayments")
+  submittedReviews  Review[]  @relation("SubmittedReviews")
+  receivedReviews   Review[]  @relation("ReceivedReviews")
 
   @@index([email])
 }
@@ -188,6 +190,7 @@ model Job {
   quotes          Quote[]
   chatMessages    ChatMessage[]
   payments        Payment[]
+  reviews         Review[]
 
   @@index([customerId])
   @@index([mechanicId])
@@ -418,6 +421,32 @@ model Payment {
   @@index([jobId, createdAt])
   @@index([customerId, createdAt])
   @@index([quoteId])
+}
+
+model Review {
+  id                  String   @id @default(cuid())
+  jobId               String
+  job                 Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  reviewerId          String
+  reviewer            User     @relation("SubmittedReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+  revieweeId          String
+  reviewee            User     @relation("ReceivedReviews", fields: [revieweeId], references: [id], onDelete: Cascade)
+  rating              Int
+  comment             String?
+  photos              String[]
+  punctualityRating   Int?
+  qualityRating       Int?
+  communicationRating Int?
+  valueRating         Int?
+  isVerified          Boolean  @default(true)
+  isHidden            Boolean  @default(false)
+  reportCount         Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([jobId, reviewerId])
+  @@index([revieweeId, createdAt])
+  @@index([jobId])
 }
 
 model ChatMessage {

@@ -12,6 +12,7 @@ import { chatRouter } from './routes/chat/route';
 import { customerRouter } from './routes/customer/route';
 import { photosRouter } from './routes/photos/route';
 import { paymentRouter } from './routes/payment/route';
+import { reviewsRouter } from './routes/reviews/route';
 
 export const appRouter = router({
   example: router({
@@ -29,6 +30,7 @@ export const appRouter = router({
   customer: customerRouter,
   photos: photosRouter,
   payment: paymentRouter,
+  reviews: reviewsRouter,
 });
 
 export type AppRouter = typeof appRouter;
