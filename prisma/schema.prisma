@@ -51,6 +51,19 @@ enum VehicleType {
   SCOOTER
 }
 
+enum NotificationType {
+  JOB_UPDATE
+  NEW_MESSAGE
+  QUOTE_RECEIVED
+  QUOTE_ACCEPTED
+  PAYMENT_RECEIVED
+  JOB_COMPLETED
+  MECHANIC_ASSIGNED
+  MECHANIC_EN_ROUTE
+  SYSTEM_ALERT
+  REVIEW_REQUEST
+}
+
 model User {
   id                String    @id @default(cuid())
   email             String    @unique
@@ -79,6 +92,8 @@ model User {
   pricingProfile    PricingProfile?
   tools             Tool[]
   notificationPrefs NotificationPref?
+  notifications     Notification[]
+  pushTokens        PushToken[]
   verifications     VerificationSubmission[]
   quotesCreated     Quote[]   @relation("QuoteCreator")
   diagnoses         DiagnosisResult[]
@@ -336,6 +351,41 @@ model NotificationPref {
   push        Boolean  @default(true)
   sms         Boolean  @default(false)
   marketing   Boolean  @default(false)
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String
+  deviceId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  jobId     String?
+  messageId String?
+  quoteId   String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([userId, read, createdAt])
+  @@index([jobId])
+  @@index([quoteId])
+  @@index([messageId])
 }
 
 model ChatMessage {
