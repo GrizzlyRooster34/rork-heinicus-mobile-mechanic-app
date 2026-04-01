@@ -14,6 +14,10 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   SMTP_SECURE: z.enum(['true', 'false']).default('false'),
   EMAIL_FROM_ADDRESS: z.string().email().optional(),
+
+  // Stripe
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
 });
 
 if (!process.env.JWT_SECRET) {
@@ -35,6 +39,8 @@ const env = {
   SMTP_PASS: process.env.SMTP_PASS,
   SMTP_SECURE: process.env.SMTP_SECURE as 'true' | 'false' | undefined,
   EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
 };
 
 export const validatedEnv = envSchema.parse(env);

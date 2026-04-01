@@ -102,3 +102,14 @@ export async function syncPaymentStatus(paymentIntentId: string) {
     payment,
   };
 }
+
+export function verifyWebhookSignature(payload: string | Buffer, signature: string) {
+  const stripeClient = assertStripeClient();
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
+  }
+
+  return stripeClient.webhooks.constructEvent(payload, signature, webhookSecret);
+}
