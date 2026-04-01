@@ -5,14 +5,20 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { devMode, isDevCredentials, getDevUser } from '@/utils/dev';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'heinicus-mobile-mechanic-app-jwt-secret-key-2025-very-secure-and-long-at-least-64-chars';
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
+  return secret;
+};
 const JWT_EXPIRES_IN = '7d'; // 7 days
 
 // Helper function to generate JWT token
 function generateToken(user: { id: string; email: string; role: string }) {
   return jwt.sign(
     { userId: user.id, email: user.email, role: user.role },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: JWT_EXPIRES_IN }
   );
 }
@@ -20,7 +26,7 @@ function generateToken(user: { id: string; email: string; role: string }) {
 // Helper function to verify JWT token
 function verifyToken(token: string) {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string; role: string };
+    return jwt.verify(token, getJwtSecret()) as { userId: string; email: string; role: string };
   } catch (error) {
     return null;
   }
