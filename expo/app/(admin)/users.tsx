@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Modal,
+} from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
 import { User } from '@/types/auth';
@@ -12,7 +20,10 @@ export default function AdminUsersScreen() {
 
   const allUsers = getAllUsers();
 
-  const handleRoleChange = async (userId: string, newRole: 'CUSTOMER' | 'MECHANIC' | 'ADMIN') => {
+  const handleRoleChange = async (
+    userId: string,
+    newRole: 'CUSTOMER' | 'MECHANIC' | 'ADMIN'
+  ) => {
     const success = await updateUserRole(userId, newRole);
     if (success) {
       Alert.alert('Success', 'User role updated successfully');
@@ -25,19 +36,27 @@ export default function AdminUsersScreen() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'ADMIN': return Colors.error;
-      case 'MECHANIC': return Colors.mechanic;
-      case 'CUSTOMER': return Colors.primary;
-      default: return Colors.textMuted;
+      case 'ADMIN':
+        return Colors.error;
+      case 'MECHANIC':
+        return Colors.mechanic;
+      case 'CUSTOMER':
+        return Colors.primary;
+      default:
+        return Colors.textMuted;
     }
   };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'ADMIN': return <Icons.Shield size={16} color={getRoleColor(role)} />;
-      case 'MECHANIC': return <Icons.Wrench size={16} color={getRoleColor(role)} />;
-      case 'CUSTOMER': return <Icons.User size={16} color={getRoleColor(role)} />;
-      default: return <Icons.User size={16} color={getRoleColor(role)} />;
+      case 'ADMIN':
+        return <Icons.Shield size={16} color={getRoleColor(role)} />;
+      case 'MECHANIC':
+        return <Icons.Wrench size={16} color={getRoleColor(role)} />;
+      case 'CUSTOMER':
+        return <Icons.User size={16} color={getRoleColor(role)} />;
+      default:
+        return <Icons.User size={16} color={getRoleColor(role)} />;
     }
   };
 
@@ -62,64 +81,77 @@ export default function AdminUsersScreen() {
         </Text>
       </View>
 
-      <ScrollView style={styles.usersList} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          {allUsers.map((userData) => (
-            <View key={userData.id} style={styles.userCard}>
-              <View style={styles.userInfo}>
-                <View style={styles.userAvatar}>
-                  <Text style={styles.userAvatarText}>
-                    {userData.firstName?.[0]}{userData.lastName?.[0]}
-                  </Text>
-                </View>
-                
-                <View style={styles.userDetails}>
-                  <Text style={styles.userName}>
-                    {userData.firstName} {userData.lastName}
-                  </Text>
-                  <Text style={styles.userEmail}>{userData.email}</Text>
-                  <Text style={styles.userDate}>
-                    Joined {userData.createdAt.toLocaleDateString()}
-                  </Text>
-                </View>
+      {/* ⚡ Bolt Performance Optimization:
+          Replaced ScrollView + .map() with FlatList.
+          FlatList only renders items currently visible on screen plus a small buffer,
+          significantly reducing memory footprint and main thread blocking during initial render
+          compared to ScrollView which mounts all items synchronously. */}
+      <FlatList
+        data={allUsers}
+        keyExtractor={item => item.id}
+        style={styles.usersList}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item: userData }) => (
+          <View style={styles.userCard}>
+            <View style={styles.userInfo}>
+              <View style={styles.userAvatar}>
+                <Text style={styles.userAvatarText}>
+                  {userData.firstName?.[0]}
+                  {userData.lastName?.[0]}
+                </Text>
               </View>
 
-              <View style={styles.userActions}>
-                <View style={[
-                  styles.roleBadge,
-                  { backgroundColor: getRoleColor(userData.role) + '20' }
-                ]}>
-                  {getRoleIcon(userData.role)}
-                  <Text style={[
-                    styles.roleText,
-                    { color: getRoleColor(userData.role) }
-                  ]}>
-                    {userData.role}
-                  </Text>
-                </View>
-
-                {userData.id !== user.id && (
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() => {
-                      setSelectedUser(userData);
-                      setShowRoleModal(true);
-                    }}
-                  >
-                    <Icons.Edit2 size={16} color={Colors.primary} />
-                  </TouchableOpacity>
-                )}
+              <View style={styles.userDetails}>
+                <Text style={styles.userName}>
+                  {userData.firstName} {userData.lastName}
+                </Text>
+                <Text style={styles.userEmail}>{userData.email}</Text>
+                <Text style={styles.userDate}>
+                  Joined {userData.createdAt.toLocaleDateString()}
+                </Text>
               </View>
             </View>
-          ))}
-        </View>
-      </ScrollView>
+
+            <View style={styles.userActions}>
+              <View
+                style={[
+                  styles.roleBadge,
+                  { backgroundColor: getRoleColor(userData.role) + '20' },
+                ]}
+              >
+                {getRoleIcon(userData.role)}
+                <Text
+                  style={[
+                    styles.roleText,
+                    { color: getRoleColor(userData.role) },
+                  ]}
+                >
+                  {userData.role}
+                </Text>
+              </View>
+
+              {userData.id !== user?.id && (
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => {
+                    setSelectedUser(userData);
+                    setShowRoleModal(true);
+                  }}
+                >
+                  <Icons.Edit2 size={16} color={Colors.primary} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+      />
 
       {/* Role Change Modal */}
       <Modal
         visible={showRoleModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        animationType='slide'
+        presentationStyle='pageSheet'
         onRequestClose={() => setShowRoleModal(false)}
       >
         <View style={styles.modalContainer}>
@@ -136,7 +168,9 @@ export default function AdminUsersScreen() {
                 <Text style={styles.selectedUserName}>
                   {selectedUser.firstName} {selectedUser.lastName}
                 </Text>
-                <Text style={styles.selectedUserEmail}>{selectedUser.email}</Text>
+                <Text style={styles.selectedUserEmail}>
+                  {selectedUser.email}
+                </Text>
                 <Text style={styles.currentRole}>
                   Current role: {selectedUser.role}
                 </Text>
@@ -145,12 +179,12 @@ export default function AdminUsersScreen() {
               <Text style={styles.roleSelectionTitle}>Select new role:</Text>
 
               <View style={styles.roleOptions}>
-                {['CUSTOMER', 'MECHANIC', 'ADMIN'].map((role) => (
+                {['CUSTOMER', 'MECHANIC', 'ADMIN'].map(role => (
                   <TouchableOpacity
                     key={role}
                     style={[
                       styles.roleOption,
-                      selectedUser.role === role && styles.currentRoleOption
+                      selectedUser.role === role && styles.currentRoleOption,
                     ]}
                     onPress={() => {
                       if (role !== selectedUser.role) {
@@ -161,8 +195,9 @@ export default function AdminUsersScreen() {
                             { text: 'Cancel', style: 'cancel' },
                             {
                               text: 'Confirm',
-                              onPress: () => handleRoleChange(selectedUser.id, role as any)
-                            }
+                              onPress: () =>
+                                handleRoleChange(selectedUser.id, role as any),
+                            },
                           ]
                         );
                       }
@@ -171,10 +206,12 @@ export default function AdminUsersScreen() {
                   >
                     <View style={styles.roleOptionContent}>
                       {getRoleIcon(role)}
-                      <Text style={[
-                        styles.roleOptionText,
-                        { color: getRoleColor(role) }
-                      ]}>
+                      <Text
+                        style={[
+                          styles.roleOptionText,
+                          { color: getRoleColor(role) },
+                        ]}
+                      >
                         {role.charAt(0).toUpperCase() + role.slice(1)}
                       </Text>
                     </View>
