@@ -3,27 +3,36 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Image } fr
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
 import { SERVICE_CATEGORIES } from '@/constants/services';
-import { Quote } from '@/types/service';
 import { ChatComponent } from '@/components/ChatComponent';
-import { PaymentModal } from '@/components/PaymentModal';
+import { StripeCheckoutModal } from '@/components/StripeCheckoutModal';
 import { trpc } from '@/lib/trpc';
 import * as Icons from 'lucide-react-native';
+import { LiveJobStatus } from '@/components/LiveJobStatus';
+import { ReviewSubmissionModal } from '@/components/ReviewSubmissionModal';
 
 export default function CustomerQuotesScreen() {
   const { user } = useAuthStore();
   const utils = trpc.useUtils();
   const { data: jobsData, isLoading: jobsLoading } = trpc.job.getAll.useQuery();
   const { data: quotesData, isLoading: quotesLoading } = trpc.quote.listMine.useQuery();
+  const { data: pendingReviewsData } = trpc.reviews.getPendingReviews.useQuery(undefined, {
+    enabled: Boolean(user?.id),
+  });
   const markPaidMutation = trpc.quote.markPaid.useMutation();
   const declineQuoteMutation = trpc.quote.decline.useMutation();
+  const submitReviewMutation = trpc.reviews.submitReview.useMutation();
   const jobs = jobsData?.jobs ?? [];
   const quotes = quotesData?.quotes ?? [];
+  const pendingReviews = pendingReviewsData?.pendingReviews ?? [];
   const isLoading = jobsLoading || quotesLoading;
   type JobItem = typeof jobs[number];
   type QuoteItem = typeof quotes[number];
   const [selectedRequestForChat, setSelectedRequestForChat] = React.useState<string | null>(null);
-  const [selectedQuoteForPayment, setSelectedQuoteForPayment] = React.useState<Quote | null>(null);
-  const [selectedBackendQuoteId, setSelectedBackendQuoteId] = React.useState<string | null>(null);
+  const [selectedPaymentContext, setSelectedPaymentContext] = React.useState<{
+    jobId: string;
+    quote: QuoteItem;
+  } | null>(null);
+  const [selectedReviewJobId, setSelectedReviewJobId] = React.useState<string | null>(null);
 
   const getServiceTitle = (type: string) => {
     return SERVICE_CATEGORIES.find(s => s.id === type)?.title || type;
@@ -74,20 +83,6 @@ export default function CustomerQuotesScreen() {
     return quote.status;
   };
 
-  const mapQuoteForPayment = (quote: QuoteItem): Quote => ({
-    id: quote.id,
-    serviceRequestId: quote.jobId ?? '',
-    description: quote.description ?? undefined,
-    laborCost: quote.laborCost,
-    partsCost: quote.partsCost,
-    totalCost: quote.totalCost,
-    estimatedDuration: quote.estimatedDuration,
-    validUntil: quote.validUntil,
-    status: quote.status.toLowerCase() as Quote['status'],
-    createdAt: quote.createdAt,
-    createdBy: quote.createdBy,
-  });
-
   const handleAcceptQuote = (quoteId: string) => {
     const quote = quotes.find((q: QuoteItem) => q.id === quoteId);
     if (!quote) return;
@@ -100,8 +95,10 @@ export default function CustomerQuotesScreen() {
         {
           text: 'Accept & Pay',
           onPress: () => {
-            setSelectedBackendQuoteId(quote.id);
-            setSelectedQuoteForPayment(mapQuoteForPayment(quote));
+            setSelectedPaymentContext({
+              jobId: quote.jobId ?? '',
+              quote,
+            });
           }
         }
       ]
@@ -109,18 +106,35 @@ export default function CustomerQuotesScreen() {
   };
 
   const handlePaymentSuccess = async () => {
-    if (!selectedBackendQuoteId) return;
+    if (!selectedPaymentContext) return;
 
     try {
-      await markPaidMutation.mutateAsync({ quoteId: selectedBackendQuoteId });
+      await markPaidMutation.mutateAsync({ quoteId: selectedPaymentContext.quote.id });
       await utils.quote.listMine.invalidate();
       await utils.job.getAll.invalidate();
-      setSelectedBackendQuoteId(null);
-      setSelectedQuoteForPayment(null);
-      Alert.alert('Payment Successful', 'Your payment has been processed. We will contact you to schedule the service.');
+      setSelectedPaymentContext(null);
+      Alert.alert('Payment Successful', 'Your payment is complete. The job is now ready to schedule or start.');
     } catch (error) {
       Alert.alert('Payment Failed', 'Unable to finalize payment. Please try again.');
     }
+  };
+
+  const getPendingReview = (jobId: string) => pendingReviews.find((review) => review.jobId === jobId);
+
+  const handleSubmitReview = async (input: { rating: number; comment?: string }) => {
+    if (!selectedReviewJobId) {
+      return;
+    }
+
+    await submitReviewMutation.mutateAsync({
+      jobId: selectedReviewJobId,
+      rating: input.rating,
+      comment: input.comment,
+    });
+
+    await utils.reviews.getPendingReviews.invalidate();
+    setSelectedReviewJobId(null);
+    Alert.alert('Review Submitted', 'Thanks. Your feedback is now attached to this job.');
   };
 
   const handleDeclineQuote = (quoteId: string) => {
@@ -219,6 +233,12 @@ export default function CustomerQuotesScreen() {
                   </View>
                 </View>
 
+                <LiveJobStatus
+                  jobId={job.id}
+                  initialStatus={displayStatus}
+                  initialEta={job.eta}
+                />
+
                 <Text style={styles.requestDescription} numberOfLines={2}>
                   {job.description}
                 </Text>
@@ -257,6 +277,15 @@ export default function CustomerQuotesScreen() {
                     <Icons.MessageCircle size={16} color={Colors.primary} />
                     <Text style={styles.chatButtonText}>Chat</Text>
                   </TouchableOpacity>
+                  {job.status === 'COMPLETED' && getPendingReview(job.id) && (
+                    <TouchableOpacity
+                      style={styles.reviewButton}
+                      onPress={() => setSelectedReviewJobId(job.id)}
+                    >
+                      <Icons.Star size={16} color={Colors.warning} />
+                      <Text style={styles.reviewButtonText}>Leave Review</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 {requestQuote && (
@@ -325,14 +354,34 @@ export default function CustomerQuotesScreen() {
       </ScrollView>
 
       {/* Payment Modal */}
-      {selectedQuoteForPayment && (
-        <PaymentModal
-          quote={selectedQuoteForPayment}
+      {selectedPaymentContext && (
+        <StripeCheckoutModal
+          visible
+          jobId={selectedPaymentContext.jobId}
+          quoteId={selectedPaymentContext.quote.id}
+          amount={selectedPaymentContext.quote.totalCost}
+          description={selectedPaymentContext.quote.description ?? undefined}
           onSuccess={handlePaymentSuccess}
-          onCancel={() => {
-            setSelectedQuoteForPayment(null);
-            setSelectedBackendQuoteId(null);
-          }}
+          onCancel={() => setSelectedPaymentContext(null)}
+        />
+      )}
+
+      {selectedReviewJobId && getPendingReview(selectedReviewJobId) && (
+        <ReviewSubmissionModal
+          visible
+          serviceLabel={getServiceTitle(
+            jobs.find((job) => job.id === selectedReviewJobId)?.serviceType ?? 'service'
+          )}
+          revieweeName={(() => {
+            const pendingReview = getPendingReview(selectedReviewJobId);
+            if (!pendingReview?.reviewee) {
+              return 'your mechanic';
+            }
+
+            return `${pendingReview.reviewee.firstName} ${pendingReview.reviewee.lastName}`.trim();
+          })()}
+          onCancel={() => setSelectedReviewJobId(null)}
+          onSubmit={handleSubmitReview}
         />
       )}
     </>
@@ -458,6 +507,7 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     gap: 8,
+    flexWrap: 'wrap',
     marginBottom: 8,
   },
   chatButton: {
@@ -473,6 +523,22 @@ const styles = StyleSheet.create({
   },
   chatButtonText: {
     color: Colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  reviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.warning + '20',
+    borderWidth: 1,
+    borderColor: Colors.warning,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    gap: 6,
+  },
+  reviewButtonText: {
+    color: Colors.warning,
     fontSize: 12,
     fontWeight: '600',
   },

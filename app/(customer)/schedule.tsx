@@ -6,6 +6,7 @@ import { AvailabilityCalendar } from '@/components/AvailabilityCalendar';
 import { router } from 'expo-router';
 import * as Icons from 'lucide-react-native';
 import { trpc } from '@/lib/trpc';
+import { LiveJobStatus } from '@/components/LiveJobStatus';
 
 export default function ScheduleScreen() {
   const utils = trpc.useUtils();
@@ -106,6 +107,11 @@ export default function ScheduleScreen() {
             <Text style={styles.serviceDetails}>
               {pendingRequests[0].description}
             </Text>
+            <LiveJobStatus
+              jobId={pendingRequests[0].id}
+              initialStatus={pendingRequests[0].status}
+              initialEta={pendingRequests[0].eta}
+            />
           </View>
         </View>
 

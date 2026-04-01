@@ -21,6 +21,12 @@ export default function MechanicProfileScreen() {
   const { data: jobsData } = trpc.job.getAll.useQuery(undefined, {
     enabled: !!user?.id,
   });
+  const { data: reviewSummary } = trpc.reviews.getMechanicReviewSummary.useQuery(
+    { mechanicId: user?.id ?? '' },
+    {
+      enabled: Boolean(user?.id),
+    }
+  );
   const jobs = jobsData?.jobs ?? [];
 
   // Get verification status
@@ -39,7 +45,8 @@ export default function MechanicProfileScreen() {
     .flatMap((job) => job.quotes)
     .filter((quote) => quote.status === 'PAID')
     .reduce((sum, quote) => sum + quote.totalCost, 0);
-  const averageRating = 4.8; // Mock rating
+  const averageRating = reviewSummary?.averageRating ?? 0;
+  const totalReviews = reviewSummary?.totalReviews ?? 0;
 
   const handleLogout = () => {
     Alert.alert(
@@ -314,8 +321,10 @@ export default function MechanicProfileScreen() {
           
           <View style={styles.statCard}>
             <Icons.Star size={24} color={Colors.warning} />
-            <Text style={styles.statNumber}>{averageRating}</Text>
-            <Text style={styles.statLabel}>Average Rating</Text>
+            <Text style={styles.statNumber}>{totalReviews > 0 ? averageRating.toFixed(1) : '--'}</Text>
+            <Text style={styles.statLabel}>
+              {totalReviews > 0 ? `Rating (${totalReviews})` : 'No Reviews Yet'}
+            </Text>
           </View>
         </View>
       </View>

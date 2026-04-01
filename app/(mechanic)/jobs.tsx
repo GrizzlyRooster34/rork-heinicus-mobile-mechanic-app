@@ -4,15 +4,15 @@ import { Colors } from '@/constants/colors';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { SERVICE_CATEGORIES } from '@/constants/services';
-import { JobLog, JobPhoto, Quote, ServiceRequest, ServiceStatus } from '@/types/service';
+import { JobLog, JobPhoto, ServiceRequest, ServiceStatus } from '@/types/service';
 import { ChatComponent } from '@/components/ChatComponent';
 import WorkTimer from '@/components/WorkTimer';
 import { SignatureCapture } from '@/components/SignatureCapture';
-import { PaymentModal } from '@/components/PaymentModal';
 import { JobPhotoUpload } from '@/components/JobPhotoUpload';
 import { JobTimeline } from '@/components/JobTimeline';
 import { trpc } from '@/lib/trpc';
 import * as Icons from 'lucide-react-native';
+import { LiveJobStatus } from '@/components/LiveJobStatus';
 
 const mapPhotoType = (description?: string | null): JobPhoto['type'] => {
   const normalizedDescription = description?.toLowerCase() || '';
@@ -70,7 +70,8 @@ export default function MechanicJobsScreen() {
   const jobsQuery = trpc.job.getAll.useQuery();
   const updateStatusMutation = trpc.job.updateStatus.useMutation();
   const captureSignatureMutation = trpc.job.captureSignature.useMutation();
-  const addPhotoMutation = trpc.job.addPhoto.useMutation();
+  const uploadPhotoMutation = trpc.photos.uploadPhoto.useMutation();
+  const deletePhotoMutation = trpc.photos.deletePhoto.useMutation();
   const updateTimeLogMutation = trpc.job.updateTimeLog.useMutation();
   const updatePartsMutation = trpc.job.updatePartsApproval.useMutation();
   const claimJobMutation = trpc.job.claim.useMutation();
@@ -82,8 +83,13 @@ export default function MechanicJobsScreen() {
   const [selectedRequestForParts, setSelectedRequestForParts] = useState<string | null>(null);
   const [selectedRequestForPhotos, setSelectedRequestForPhotos] = useState<string | null>(null);
   const [selectedRequestForTimeline, setSelectedRequestForTimeline] = useState<string | null>(null);
-  const [selectedRequestForPayment, setSelectedRequestForPayment] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState<string | null>(null);
+  const selectedPhotosQuery = trpc.photos.getJobPhotos.useQuery(
+    { jobId: selectedRequestForPhotos ?? '' },
+    {
+      enabled: Boolean(selectedRequestForPhotos),
+    }
+  );
 
   const mechanicId = user?.id ?? 'mechanic-unknown';
   const backendJobs = jobsQuery.data?.jobs ?? [];
@@ -107,6 +113,7 @@ export default function MechanicJobsScreen() {
           }),
           createdAt: job.createdAt,
           updatedAt: job.updatedAt,
+          eta: job.eta || undefined,
           photos: job.customerPhotos,
           jobPhotos: job.photos.map((photo) => ({
             id: photo.id,
@@ -133,26 +140,6 @@ export default function MechanicJobsScreen() {
     [backendJobs]
   );
 
-  const paymentQuotes = useMemo<Quote[]>(
-    () =>
-      backendJobs.flatMap((job) =>
-        job.quotes.map((quote) => ({
-          id: quote.id,
-          serviceRequestId: job.id,
-          description: quote.description,
-          laborCost: quote.laborCost,
-          partsCost: quote.partsCost,
-          totalCost: quote.totalCost,
-          estimatedDuration: quote.estimatedDuration,
-          validUntil: quote.validUntil,
-          status: quote.status.toLowerCase() as Quote['status'],
-          createdAt: quote.createdAt,
-          createdBy: quote.createdBy,
-        }))
-      ),
-    [backendJobs]
-  );
-
   const mechanicJobs = serviceRequests.filter(job => {
     return !job.mechanicId || job.mechanicId === mechanicId;
   });
@@ -173,7 +160,12 @@ export default function MechanicJobsScreen() {
     return [...backendLogs, ...getJobLogs(jobId)];
   };
   const getCombinedJobPhotos = (jobId: string): JobPhoto[] => {
-    const backendPhotoSet: JobPhoto[] = (getBackendJobById(jobId)?.photos ?? []).map((photo) => ({
+    const realtimePhotos =
+      selectedRequestForPhotos === jobId ? selectedPhotosQuery.data?.photos ?? [] : [];
+    const backendPhotoSet: JobPhoto[] = [
+      ...(getBackendJobById(jobId)?.photos ?? []),
+      ...realtimePhotos,
+    ].map((photo) => ({
       id: photo.id,
       url: photo.url,
       type: mapPhotoType(photo.description),
@@ -285,19 +277,13 @@ export default function MechanicJobsScreen() {
                 status: toBackendStatus(newStatus),
               });
 
-              if (newStatus === 'completed') {
-                const paymentQuote = paymentQuotes.find((quote) => quote.serviceRequestId === jobId);
-                if (!paymentQuote) {
-                  Alert.alert(
-                    'Quote Required',
-                    'Cannot complete payment flow because this job has no quote yet.'
-                  );
-                  return;
-                }
-                setSelectedRequestForPayment(jobId);
-              }
-
               await utils.job.getAll.invalidate();
+              if (newStatus === 'completed') {
+                Alert.alert(
+                  'Job Completed',
+                  'The job is complete. The customer can now finish payment from their quote screen.'
+                );
+              }
             } catch (error) {
               Alert.alert('Status Update Failed', 'Unable to update job status right now.');
             }
@@ -449,36 +435,51 @@ export default function MechanicJobsScreen() {
 
   const handlePhotosUpdate = async (jobId: string, photos: JobPhoto[]) => {
     const currentPhotos = getCombinedJobPhotos(jobId);
-    
-    // Find new photos
-    const newPhotos = photos.filter(p => !currentPhotos.find(cp => cp.id === p.id));
-    
-    if (newPhotos.length > 0) {
-      try {
+    const newPhotos = photos.filter(
+      (photo) => !currentPhotos.some((currentPhoto) => currentPhoto.url === photo.url)
+    );
+    const removedPhotos = currentPhotos.filter(
+      (currentPhoto) => !photos.some((photo) => photo.id === currentPhoto.id)
+    );
+
+    try {
+      if (newPhotos.length > 0) {
         await Promise.all(
           newPhotos.map((photo) =>
-            addPhotoMutation.mutateAsync({
+            uploadPhotoMutation.mutateAsync({
               jobId,
               photoUrl: photo.url,
-              description: `type:${photo.type}${photo.caption ? ` ${photo.caption}` : ''}`,
-              mechanicId,
+              description: `${photo.type}${photo.caption ? ` ${photo.caption}` : ''}`.trim(),
             })
           )
         );
-        await utils.job.getAll.invalidate();
-      } catch (error) {
-        Alert.alert('Photo Sync Failed', 'Some photos could not be saved to backend.');
       }
+
+      if (removedPhotos.length > 0) {
+        await Promise.all(
+          removedPhotos
+            .filter((photo) => !photo.id.startsWith('photo-'))
+            .map((photo) =>
+              deletePhotoMutation.mutateAsync({
+                photoId: photo.id,
+              })
+            )
+        );
+      }
+
+      if (newPhotos.length > 0 || removedPhotos.length > 0) {
+        await utils.photos.getJobPhotos.invalidate({ jobId });
+        await utils.job.getAll.invalidate();
+      }
+    } catch (error) {
+      Alert.alert('Photo Sync Failed', 'Some photo changes could not be saved to backend.');
+    }
+
+    if (newPhotos.length > 0) {
       addJobPhotos(jobId, newPhotos);
     }
-    
-    // Update the service request with all photos
-    updateServiceRequest(jobId, { jobPhotos: photos });
-  };
 
-  const handlePaymentComplete = () => {
-    setSelectedRequestForPayment(null);
-    Alert.alert('Payment Complete', 'Job has been completed and payment processed successfully.');
+    updateServiceRequest(jobId, { jobPhotos: photos });
   };
 
   const openChat = (requestId: string) => {
@@ -971,22 +972,6 @@ export default function MechanicJobsScreen() {
         </Modal>
       )}
 
-      {/* Payment Modal */}
-      {selectedRequestForPayment && (() => {
-        const selectedQuote = paymentQuotes.find((quote) => quote.serviceRequestId === selectedRequestForPayment);
-        if (!selectedQuote) {
-          return null;
-        }
-
-        return (
-          <PaymentModal
-            quote={selectedQuote}
-            paymentType="full"
-            onSuccess={handlePaymentComplete}
-            onCancel={() => setSelectedRequestForPayment(null)}
-          />
-        );
-      })()}
     </View>
   );
 }
@@ -1086,6 +1071,8 @@ function JobCard({
           </Text>
         </View>
       </View>
+
+      <LiveJobStatus jobId={job.id} initialStatus={job.status} initialEta={job.eta} />
 
       <Text style={styles.jobDescription} numberOfLines={3}>
         {job.description}
