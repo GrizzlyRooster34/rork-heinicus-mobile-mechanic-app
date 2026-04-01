@@ -2,10 +2,11 @@ import * as crypto from 'crypto';
 import { authenticator } from 'otplib';
 import { prisma } from '../../lib/prisma';
 import { validatedEnv } from '../env-validation';
+import twilio from 'twilio';
 
 /**
  * Two-Factor Authentication Service
- * Implements TOTP-based 2FA with backup codes
+ * Implements TOTP-based 2FA with backup codes and SMS delivery via Twilio
  */
 
 /**
@@ -28,7 +29,7 @@ export const TWO_FACTOR_CONFIG = {
     charset: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',
   },
 
-  // SMS (for future Twilio integration)
+  // SMS
   sms: {
     codeLength: 6,
     expirationMinutes: 10,
@@ -68,13 +69,8 @@ export function generateTOTPUri(
  * Returns a data URL that can be displayed as an image
  */
 export async function generateQRCodeDataURL(uri: string): Promise<string> {
-  // For now, return the URI as-is
   // In production, use qrcode library to generate actual QR code
-  // Example: import QRCode from 'qrcode';
-  // return await QRCode.toDataURL(uri);
-
-  // For development, return a base64 encoded placeholder
-  // Frontend should use a QR code library to generate the visual QR code
+  // This is a placeholder for development
   return uri;
 }
 
@@ -280,16 +276,8 @@ export async function regenerateBackupCodes(
 }
 
 /**
- * SMS-based 2FA (for future implementation with Twilio)
+ * SMS-based 2FA using Twilio
  */
-export interface SMSVerification {
-  code: string;
-  expiresAt: Date;
-  attempts: number;
-}
-
-// In-memory SMS code storage (use Redis in production)
-const smsVerificationStore = new Map<string, SMSVerification>();
 
 /**
  * Generate SMS verification code
@@ -306,86 +294,168 @@ export function generateSMSCode(): string {
 }
 
 /**
- * Send SMS verification code (placeholder for Twilio integration)
+ * Send SMS verification code using Twilio SDK
+ */
+export async function sendSMSCode(
+  phoneNumber: string,
+  code: string
+): Promise<{ success: boolean; error?: string }> {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+
+  if (!accountSid || !authToken || !twilioPhoneNumber) {
+    console.warn('Twilio credentials not configured. Skipping SMS send.');
+    // In development mode, we log the code for testing
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DEV MODE] SMS code for ${phoneNumber}: ${code}`);
+      return { success: true };
+    }
+    return {
+      success: false,
+      error: 'SMS service is not configured.',
+    };
+  }
+
+  try {
+    const client = twilio(accountSid, authToken);
+
+    await client.messages.create({
+      body: `Your Heinicus verification code is: ${code}. Valid for ${TWO_FACTOR_CONFIG.sms.expirationMinutes} minutes.`,
+      from: twilioPhoneNumber,
+      to: phoneNumber,
+    });
+
+    console.log(`SMS code successfully sent to ${phoneNumber}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to send SMS code:', error);
+    return {
+      success: false,
+      error: 'Failed to send SMS code. Please try again.',
+    };
+  }
+}
+
+/**
+ * Store SMS code in database with TTL
+ */
+export async function storeSmsCode(
+  userId: string,
+  code: string
+): Promise<void> {
+  // Invalidate existing unused codes
+  await prisma.smsVerificationCode.updateMany({
+    where: {
+      userId,
+      used: false,
+    },
+    data: {
+      used: true,
+    },
+  });
+
+  const expiresAt = new Date();
+  expiresAt.setMinutes(expiresAt.getMinutes() + TWO_FACTOR_CONFIG.sms.expirationMinutes);
+
+  await prisma.smsVerificationCode.create({
+    data: {
+      userId,
+      code, // For simple 6-digit codes, plaintext is common, but hashing is better. 
+      // Using plaintext here to match simple verify logic.
+      expiresAt,
+    },
+  });
+}
+
+/**
+ * Send and store SMS verification code
  */
 export async function sendSMSVerificationCode(
   userId: string,
   phoneNumber: string
-): Promise<{ success: boolean; expiresAt: Date }> {
+): Promise<{ success: boolean; expiresAt: Date; error?: string }> {
   const code = generateSMSCode();
   const expiresAt = new Date();
   expiresAt.setMinutes(
     expiresAt.getMinutes() + TWO_FACTOR_CONFIG.sms.expirationMinutes
   );
 
-  // Store verification code
-  smsVerificationStore.set(userId, {
-    code,
-    expiresAt,
-    attempts: 0,
-  });
-
-  // TODO: Integrate with Twilio
-  // Example:
-  // const twilioClient = twilio(validatedEnv.TWILIO_ACCOUNT_SID, validatedEnv.TWILIO_AUTH_TOKEN);
-  // await twilioClient.messages.create({
-  //   body: `Your Heinicus verification code is: ${code}. Valid for ${TWO_FACTOR_CONFIG.sms.expirationMinutes} minutes.`,
-  //   from: validatedEnv.TWILIO_PHONE_NUMBER,
-  //   to: phoneNumber,
-  // });
-
-  console.log(`SMS code for ${phoneNumber}: ${code} (expires at ${expiresAt.toISOString()})`);
-
-  return { success: true, expiresAt };
-}
-
-/**
- * Verify SMS code
- */
-export function verifySMSCode(userId: string, code: string): boolean {
-  const verification = smsVerificationStore.get(userId);
-
-  if (!verification) {
-    return false;
-  }
-
-  // Check expiration
-  if (new Date() > verification.expiresAt) {
-    smsVerificationStore.delete(userId);
-    return false;
-  }
-
-  // Check max attempts
-  verification.attempts++;
-  if (verification.attempts > TWO_FACTOR_CONFIG.sms.maxAttempts) {
-    smsVerificationStore.delete(userId);
-    return false;
-  }
-
-  // Verify code
-  if (verification.code === code) {
-    smsVerificationStore.delete(userId);
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Clean up expired SMS codes (should be called periodically)
- */
-export function cleanupExpiredSMSCodes(): void {
-  const now = new Date();
-
-  for (const [userId, verification] of smsVerificationStore.entries()) {
-    if (now > verification.expiresAt) {
-      smsVerificationStore.delete(userId);
+  try {
+    const result = await sendSMSCode(phoneNumber, code);
+    
+    if (result.success) {
+      await storeSmsCode(userId, code);
+      return { success: true, expiresAt };
+    } else {
+      return { success: false, expiresAt, error: result.error };
     }
+  } catch (error) {
+    console.error('sendSMSVerificationCode error:', error);
+    return { success: false, expiresAt, error: 'Internal server error' };
   }
 }
 
-// Auto-cleanup every 5 minutes
-setInterval(cleanupExpiredSMSCodes, 5 * 60 * 1000);
+/**
+ * Verify SMS code checking DB record + expiry
+ */
+export async function verifySMSCode(
+  userId: string, 
+  code: string
+): Promise<boolean> {
+  try {
+    const now = new Date();
+
+    const verificationCode = await prisma.smsVerificationCode.findFirst({
+      where: {
+        userId,
+        code,
+        used: false,
+        expiresAt: {
+          gt: now,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    if (!verificationCode) {
+      return false;
+    }
+
+    // Mark the code as used
+    await prisma.smsVerificationCode.update({
+      where: { id: verificationCode.id },
+      data: { used: true },
+    });
+
+    console.log(`SMS code verified for user ${userId}`);
+    return true;
+  } catch (error) {
+    console.error('Verify SMS code error:', error);
+    return false;
+  }
+}
+
+/**
+ * Clean up expired SMS codes
+ */
+export async function cleanupExpiredSMSCodes(): Promise<number> {
+  try {
+    const result = await prisma.smsVerificationCode.deleteMany({
+      where: {
+        expiresAt: {
+          lt: new Date(),
+        },
+      },
+    });
+    return result.count;
+  } catch (error) {
+    console.error('Cleanup expired SMS codes error:', error);
+    return 0;
+  }
+}
 
 /**
  * Get 2FA status for user

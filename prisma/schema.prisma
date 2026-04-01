@@ -19,7 +19,9 @@ enum UserRole {
 enum JobStatus {
   PENDING
   ACCEPTED
+  EN_ROUTE
   IN_PROGRESS
+  AWAITING_PAYMENT
   COMPLETED
   CANCELLED
 }
@@ -92,6 +94,7 @@ model User {
   twoFactorSecret   String?   // Encrypted TOTP secret
   backupCodes       TwoFactorBackupCode[]
   passwordResets    PasswordReset[]
+  smsVerifications  SmsVerificationCode[]
 
   // Role-specific relations
   customerJobs      Job[]     @relation("CustomerJobs")
@@ -112,6 +115,20 @@ model User {
   receivedReviews   Review[]  @relation("ReceivedReviews")
 
   @@index([email])
+}
+
+model SmsVerificationCode {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String   // Plaintext or hashed code
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([code])
 }
 
 model TwoFactorBackupCode {
