@@ -1,4 +1,4 @@
-import { UrgencyLevel, VehicleType } from '@/types/service';
+import { VehicleType } from '@/types/service';
 
 /**
  * Shared logic for calculating a quote based on the Master Blueprint.
@@ -10,7 +10,7 @@ interface PricingInput {
   parts?: { price: number }[];
   vehicleYear?: number;
   vehicleMake?: string;
-  urgency?: UrgencyLevel;
+  urgency?: 'low' | 'medium' | 'high' | 'emergency';
   distanceMiles?: number;
 }
 

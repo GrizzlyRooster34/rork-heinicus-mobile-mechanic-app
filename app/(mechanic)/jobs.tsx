@@ -24,7 +24,7 @@ const mapPhotoType = (description?: string | null): JobPhoto['type'] => {
 };
 
 const mapBackendStatus = (params: {
-  status: 'PENDING' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'PENDING' | 'ACCEPTED' | 'EN_ROUTE' | 'IN_PROGRESS' | 'AWAITING_PAYMENT' | 'COMPLETED' | 'CANCELLED';
   scheduledDate?: Date | null;
   timePaused?: Date | null;
   hasPendingQuote: boolean;
@@ -33,8 +33,10 @@ const mapBackendStatus = (params: {
   if (params.status === 'PENDING') return 'pending';
   if (params.status === 'ACCEPTED' && params.scheduledDate) return 'scheduled';
   if (params.status === 'ACCEPTED') return 'accepted';
+  if (params.status === 'EN_ROUTE') return 'en_route';
   if (params.status === 'IN_PROGRESS' && params.timePaused) return 'paused';
-  if (params.status === 'IN_PROGRESS') return 'in_progress';
+  if (params.status === 'IN_PROGRESS') return 'working';
+  if (params.status === 'AWAITING_PAYMENT') return 'awaiting_payment';
   if (params.status === 'COMPLETED') return 'completed';
   return 'cancelled';
 };
@@ -253,12 +255,16 @@ export default function MechanicJobsScreen() {
     const statusLabels: Record<ServiceStatus, string> = {
       'pending': 'Set Pending',
       'quoted': 'Set Quoted',
+      'assigned': 'Claim Job',
+      'en_route': 'On My Way',
+      'working': 'Start Work',
+      'awaiting_payment': 'Awaiting Payment',
+      'completed': 'Complete Job',
+      'cancelled': 'Cancel Job',
       'accepted': 'Accept Job',
       'scheduled': 'Schedule Job',
-      'in_progress': 'Start Work',
-      'paused': 'Pause Work',
-      'completed': 'Complete Job',
-      'cancelled': 'Cancel Job'
+      'in_progress': 'In Progress',
+      'paused': 'Pause Work'
     };
 
     const statusLabel = statusLabels[newStatus] || `Update to ${newStatus}`;
