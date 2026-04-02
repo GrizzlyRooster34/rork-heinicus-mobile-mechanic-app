@@ -2,7 +2,10 @@ import jwt from 'jsonwebtoken';
 import { TRPCError } from '@trpc/server';
 import { prisma } from '../../lib/prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'heinicus-mobile-mechanic-app-jwt-secret-key-2025-very-secure-and-long-at-least-64-chars';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set');
+}
 
 export interface JWTPayload {
   userId: string;
