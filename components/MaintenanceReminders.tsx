@@ -12,7 +12,7 @@ export function MaintenanceReminders() {
   const { vehicles, addMaintenanceReminder, maintenanceReminders } = useAppStore();
 
   const getMaintenanceReminders = () => {
-    const reminders: Array<{
+    const reminders: {
       vehicleId: string;
       vehicleName: string;
       serviceType: string;
@@ -23,7 +23,7 @@ export function MaintenanceReminders() {
       priority: 'low' | 'medium' | 'high';
       dueMileage?: number;
       reason: string;
-    }> = [];
+    }[] = [];
 
     vehicles.forEach(vehicle => {
       const intervals = getMaintenanceIntervals();
@@ -139,8 +139,8 @@ export function MaintenanceReminders() {
     const reminder = {
       id: `${vehicleId}-${serviceType}-${Date.now()}`,
       vehicleId,
-      serviceType: serviceType as ServiceType,
-      description: `Maintenance reminder for ${serviceType}`,
+      serviceType: serviceType as any,
+      description: `Scheduled ${serviceType} maintenance`,
       dueDate: new Date(),
       dueMileage: undefined,
       isOverdue: false,

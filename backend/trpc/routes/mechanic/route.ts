@@ -1,88 +1,145 @@
 import { z } from 'zod';
-import { protectedProcedure, router } from '../../trpc';
-import { prisma } from '@/lib/prisma';
-import { VerificationStatus, UserRole } from '@prisma/client';
-import { TRPCError } from '@trpc/server';
+import { publicProcedure, router } from '../../trpc';
+import type { Context } from '../../create-context';
+import { prisma } from '../../../../lib/prisma';
+import * as jwt from 'jsonwebtoken';
 
-const mechanicProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Authentication required' });
-  }
-  if (ctx.user.role !== UserRole.MECHANIC) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'Mechanic role required' });
-  }
-  return next();
-});
+// Use publicProcedure for now since protectedProcedure is the same
+const protectedProcedure = publicProcedure;
 
-const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Authentication required' });
+// Helper function to get user from request
+async function getUserFromRequest(req: Request): Promise<{ id: string; role: 'mechanic' | 'admin' | 'customer' } | null> {
+  try {
+    // Extract token from Authorization header
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+    
+    const token = authHeader.substring(7);
+    
+    // Verify JWT token
+    const decoded = jwt.verify(
+      token,
+      process.env.NEXTAUTH_SECRET || 'default-secret'
+    ) as { userId: string; email: string; role: string };
+    
+    // Find user in database
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId }
+    });
+    
+    if (!user || !user.isActive) {
+      return null;
+    }
+    
+    return {
+      id: user.id,
+      role: user.role.toLowerCase() as 'mechanic' | 'admin' | 'customer'
+    };
+  } catch (error) {
+    console.error('Error getting user from request:', error);
+    return null;
   }
-  if (ctx.user.role !== UserRole.ADMIN) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin role required' });
-  }
-  return next();
-});
+}
 
 export const mechanicRouter = router({
-  submitVerification: mechanicProcedure
+  submitVerification: protectedProcedure
     .input(z.object({
       fullName: z.string().min(2, 'Full name must be at least 2 characters'),
       photoUri: z.string().url('Invalid photo URL'),
       idUri: z.string().url('Invalid ID photo URL'),
     }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
-        const userId = ctx.user?.id;
-        if (!userId) {
-          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Authentication required' });
+        const user = await getUserFromRequest(ctx.req);
+        
+        if (!user) {
+          throw new Error('Authentication required');
+        }
+        
+        // Check if user is a mechanic
+        if (user.role !== 'mechanic') {
+          throw new Error('Only mechanics can submit verification');
         }
 
-        // Check for pending submission
-        const existingSubmission = await prisma.verificationSubmission.findFirst({
+        // Get mechanic profile
+        const mechanicProfile = await prisma.mechanicProfile.findUnique({
+          where: { userId: user.id }
+        });
+
+        if (!mechanicProfile) {
+          throw new Error('Mechanic profile not found');
+        }
+
+        // Check if already submitted
+        const existingSubmission = await prisma.mechanicVerification.findFirst({
           where: {
-            userId,
-            status: VerificationStatus.PENDING
+            mechanicId: mechanicProfile.id,
+            status: 'PENDING'
           }
         });
         
         if (existingSubmission) {
-          throw new TRPCError({ code: 'CONFLICT', message: 'Verification already submitted and pending review' });
+          throw new Error('Verification already submitted and pending review');
         }
 
-        const submission = await prisma.verificationSubmission.create({
+        // Create new verification submission
+        const newSubmission = await prisma.mechanicVerification.create({
           data: {
-            userId,
+            mechanicId: mechanicProfile.id,
             fullName: input.fullName,
             photoUri: input.photoUri,
             idUri: input.idUri,
-            status: VerificationStatus.PENDING,
+            status: 'PENDING'
           }
+        });
+
+        // Log the submission for production monitoring
+        console.log('Mechanic verification submitted:', {
+          verificationId: newSubmission.id,
+          userId: user.id,
+          mechanicName: input.fullName,
+          timestamp: new Date().toISOString(),
         });
 
         return {
           success: true,
-          verificationId: submission.id,
+          verificationId: newSubmission.id,
           message: 'Verification submitted successfully',
-          submission
+          submission: {
+            id: newSubmission.id,
+            status: newSubmission.status,
+            submittedAt: newSubmission.submittedAt,
+          }
         };
       } catch (error) {
-        if (error instanceof TRPCError) throw error;
         console.error('Error in submitVerification:', error);
-        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to submit verification' });
+        throw error;
       }
     }),
 
-  getVerificationStatus: mechanicProcedure
+  getVerificationStatus: protectedProcedure
     .query(async ({ ctx }) => {
       try {
-        const userId = ctx.user?.id;
-        if (!userId) {
-          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Authentication required' });
+        const user = await getUserFromRequest(ctx.req);
+        
+        if (!user || user.role !== 'mechanic') {
+          return { verified: false, status: null };
         }
 
-        const latestSubmission = await prisma.verificationSubmission.findFirst({
-          where: { userId },
+        // Get mechanic profile
+        const mechanicProfile = await prisma.mechanicProfile.findUnique({
+          where: { userId: user.id }
+        });
+
+        if (!mechanicProfile) {
+          return { verified: false, status: null };
+        }
+
+        // Find the latest verification submission for this user
+        const latestSubmission = await prisma.mechanicVerification.findFirst({
+          where: { mechanicId: mechanicProfile.id },
           orderBy: { submittedAt: 'desc' }
         });
 
@@ -91,7 +148,7 @@ export const mechanicRouter = router({
         }
 
         return {
-          verified: latestSubmission.status === VerificationStatus.APPROVED,
+          verified: latestSubmission.status === 'APPROVED',
           status: latestSubmission.status,
           submittedAt: latestSubmission.submittedAt.toISOString(),
           reviewedAt: latestSubmission.reviewedAt?.toISOString(),
@@ -99,6 +156,7 @@ export const mechanicRouter = router({
         };
       } catch (error) {
         console.error('Error in getVerificationStatus:', error);
+        // Always return a valid response structure to prevent crashes
         return { 
           verified: false, 
           status: null,
@@ -107,84 +165,154 @@ export const mechanicRouter = router({
       }
     }),
 
-  getAllVerifications: adminProcedure
-    .query(async () => {
+  // Admin-only procedures for managing verifications
+  getAllVerifications: protectedProcedure
+    .query(async ({ ctx }) => {
       try {
-        const submissions = await prisma.verificationSubmission.findMany({
-          orderBy: { submittedAt: 'desc' },
+        const user = await getUserFromRequest(ctx.req);
+        
+        if (!user || user.role !== 'admin') {
+          throw new Error('Only admins can view all verifications');
+        }
+
+        const verifications = await prisma.mechanicVerification.findMany({
           include: {
-            user: {
-              select: { email: true }
+            mechanic: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                  }
+                }
+              }
             }
-          }
+          },
+          orderBy: { submittedAt: 'desc' }
         });
 
-        return submissions.map(sub => ({
-          id: sub.id,
-          userId: sub.userId,
-          fullName: sub.fullName,
-          email: sub.user.email,
-          status: sub.status,
-          submittedAt: sub.submittedAt,
-          reviewedAt: sub.reviewedAt,
-          reviewedBy: sub.reviewedBy,
+        return verifications.map(verification => ({
+          id: verification.id,
+          userId: verification.mechanic.user.id,
+          fullName: verification.fullName,
+          status: verification.status,
+          submittedAt: verification.submittedAt,
+          reviewedAt: verification.reviewedAt,
+          reviewedBy: verification.reviewedBy,
+          mechanicInfo: {
+            firstName: verification.mechanic.user.firstName,
+            lastName: verification.mechanic.user.lastName,
+            email: verification.mechanic.user.email,
+          }
         }));
       } catch (error) {
-        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to fetch verifications' });
+        console.error('Error in getAllVerifications:', error);
+        throw error;
       }
     }),
 
-  reviewVerification: adminProcedure
+  reviewVerification: protectedProcedure
     .input(z.object({
       verificationId: z.string(),
-      status: z.enum(['APPROVED', 'REJECTED']), // Match Prisma Enum
+      status: z.enum(['approved', 'rejected']),
       reviewNotes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const userId = ctx.user?.id;
-        if (!userId) {
-          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Authentication required' });
+        const user = await getUserFromRequest(ctx.req);
+        
+        if (!user || user.role !== 'admin') {
+          throw new Error('Only admins can review verifications');
         }
 
-        const submission = await prisma.verificationSubmission.update({
+        const verification = await prisma.mechanicVerification.findUnique({
+          where: { id: input.verificationId }
+        });
+
+        if (!verification) {
+          throw new Error('Verification submission not found');
+        }
+
+        // Update the submission
+        await prisma.mechanicVerification.update({
           where: { id: input.verificationId },
           data: {
-            status: input.status as VerificationStatus,
+            status: input.status as 'APPROVED' | 'REJECTED',
             reviewedAt: new Date(),
-            reviewedBy: userId,
+            reviewedBy: user.id,
             reviewNotes: input.reviewNotes,
           }
+        });
+
+        // Log the review for production monitoring
+        console.log('Mechanic verification reviewed:', {
+          verificationId: input.verificationId,
+          status: input.status,
+          reviewedBy: user.id,
+          timestamp: new Date().toISOString(),
         });
 
         return {
           success: true,
           message: `Verification ${input.status} successfully`,
-          submission
         };
       } catch (error) {
-        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to review verification' });
+        console.error('Error in reviewVerification:', error);
+        throw error;
       }
     }),
 
-  getVerificationDetails: adminProcedure
+  getVerificationDetails: protectedProcedure
     .input(z.object({
       verificationId: z.string(),
     }))
-    .query(async ({ input }) => {
-      const submission = await prisma.verificationSubmission.findUnique({
-        where: { id: input.verificationId },
-        include: {
-          user: {
-            select: { email: true, phone: true }
-          }
+    .query(async ({ ctx, input }) => {
+      try {
+        const user = await getUserFromRequest(ctx.req);
+        
+        if (!user || user.role !== 'admin') {
+          throw new Error('Only admins can view verification details');
         }
-      });
 
-      if (!submission) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Verification submission not found' });
+        const verification = await prisma.mechanicVerification.findUnique({
+          where: { id: input.verificationId },
+          include: {
+            mechanic: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        if (!verification) {
+          throw new Error('Verification submission not found');
+        }
+
+        return {
+          id: verification.id,
+          fullName: verification.fullName,
+          photoUri: verification.photoUri,
+          idUri: verification.idUri,
+          status: verification.status,
+          submittedAt: verification.submittedAt,
+          reviewedAt: verification.reviewedAt,
+          reviewedBy: verification.reviewedBy,
+          reviewNotes: verification.reviewNotes,
+          mechanic: verification.mechanic.user,
+        };
+      } catch (error) {
+        console.error('Error in getVerificationDetails:', error);
+        throw error;
       }
-
-      return submission;
     }),
 });

@@ -1,38 +1,50 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
 import { SERVICE_CATEGORIES } from '@/constants/services';
 import { ChatComponent } from '@/components/ChatComponent';
-import { StripeCheckoutModal } from '@/components/StripeCheckoutModal';
-import { trpc } from '@/lib/trpc';
+import { PaymentModal } from '@/components/PaymentModal';
+import { LoadingState, LoadingButton } from '@/components/LoadingState';
+import { SkeletonQuoteCard } from '@/components/LoadingSkeleton';
+import { withScreenErrorBoundary } from '@/components/error-boundaries/withErrorBoundary';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { useAsyncState } from '@/hooks/useAsyncState';
 import * as Icons from 'lucide-react-native';
 import { LiveJobStatus } from '@/components/LiveJobStatus';
 import { ReviewSubmissionModal } from '@/components/ReviewSubmissionModal';
 
-export default function CustomerQuotesScreen() {
+function CustomerQuotesScreen() {
+  const { serviceRequests, quotes, updateServiceRequest, updateQuote } = useAppStore();
   const { user } = useAuthStore();
-  const utils = trpc.useUtils();
-  const { data: jobsData, isLoading: jobsLoading } = trpc.job.getAll.useQuery();
-  const { data: quotesData, isLoading: quotesLoading } = trpc.quote.listMine.useQuery();
-  const { data: pendingReviewsData } = trpc.reviews.getPendingReviews.useQuery(undefined, {
-    enabled: Boolean(user?.id),
+  const [selectedRequestForChat, setSelectedRequestForChat] = useState<string | null>(null);
+  const [selectedQuoteForPayment, setSelectedQuoteForPayment] = useState<Quote | null>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const { handleError } = useErrorHandler({ 
+    showAlert: true, 
+    context: 'customer_quotes_screen' 
   });
-  const markPaidMutation = trpc.quote.markPaid.useMutation();
-  const declineQuoteMutation = trpc.quote.decline.useMutation();
-  const submitReviewMutation = trpc.reviews.submitReview.useMutation();
-  const jobs = jobsData?.jobs ?? [];
-  const quotes = quotesData?.quotes ?? [];
-  const pendingReviews = pendingReviewsData?.pendingReviews ?? [];
-  const isLoading = jobsLoading || quotesLoading;
-  type JobItem = typeof jobs[number];
-  type QuoteItem = typeof quotes[number];
-  const [selectedRequestForChat, setSelectedRequestForChat] = React.useState<string | null>(null);
-  const [selectedPaymentContext, setSelectedPaymentContext] = React.useState<{
-    jobId: string;
-    quote: QuoteItem;
-  } | null>(null);
-  const [selectedReviewJobId, setSelectedReviewJobId] = React.useState<string | null>(null);
+
+  const paymentOperation = useAsyncState({
+    onSuccess: () => {
+      Alert.alert('Payment Successful', 'Your quote has been accepted and payment processed. We will contact you to schedule the service.');
+    },
+    onError: (error) => {
+      handleError(error);
+    },
+  });
+
+  // Simulate initial data loading
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setIsInitialLoading(true);
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setIsInitialLoading(false);
+    };
+    
+    loadInitialData();
+  }, []);
 
   const getServiceTitle = (type: string) => {
     return SERVICE_CATEGORIES.find(s => s.id === type)?.title || type;
@@ -84,57 +96,56 @@ export default function CustomerQuotesScreen() {
   };
 
   const handleAcceptQuote = (quoteId: string) => {
-    const quote = quotes.find((q: QuoteItem) => q.id === quoteId);
-    if (!quote) return;
+    try {
+      const quote = quotes.find(q => q.id === quoteId);
+      if (!quote) {
+        throw new Error('Quote not found');
+      }
 
-    Alert.alert(
-      'Accept Quote',
-      `Accept quote for $${quote.totalCost}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Accept & Pay',
-          onPress: () => {
-            setSelectedPaymentContext({
-              jobId: quote.jobId ?? '',
-              quote,
-            });
+      Alert.alert(
+        'Accept Quote',
+        `Accept quote for $${quote.totalCost}?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Accept & Pay',
+            onPress: () => {
+            try {
+              setSelectedQuoteForPayment(quote);
+            } catch (error) {
+              handleError(error as Error);
+            }
           }
         }
       ]
     );
-  };
-
-  const handlePaymentSuccess = async () => {
-    if (!selectedPaymentContext) return;
-
-    try {
-      await markPaidMutation.mutateAsync({ quoteId: selectedPaymentContext.quote.id });
-      await utils.quote.listMine.invalidate();
-      await utils.job.getAll.invalidate();
-      setSelectedPaymentContext(null);
-      Alert.alert('Payment Successful', 'Your payment is complete. The job is now ready to schedule or start.');
     } catch (error) {
-      Alert.alert('Payment Failed', 'Unable to finalize payment. Please try again.');
+      handleError(error as Error);
     }
   };
 
-  const getPendingReview = (jobId: string) => pendingReviews.find((review) => review.jobId === jobId);
+  const handlePaymentSuccess = async (quoteId: string) => {
+    try {
+      await paymentOperation.execute(async () => {
+        const quote = quotes.find(q => q.id === quoteId);
+        if (!quote) throw new Error('Quote not found');
 
-  const handleSubmitReview = async (input: { rating: number; comment?: string }) => {
-    if (!selectedReviewJobId) {
-      return;
+        // Simulate payment processing delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        updateQuote(quoteId, { 
+          status: 'accepted',
+          paidAt: new Date(),
+        });
+        updateServiceRequest(quote.serviceRequestId, { status: 'accepted' });
+        setSelectedQuoteForPayment(null);
+        
+        return { success: true };
+      });
+    } catch (error) {
+      // Error is handled by the useAsyncState hook
+      console.error('Payment failed:', error);
     }
-
-    await submitReviewMutation.mutateAsync({
-      jobId: selectedReviewJobId,
-      rating: input.rating,
-      comment: input.comment,
-    });
-
-    await utils.reviews.getPendingReviews.invalidate();
-    setSelectedReviewJobId(null);
-    Alert.alert('Review Submitted', 'Thanks. Your feedback is now attached to this job.');
   };
 
   const handleDeclineQuote = (quoteId: string) => {
@@ -189,23 +200,32 @@ export default function CustomerQuotesScreen() {
     );
   }
 
-  if (isLoading) {
+  // Show initial loading state
+  if (isInitialLoading) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyTitle}>Loading requests...</Text>
+      <View style={styles.container}>
+        <View style={styles.content}>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <SkeletonQuoteCard key={index} style={styles.skeletonCard} />
+          ))}
+        </View>
       </View>
     );
   }
 
-  if (jobs.length === 0) {
+  if (serviceRequests.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <Icons.FileText size={64} color={Colors.textMuted} />
-        <Text style={styles.emptyTitle}>No Service Requests</Text>
+      <LoadingState
+        empty={true}
+        emptyMessage="No Service Requests"
+        emptyIcon="FileText"
+        size="large"
+        style={styles.emptyContainer}
+      >
         <Text style={styles.emptyText}>
           Your service requests and quotes will appear here once you submit a request.
         </Text>
-      </View>
+      </LoadingState>
     );
   }
 
@@ -322,17 +342,26 @@ export default function CustomerQuotesScreen() {
 
                     {displayStatus.toLowerCase() === 'quoted' && requestQuote.status.toLowerCase() === 'pending' && (
                       <View style={styles.quoteActions}>
-                        <TouchableOpacity 
-                          style={styles.acceptButton}
+                        <LoadingButton
+                          title="Accept & Pay"
+                          loadingTitle="Processing..."
+                          isLoading={paymentOperation.isLoading}
                           onPress={() => handleAcceptQuote(requestQuote.id)}
-                        >
-                          <Text style={styles.acceptButtonText}>Accept & Pay</Text>
-                        </TouchableOpacity>
+                          style={styles.acceptButton}
+                          variant="primary"
+                          size="medium"
+                        />
                         <TouchableOpacity 
                           style={styles.declineButton}
                           onPress={() => handleDeclineQuote(requestQuote.id)}
+                          disabled={paymentOperation.isLoading}
                         >
-                          <Text style={styles.declineButtonText}>Decline</Text>
+                          <Text style={[
+                            styles.declineButtonText,
+                            paymentOperation.isLoading && styles.disabledText
+                          ]}>
+                            Decline
+                          </Text>
                         </TouchableOpacity>
                       </View>
                     )}
@@ -634,4 +663,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+  skeletonCard: {
+    marginBottom: 16,
+  },
+  disabledText: {
+    opacity: 0.5,
+  },
 });
+
+// Export with error boundary
+export default withScreenErrorBoundary(
+  CustomerQuotesScreen, 
+  'Customer Quotes', 
+  '/(customer)'
+);

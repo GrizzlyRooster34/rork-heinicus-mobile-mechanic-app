@@ -8,24 +8,19 @@ import { VehicleType } from '@/types/service';
 import * as Icons from 'lucide-react-native';
 
 export default function CustomerProfileScreen() {
-  const { user, logout, setUser } = useAuthStore();
-  const utils = trpc.useUtils();
-  const { data: profileData, isLoading } = trpc.customer.getProfile.useQuery(undefined, {
-    enabled: !!user,
-  });
-  const updateProfileMutation = trpc.customer.updateProfile.useMutation();
-  const addVehicleMutation = trpc.customer.addVehicle.useMutation();
-  const removeVehicleMutation = trpc.customer.removeVehicle.useMutation();
-
-  const profile = profileData?.profile;
-  const vehicles = profile?.vehicles ?? [];
-
-  const [firstName, setFirstName] = useState(user?.firstName || '');
-  const [lastName, setLastName] = useState(user?.lastName || '');
-  const [phone, setPhone] = useState(user?.phone || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [address, setAddress] = useState('');
-
+  const { contact, vehicles, setContact, addVehicle, removeVehicle } = useAppStore();
+  const { user, logout } = useAuthStore();
+  
+  // Contact form state
+  const [firstName, setFirstName] = useState(contact?.firstName || user?.firstName || '');
+  const [lastName, setLastName] = useState(contact?.lastName || user?.lastName || '');
+  const [phone, setPhone] = useState(contact?.phone || user?.phone || '');
+  const [email, setEmail] = useState(contact?.email || user?.email || '');
+  const [address, setAddress] = useState(
+    typeof contact?.address === 'string' ? contact.address : ''
+  );
+  
+  // Vehicle form state
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [vehicleMake, setVehicleMake] = useState('');
   const [vehicleModel, setVehicleModel] = useState('');
@@ -77,14 +72,19 @@ export default function CustomerProfileScreen() {
       return;
     }
 
-    try {
-      const result = await updateProfileMutation.mutateAsync({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        phone: phone.trim(),
-        email: email.trim(),
-        address: address.trim() || undefined,
-      });
+    const contactData: Contact = {
+      id: contact?.id || Date.now().toString(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      address: address.trim() ? {
+        street: address.trim(),
+        city: '',
+        state: '',
+        zipCode: ''
+      } : undefined,
+    };
 
       if (user) {
         setUser({
@@ -116,11 +116,15 @@ export default function CustomerProfileScreen() {
       return;
     }
 
-    const parsedMileage = vehicleMileage.trim() ? parseInt(vehicleMileage.trim(), 10) : 0;
-    if (Number.isNaN(parsedMileage) || parsedMileage < 0) {
-      Alert.alert('Error', 'Please enter a valid mileage.');
-      return;
-    }
+    const vehicle: Vehicle = {
+      id: Date.now().toString(),
+      make: vehicleMake.trim(),
+      model: vehicleModel.trim(),
+      year,
+      vehicleType: 'car',
+      color: vehicleColor.trim() || undefined,
+      mileage: vehicleMileage.trim() ? parseInt(vehicleMileage) : 0,
+    };
 
     try {
       await addVehicleMutation.mutateAsync({

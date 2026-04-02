@@ -301,8 +301,8 @@ export function MaintenanceReminderEngine({ vehicleInfo, onScheduleService }: Ma
                   onPress={() => handleScheduleService(item)}
                   style={[
                     styles.scheduleButton,
-                    isOverdue && styles.overdueButton,
-                    isUrgent && styles.urgentButton,
+                    ...(isOverdue ? [styles.overdueButton] : []),
+                    ...(isUrgent ? [styles.urgentButton] : []),
                   ]}
                 />
               </View>

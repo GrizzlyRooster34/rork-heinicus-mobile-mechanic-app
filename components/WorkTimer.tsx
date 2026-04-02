@@ -10,7 +10,7 @@ interface WorkTimerProps {
   mechanicId: string;
   jobTitle?: string;
   onTimeUpdate?: (timeData: TimeData) => void;
-  onWorkComplete?: (jobId: string, workLog: JobLog) => void;
+  onWorkComplete?: (jobId: string, workLog: any) => void;
   initialTime?: number; // in seconds
 }
 
@@ -23,7 +23,7 @@ interface TimeData {
   pausedDuration: number;
 }
 
-export default function WorkTimer({ jobId, mechanicId, jobTitle, onTimeUpdate, onWorkComplete, initialTime = 0 }: WorkTimerProps) {
+export default function WorkTimer({ jobId, onTimeUpdate, onWorkComplete, initialTime = 0 }: WorkTimerProps) {
   const [timeData, setTimeData] = useState<TimeData>({
     jobId,
     startTime: null,
@@ -140,6 +140,18 @@ export default function WorkTimer({ jobId, mechanicId, jobTitle, onTimeUpdate, o
               totalMinutes: Math.round(finalTotalSeconds / 60),
               totalHours: Math.round(finalTotalSeconds / 3600 * 100) / 100,
             });
+
+            // Call onWorkComplete callback if provided
+            if (onWorkComplete) {
+              onWorkComplete(jobId, {
+                jobId,
+                startTime: timeData.startTime,
+                endTime: now,
+                totalSeconds: finalTotalSeconds,
+                totalMinutes: Math.round(finalTotalSeconds / 60),
+                totalHours: Math.round(finalTotalSeconds / 3600 * 100) / 100,
+              });
+            }
 
             Alert.alert(
               'Job Completed',

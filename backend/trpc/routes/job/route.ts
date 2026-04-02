@@ -1,73 +1,11 @@
 import { z } from 'zod';
-import { protectedProcedure, router } from '../../trpc';
-import { prisma } from '@/lib/prisma';
-import { JobStatus, UserRole } from '@prisma/client';
-import { TRPCError } from '@trpc/server';
-import { createJobPhotoRecord } from '@/backend/services/storage';
-import { emitToJobRoom } from '@/backend/websocket/runtime';
+import { publicProcedure, router } from '../../trpc';
 
 const isAdminOrMechanic = (role: UserRole) => role === UserRole.ADMIN || role === UserRole.MECHANIC;
 const isAdminOrCustomer = (role: UserRole) => role === UserRole.ADMIN || role === UserRole.CUSTOMER;
 
-const ensureMechanicCanReadJob = async (jobId: string, userId: string, role: UserRole) => {
-  if (role !== UserRole.MECHANIC) {
-    return;
-  }
-
-  const job = await prisma.job.findUnique({
-    where: { id: jobId },
-    select: { mechanicId: true },
-  });
-
-  if (!job) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'Job not found',
-    });
-  }
-
-  if (job.mechanicId && job.mechanicId !== userId) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'You do not have access to this job',
-    });
-  }
-};
-
-const ensureMechanicCanMutateJob = async (jobId: string, userId: string, role: UserRole) => {
-  if (role !== UserRole.MECHANIC) {
-    return;
-  }
-
-  const job = await prisma.job.findUnique({
-    where: { id: jobId },
-    select: { mechanicId: true },
-  });
-
-  if (!job) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'Job not found',
-    });
-  }
-
-  if (!job.mechanicId) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'Claim job before updating it',
-    });
-  }
-
-  if (job.mechanicId !== userId) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'Job is assigned to another mechanic',
-    });
-  }
-};
-
 export const jobRouter = router({
-  create: protectedProcedure
+  create: publicProcedure
     .input(z.object({
       serviceType: z.string(),
       description: z.string(),

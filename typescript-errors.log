@@ -1,0 +1,68 @@
+
+> heinicus-mobile-mechanic-app@1.0.0 type-check
+> tsc --noEmit
+
+components/JobTimeline.tsx(53,59): error TS2339: Property 'replace' does not exist on type 'never'.
+components/MaintenanceReminderEngine.tsx(304,21): error TS2322: Type 'false | { backgroundColor: string; }' is not assignable to type 'ViewStyle'.
+  Type 'false' has no properties in common with type 'ViewStyle'.
+components/MaintenanceReminderEngine.tsx(305,21): error TS2322: Type 'false | { backgroundColor: string; }' is not assignable to type 'ViewStyle'.
+  Type 'false' has no properties in common with type 'ViewStyle'.
+components/MaintenanceReminders.tsx(149,28): error TS2345: Argument of type '{ id: string; vehicleId: string; serviceType: any; dueDate: Date; dueMileage: undefined; isOverdue: boolean; reminderSent: boolean; priority: "low"; }' is not assignable to parameter of type 'MaintenanceReminder'.
+  Type '{ id: string; vehicleId: string; serviceType: any; dueDate: Date; dueMileage: undefined; isOverdue: boolean; reminderSent: boolean; priority: "low"; }' is missing the following properties from type 'MaintenanceReminder': description, completed, createdAt
+components/PartsApprovalToggle.tsx(36,48): error TS2345: Argument of type 'string[]' is not assignable to parameter of type 'PartEstimate[]'.
+  Type 'string' is not assignable to type 'PartEstimate'.
+components/PartsApprovalToggle.tsx(37,46): error TS2339: Property 'foundCount' does not exist on type 'number'.
+components/PartsApprovalToggle.tsx(44,66): error TS2339: Property 'total' does not exist on type 'number'.
+components/PartsApprovalToggle.tsx(48,68): error TS2339: Property 'total' does not exist on type 'number'.
+components/PartsApprovalToggle.tsx(109,67): error TS2339: Property 'total' does not exist on type 'number'.
+components/PartsApprovalToggle.tsx(116,33): error TS2339: Property 'breakdown' does not exist on type 'number'.
+components/PartsApprovalToggle.tsx(116,48): error TS7006: Parameter 'part' implicitly has an 'any' type.
+components/PartsApprovalToggle.tsx(116,54): error TS7006: Parameter 'index' implicitly has an 'any' type.
+components/PartsApprovalToggle.tsx(147,33): error TS2339: Property 'notFoundCount' does not exist on type 'number'.
+components/PartsApprovalToggle.tsx(150,39): error TS2339: Property 'notFoundCount' does not exist on type 'number'.
+components/PaymentModal.tsx(56,13): error TS2353: Object literal may only specify known properties, and 'depositPaidAt' does not exist in type 'Partial<Quote>'.
+components/PaymentModal.tsx(75,13): error TS2322: Type '"card" | "apple_pay" | "google_pay"' is not assignable to type '"card" | "cash" | "check" | undefined'.
+  Type '"apple_pay"' is not assignable to type '"card" | "cash" | "check" | undefined'.
+components/PaymentModal.tsx(83,13): error TS2353: Object literal may only specify known properties, and 'paidAt' does not exist in type 'Partial<ServiceRequest>'.
+components/PaymentModal.tsx(95,13): error TS2322: Type '"card" | "apple_pay" | "google_pay"' is not assignable to type '"card" | "cash" | "check" | undefined'.
+  Type '"apple_pay"' is not assignable to type '"card" | "cash" | "check" | undefined'.
+components/PaymentModal.tsx(101,13): error TS2353: Object literal may only specify known properties, and 'paidAt' does not exist in type 'Partial<ServiceRequest>'.
+components/ScooterServiceSelector.tsx(150,15): error TS2322: Type 'false | { backgroundColor: string; }' is not assignable to type 'ViewStyle'.
+  Type 'false' has no properties in common with type 'ViewStyle'.
+components/ServicePricingSettings.tsx(34,61): error TS2345: Argument of type 'PricingSettings' is not assignable to parameter of type 'PricingSettings | (() => PricingSettings)'.
+  Type 'PricingSettings' is not assignable to type 'PricingSettings'. Two different types with this name exist, but they are unrelated.
+    Types of property 'servicePricing' are incompatible.
+      Type '{ [serviceType: string]: { basePrice: number; laborRate: number; estimatedHours: number; }; }' is missing the following properties from type '{ oil_change: { basePrice: number; laborRate: number; estimatedHours: number; }; brake_service: { basePrice: number; laborRate: number; estimatedHours: number; }; tire_service: { basePrice: number; laborRate: number; estimatedHours: number; }; ... 17 more ...; scooter_diagnostic: { ...; }; }': oil_change, brake_service, tire_service, battery_service, and 17 more.
+components/ServicePricingSettings.tsx(37,17): error TS2345: Argument of type 'PricingSettings' is not assignable to parameter of type 'SetStateAction<PricingSettings>'.
+  Type 'PricingSettings' is not assignable to type 'PricingSettings'. Two different types with this name exist, but they are unrelated.
+    Types of property 'servicePricing' are incompatible.
+      Type '{ [serviceType: string]: { basePrice: number; laborRate: number; estimatedHours: number; }; }' is missing the following properties from type '{ oil_change: { basePrice: number; laborRate: number; estimatedHours: number; }; brake_service: { basePrice: number; laborRate: number; estimatedHours: number; }; tire_service: { basePrice: number; laborRate: number; estimatedHours: number; }; ... 17 more ...; scooter_diagnostic: { ...; }; }': oil_change, brake_service, tire_service, battery_service, and 17 more.
+components/SignatureCapture.tsx(126,27): error TS2339: Property 'requireSignature' does not exist on type '{ showQuickAccess: boolean; isProduction: boolean; enableLogging: boolean; }'.
+components/SignatureCapture.tsx(210,28): error TS2339: Property 'requireSignature' does not exist on type '{ showQuickAccess: boolean; isProduction: boolean; enableLogging: boolean; }'.
+components/SignatureCapture.tsx(305,26): error TS2339: Property 'requireSignature' does not exist on type '{ showQuickAccess: boolean; isProduction: boolean; enableLogging: boolean; }'.
+components/SignatureCapture.tsx(329,13): error TS2322: Type 'false | { backgroundColor: string; }' is not assignable to type 'ViewStyle'.
+  Type 'false' has no properties in common with type 'ViewStyle'.
+components/StoreIntegrationTest.tsx(93,27): error TS2345: Argument of type '{ id: string; make: string; model: string; year: number; }' is not assignable to parameter of type 'Vehicle'.
+  Type '{ id: string; make: string; model: string; year: number; }' is missing the following properties from type 'Vehicle': vehicleType, mileage
+components/StripePayment.tsx(32,19): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+components/payments/StripePaymentWidget.tsx(73,9): error TS18048: 'paymentMethodsData.paymentMethods.length' is possibly 'undefined'.
+components/payments/StripePaymentWidget.tsx(74,29): error TS18048: 'paymentMethodsData' is possibly 'undefined'.
+components/payments/StripePaymentWidget.tsx(75,12): error TS18048: 'paymentMethodsData' is possibly 'undefined'.
+hooks/use-firebase.ts(111,13): error TS7030: Not all code paths return a value.
+hooks/usePushNotifications.ts(11,35): error TS2322: Type 'Promise<{ shouldShowAlert: true; shouldPlaySound: true; shouldSetBadge: true; }>' is not assignable to type 'Promise<NotificationBehavior>'.
+  Type '{ shouldShowAlert: true; shouldPlaySound: true; shouldSetBadge: true; }' is missing the following properties from type 'NotificationBehavior': shouldShowBanner, shouldShowList
+hooks/usePushNotifications.ts(31,32): error TS2554: Expected 1 arguments, but got 0.
+hooks/usePushNotifications.ts(32,28): error TS2554: Expected 1 arguments, but got 0.
+lib/trpc.ts(42,7): error TS2322: Type 'typeof SuperJSON' is not assignable to type 'TypeError<"You must define a transformer on your your `initTRPC`-object first">'.
+  Type 'typeof SuperJSON' is not assignable to type '"You must define a transformer on your your `initTRPC`-object first"'.
+stores/app-store.ts(621,31): error TS2339: Property 'enableToolsModule' does not exist on type '{ showQuickAccess: boolean; isProduction: boolean; enableLogging: boolean; }'.
+stores/auth-store.ts(86,19): error TS2322: Type '{ role: "customer" | "mechanic" | "admin"; email: string; firstName: string; lastName: string; phone: string | null; id: string; isActive: boolean; createdAt: string; }' is not assignable to type 'User'.
+  Types of property 'phone' are incompatible.
+    Type 'string | null' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.
+stores/auth-store.ts(166,21): error TS2322: Type '{ role: "customer" | "mechanic" | "admin"; email: string; firstName: string; lastName: string; phone: string | null; id: string; isActive: true; createdAt: string; }' is not assignable to type 'User'.
+  Types of property 'phone' are incompatible.
+    Type 'string | null' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.
+stores/store-validators.ts(102,68): error TS2339: Property 'trim' does not exist on type 'never'.

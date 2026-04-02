@@ -1,12 +1,20 @@
 import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { useAuthStore } from '@/stores/auth-store';
-import { useThemeStore } from '@/stores/theme-store';
-import * as Icons from 'lucide-react-native';
+import { Home, Wrench, FileText, Calendar, User } from 'lucide-react-native';
 
-function TabBarIcon({ name, color }: { name: keyof typeof Icons; color: string }) {
-  const IconComponent = Icons[name] as any;
-  return IconComponent ? <IconComponent size={24} color={color} /> : null;
+type IconName = 'Home' | 'Wrench' | 'FileText' | 'Calendar' | 'User';
+
+function TabBarIcon({ name, color }: { name: IconName; color: string }) {
+  const iconMap = {
+    Home,
+    Wrench,
+    FileText,
+    Calendar,
+    User,
+  };
+  const IconComponent = iconMap[name];
+  return <IconComponent size={24} color={color} />;
 }
 
 export default function CustomerTabLayout() {

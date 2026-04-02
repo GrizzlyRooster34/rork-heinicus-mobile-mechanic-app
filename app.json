@@ -1,12 +1,13 @@
 {
   "expo": {
-    "name": "Heinicus Mobile Mechanic",
-    "slug": "heinicus-mobile-mechanic",
-    "version": "1.0.0",
+    "name": "Heinicus Mechanic",
+    "slug": "heinicus-mobile-mechanic-app",
+    "version": "1.1.0",
+    "owner": "heinicus1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "heinicus",
-    "userInterfaceStyle": "dark",
+    "scheme": "mobilemechanic",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "splash": {
       "image": "./assets/images/splash-icon.png",
@@ -15,73 +16,33 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.heinicus.mobilemechanic",
-      "buildNumber": "1",
-      "infoPlist": {
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
-        "NSLocationAlwaysUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
-        "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
-        "UIBackgroundModes": [
-          "location"
-        ],
-        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
-        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
-      },
-      "entitlements": {
-        "com": {
-          "apple": {
-            "developer": {
-              "networking": {
-                "wifi-info": true
-              }
-            }
-          }
-        }
-      }
+      "bundleIdentifier": "com.heinicus.mobilemechanic"
     },
     "android": {
-      "compileSdkVersion": 35,
-      "targetSdkVersion": 35,
-      "minSdkVersion": 30,
-      "buildToolsVersion": "35.0.0",
+      "versionCode": 9,
+      "package": "com.heinicus.mobilemechanic",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1a1a1a"
       },
-      "package": "com.heinicus.mobilemechanic",
-      "versionCode": 1,
       "permissions": [
         "CAMERA",
+        "RECORD_AUDIO",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
+        "VIBRATE",
         "INTERNET",
         "ACCESS_NETWORK_STATE",
-        "WRITE_EXTERNAL_STORAGE",
         "READ_EXTERNAL_STORAGE",
-        "VIBRATE",
-        "WAKE_LOCK",
-        "RECEIVE_BOOT_COMPLETED",
-        "FOREGROUND_SERVICE",
-        "ACCESS_BACKGROUND_LOCATION",
-        "FOREGROUND_SERVICE_LOCATION",
-        "POST_NOTIFICATIONS",
-        "RECORD_AUDIO",
-        "MODIFY_AUDIO_SETTINGS",
-        "READ_PHONE_STATE"
+        "WRITE_EXTERNAL_STORAGE",
+        "CALL_PHONE",
+        "SEND_SMS",
+        "RECEIVE_SMS",
+        "READ_SMS"
       ],
-      "blockedPermissions": [
-        "SYSTEM_ALERT_WINDOW"
-      ],
-      "allowBackup": false,
-      "networkSecurityConfig": {
-        "cleartextTrafficPermitted": false
-      },
-      "requestLegacyExternalStorage": false,
-      "usesCleartextTraffic": false,
-      "usesNonSdkApi": false,
-      "resizeableActivity": true,
-      "supportsPictureInPicture": false
+      "compileSdkVersion": 34,
+      "targetSdkVersion": 34,
+      "minSdkVersion": 21
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
@@ -91,7 +52,15 @@
       [
         "expo-router",
         {
-          "origin": "https://rork.com/"
+          "origin": "https://mobilemechanic.app/"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#000000",
+          "mode": "production"
         }
       ],
       [
@@ -120,12 +89,27 @@
         }
       ]
     ],
+    "notification": {
+      "icon": "./assets/images/notification-icon.png",
+      "color": "#000000",
+      "androidMode": "default",
+      "androidCollapsedTitle": "Mobile Mechanic",
+      "iosDisplayInForeground": true
+    },
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "eas": {
-        "projectId": "your-project-id"
+        "projectId": "43815cbd-f56d-401c-8893-5c609bc71a27"
+      },
+      "buildInfo": {
+        "buildNumber": 9,
+        "buildDate": "2025-07-13T18:08:36.059Z",
+        "gitBranch": "integrated-production",
+        "gitCommit": "06dc8e7",
+        "buildType": "build",
+        "environment": "development"
       }
     }
   }

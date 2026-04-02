@@ -3,6 +3,7 @@ import { trpcServer } from "@hono/trpc-server";
 import { cors } from "hono/cors";
 import { appRouter } from "./trpc/app-router";
 import { createContext } from "./trpc/create-context";
+import { payment } from "./routes/payment";
 
 // app will be mounted at /api
 const app = new Hono();
@@ -50,20 +51,8 @@ app.get("/", (c) => {
   });
 });
 
-// Debug endpoint to check tRPC routes
-app.get("/debug/routes", (c) => {
-  return c.json({
-    message: "Available tRPC routes",
-    routes: {
-      "mechanic.submitVerification": "POST /api/trpc/mechanic.submitVerification",
-      "mechanic.getVerificationStatus": "GET /api/trpc/mechanic.getVerificationStatus",
-      "mechanic.getAllVerifications": "GET /api/trpc/mechanic.getAllVerifications",
-      "mechanic.reviewVerification": "POST /api/trpc/mechanic.reviewVerification",
-      "mechanic.getVerificationDetails": "GET /api/trpc/mechanic.getVerificationDetails"
-    },
-    timestamp: new Date().toISOString()
-  });
-});
+// Mount payment routes at /payment
+app.route("/payment", payment);
 
 // Mount tRPC router at /trpc
 app.use(
@@ -84,7 +73,7 @@ app.all("*", (c) => {
     error: "Route not found",
     method: c.req.method,
     path: c.req.url,
-    availableRoutes: ["/", "/debug/routes", "/trpc/*"]
+    availableRoutes: ["/", "/payment/*", "/trpc/*"]
   }, 404);
 });
 

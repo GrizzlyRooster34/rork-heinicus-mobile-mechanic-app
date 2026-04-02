@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, Alert, Modal } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Colors } from '@/constants/colors';
@@ -12,14 +12,14 @@ import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { ServiceType, DiagnosticResult, Vehicle, VehicleType } from '@/types/service';
 import { ENV_CONFIG, logProductionEvent } from '@/utils/firebase-config';
-import { trpc } from '@/lib/trpc';
+import { logger } from '@/utils/logger';
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
-import * as Icons from 'lucide-react-native';
+import { Car, Truck, Bike, MapPin, Camera, Bot, Shield, Brain, CheckCircle } from 'lucide-react-native';
 
 export default function CustomerRequestScreen() {
   const params = useLocalSearchParams();
-  const { currentLocation, setCurrentLocation } = useAppStore();
+  const { addServiceRequest, addQuote, vehicles, currentLocation, setCurrentLocation, updateServiceRequest, addVehicle } = useAppStore();
   const { user } = useAuthStore();
   const utils = trpc.useUtils();
   const createJobMutation = trpc.job.create.useMutation();
@@ -59,6 +59,7 @@ export default function CustomerRequestScreen() {
   );
   const [selectedParts, setSelectedParts] = useState<string[]>([]);
   const [showVinScanner, setShowVinScanner] = useState(false);
+  const [, setLocationError] = useState<string | null>(null);
   const [vinNumber, setVinNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiDiagnosis, setAiDiagnosis] = useState<DiagnosticResult | undefined>(
@@ -68,9 +69,42 @@ export default function CustomerRequestScreen() {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType>('car');
 
+  const getCurrentLocation = useCallback(async () => {
+    if (Platform.OS === 'web') {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setCurrentLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+          },
+          (error) => logger.warn('Location error', 'CustomerRequest', error)
+        );
+      }
+    } else {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setLocationError('Permission to access location was denied');
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({});
+        setCurrentLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+      } catch (error) {
+        logger.error('Failed to get current location', 'CustomerRequest', error);
+        setLocationError('Failed to get location');
+      }
+    }
+  }, [setCurrentLocation]);
+
   useEffect(() => {
     getCurrentLocation();
-  }, []);
+  }, [getCurrentLocation]);
 
   useEffect(() => {
     // Set selected vehicle from params or default to first vehicle
@@ -84,7 +118,7 @@ export default function CustomerRequestScreen() {
       setSelectedVehicle(vehicles[0]);
       setSelectedVehicleType(vehicles[0].vehicleType);
     }
-  }, [vehicles, params.vehicleId]);
+  }, [vehicles, params.vehicleId, selectedVehicle]);
 
   useEffect(() => {
     // Auto-generate quote if requested
@@ -94,48 +128,10 @@ export default function CustomerRequestScreen() {
         handleSubmit();
       }, 500);
     }
-  }, [params.autoQuote, selectedService, description, selectedVehicle]);
+  }, [params.autoQuote, selectedService, description, selectedVehicle, handleSubmit]);
 
-  const getCurrentLocation = async () => {
-    if (Platform.OS === 'web') {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setCurrentLocation({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            });
-          },
-          (error) => console.log('Location error:', error)
-        );
-      }
-      return;
-    }
 
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required to provide service at your location.');
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({});
-      const address = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
-
-      setCurrentLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        address: address[0] ? `${address[0].street}, ${address[0].city}` : undefined,
-      });
-    } catch (error) {
-      console.log('Location error:', error);
-    }
-  };
-
-  const handleVinScanned = (vinData: any) => {
+  const handleVinScanned = (vinData: { vin: string; vehicleType: VehicleType; make?: string; model?: string; year?: number; trim?: string; engine?: string }) => {
     setVinNumber(vinData.vin);
     setSelectedVehicleType(vinData.vehicleType);
     setShowVinScanner(false);
@@ -162,35 +158,22 @@ Would you like to add this vehicle to your profile?`,
           { text: 'Skip', style: 'cancel' },
           { 
             text: 'Add Vehicle', 
-            onPress: async () => {
-              try {
-                const result = await addVehicleMutation.mutateAsync({
-                  make: vinData.make,
-                  model: vinData.model,
-                  year: vinData.year,
-                  vehicleType: vinData.vehicleType,
-                  vin: vinData.vin,
-                  mileage: 0,
-                });
-
-                const backendVehicle = result.vehicle;
-                const newVehicle: Vehicle = {
-                  id: backendVehicle.id,
-                  make: backendVehicle.make,
-                  model: backendVehicle.model,
-                  year: backendVehicle.year,
-                  vehicleType: mapVehicleType(backendVehicle.vehicleType),
-                  vin: backendVehicle.vin ?? undefined,
-                  mileage: backendVehicle.mileage ?? 0,
-                };
-
-                setSelectedVehicle(newVehicle);
-                setSelectedVehicleType(newVehicle.vehicleType);
-                await utils.customer.getProfile.invalidate();
-                Alert.alert('Vehicle Added', 'Vehicle has been added to your profile.');
-              } catch (error) {
-                Alert.alert('Error', 'Failed to add vehicle. Please try again.');
-              }
+            onPress: () => {
+              const newVehicle: Vehicle = {
+                id: Date.now().toString(),
+                make: vinData.make || 'Unknown',
+                model: vinData.model || 'Unknown',
+                year: vinData.year || new Date().getFullYear(),
+                vehicleType: vinData.vehicleType,
+                vin: vinData.vin,
+                trim: vinData.trim,
+                engine: vinData.engine,
+                mileage: 0, // User can update this later
+              };
+              addVehicle(newVehicle);
+              setSelectedVehicle(newVehicle);
+              setSelectedVehicleType(newVehicle.vehicleType);
+              Alert.alert('Vehicle Added', 'Vehicle has been added to your profile.');
             }
           }
         ]
@@ -339,7 +322,7 @@ Would you like to add this vehicle to your profile?`,
       setSelectedParts([]);
       setVinNumber('');
       setAiDiagnosis(undefined);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to submit request. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -395,7 +378,7 @@ Would you like to add this vehicle to your profile?`,
         {/* Production Environment Indicator */}
         {ENV_CONFIG?.isProduction && (
           <View style={styles.productionBanner}>
-            <Icons.Shield size={16} color={Colors.success} />
+            <Shield size={16} color={Colors.success} />
             <Text style={styles.productionText}>Production Environment - Live Service</Text>
           </View>
         )}
@@ -413,7 +396,15 @@ Would you like to add this vehicle to your profile?`,
           ) : vehicles.length > 0 ? (
             <View style={styles.vehicleSelector}>
               {vehicles.map((vehicle) => {
-                const IconComponent = Icons[getVehicleTypeIcon(vehicle.vehicleType) as keyof typeof Icons] as any;
+                const getVehicleIcon = (type: VehicleType) => {
+                  switch (type) {
+                    case 'car': return Car;
+                    case 'truck': return Truck;
+                    case 'motorcycle': return Bike;
+                    default: return Car;
+                  }
+                };
+                const IconComponent = getVehicleIcon(vehicle.vehicleType);
                 
                 return (
                   <View
@@ -521,7 +512,7 @@ Would you like to add this vehicle to your profile?`,
           {aiDiagnosis && !showAIAssistant && (
             <View style={styles.diagnosisPreview}>
               <View style={styles.diagnosisHeader}>
-                <Icons.Brain size={16} color={Colors.primary} />
+                <Brain size={16} color={Colors.primary} />
                 <Text style={styles.diagnosisTitle}>AI Diagnosis Complete</Text>
                 <Button
                   title="View Details"
@@ -609,7 +600,7 @@ Would you like to add this vehicle to your profile?`,
               <View style={styles.toolsList}>
                 {toolLoadoutSuggestions.slice(0, 6).map((toolName, index) => (
                   <View key={index} style={styles.toolItem}>
-                    <Icons.CheckCircle size={14} color={Colors.success} />
+                    <CheckCircle size={14} color={Colors.success} />
                     <Text style={styles.toolName}>{toolName}</Text>
                   </View>
                 ))}
@@ -651,7 +642,7 @@ Would you like to add this vehicle to your profile?`,
           <View style={styles.vinSection}>
             {vinNumber || selectedVehicle?.vin ? (
               <View style={styles.vinDisplay}>
-                <Icons.CheckCircle size={20} color={Colors.success} />
+                <CheckCircle size={20} color={Colors.success} />
                 <Text style={styles.vinText}>
                   VIN: {vinNumber || selectedVehicle?.vin}
                 </Text>
@@ -713,7 +704,7 @@ Would you like to add this vehicle to your profile?`,
                 title={`${option.label}
 ${option.desc}`}
                 variant={urgency === option.key ? 'primary' : 'outline'}
-                onPress={() => setUrgency(option.key as any)}
+                onPress={() => setUrgency(option.key as 'low' | 'medium' | 'high' | 'emergency')}
                 style={styles.urgencyButton}
                 textStyle={styles.urgencyButtonText}
               />

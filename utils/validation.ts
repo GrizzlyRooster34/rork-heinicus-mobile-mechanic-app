@@ -32,17 +32,17 @@ export interface SanitizationOptions {
 // Email validation
 export function validateEmail(email: string): ValidationResult {
   const errors: string[] = [];
-
+  
   if (!email || email.trim().length === 0) {
     errors.push('Email is required');
     return { isValid: false, errors };
   }
 
   const trimmedEmail = email.trim().toLowerCase();
-
+  
   // Basic email regex
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
+  
   if (!emailRegex.test(trimmedEmail)) {
     errors.push('Please enter a valid email address');
   }
@@ -54,7 +54,7 @@ export function validateEmail(email: string): ValidationResult {
 
   // Common typo detection
   const domain = trimmedEmail.split('@')[1];
-
+  
   if (domain) {
     // Check for common typos
     const typoMap: Record<string, string> = {
@@ -64,7 +64,7 @@ export function validateEmail(email: string): ValidationResult {
       'hotmial.com': 'hotmail.com',
       'outlok.com': 'outlook.com',
     };
-
+    
     if (typoMap[domain]) {
       errors.push(`Did you mean ${trimmedEmail.replace(domain, typoMap[domain])}?`);
     }
@@ -90,7 +90,7 @@ export function validatePassword(password: string, confirmPassword?: string): Va
   if (password.length < 6) {
     errors.push('Password must be at least 6 characters long');
   }
-
+  
   if (password.length > 128) {
     errors.push('Password is too long (maximum 128 characters)');
   }
@@ -104,15 +104,15 @@ export function validatePassword(password: string, confirmPassword?: string): Va
   if (!hasLowerCase) {
     warnings.push('Consider adding lowercase letters for stronger security');
   }
-
+  
   if (!hasUpperCase) {
     warnings.push('Consider adding uppercase letters for stronger security');
   }
-
+  
   if (!hasNumbers) {
     warnings.push('Consider adding numbers for stronger security');
   }
-
+  
   if (!hasSpecialChar) {
     warnings.push('Consider adding special characters for stronger security');
   }
@@ -122,7 +122,7 @@ export function validatePassword(password: string, confirmPassword?: string): Va
     'password', '123456', '12345678', 'qwerty', 'abc123', 'password123',
     'admin', 'letmein', 'welcome', 'monkey', '1234567890'
   ];
-
+  
   if (commonPasswords.includes(password.toLowerCase())) {
     errors.push('Please choose a more secure password');
   }
@@ -142,19 +142,19 @@ export function validatePassword(password: string, confirmPassword?: string): Va
 // Phone number validation
 export function validatePhoneNumber(phone: string): ValidationResult {
   const errors: string[] = [];
-
+  
   if (!phone || phone.trim().length === 0) {
     return { isValid: true, errors }; // Phone is optional
   }
 
   // Remove all non-digit characters for validation
   const digitsOnly = phone.replace(/\D/g, '');
-
+  
   // US phone number validation
   if (digitsOnly.length < 10) {
     errors.push('Phone number must have at least 10 digits');
   }
-
+  
   if (digitsOnly.length > 15) {
     errors.push('Phone number is too long');
   }
@@ -169,7 +169,7 @@ export function validatePhoneNumber(phone: string): ValidationResult {
   ];
 
   const isValidFormat = phonePatterns.some(pattern => pattern.test(phone.trim()));
-
+  
   if (!isValidFormat && digitsOnly.length >= 10) {
     errors.push('Please enter a valid phone number format');
   }
@@ -183,18 +183,18 @@ export function validatePhoneNumber(phone: string): ValidationResult {
 // Name validation
 export function validateName(name: string, fieldName: string = 'Name'): ValidationResult {
   const errors: string[] = [];
-
+  
   if (!name || name.trim().length === 0) {
     errors.push(`${fieldName} is required`);
     return { isValid: false, errors };
   }
 
   const trimmedName = name.trim();
-
+  
   if (trimmedName.length < 2) {
     errors.push(`${fieldName} must be at least 2 characters long`);
   }
-
+  
   if (trimmedName.length > 50) {
     errors.push(`${fieldName} is too long (maximum 50 characters)`);
   }
@@ -219,14 +219,13 @@ export function validateName(name: string, fieldName: string = 'Name'): Validati
 // VIN validation
 export function validateVIN(vin: string): ValidationResult {
   const errors: string[] = [];
-
+  
   if (!vin || vin.trim().length === 0) {
-    errors.push('VIN is required');
-    return { isValid: false, errors };
+    return { isValid: true, errors }; // VIN is optional
   }
 
   const trimmedVIN = vin.trim().toUpperCase();
-
+  
   // VIN must be exactly 17 characters
   if (trimmedVIN.length !== 17) {
     errors.push('VIN must be exactly 17 characters long');
@@ -319,7 +318,7 @@ export function sanitizeInput(input: string, options: SanitizationOptions = {}):
       'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'CREATE', 'ALTER',
       'UNION', 'WHERE', 'OR', 'AND', 'EXEC', 'EXECUTE'
     ];
-
+    
     sqlKeywords.forEach(keyword => {
       const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
       sanitized = sanitized.replace(regex, '');
@@ -409,12 +408,12 @@ export function validateForm(fields: Record<string, unknown>, rules: Record<stri
     const rule = rules[fieldName];
     if (rule) {
       const result = validateField(String(value || ''), rule);
-
+      
       if (!result.isValid) {
         errors[fieldName] = result.errors;
         isValid = false;
       }
-
+      
       if (result.warnings && result.warnings.length > 0) {
         warnings[fieldName] = result.warnings;
       }
@@ -433,8 +432,8 @@ export function debounceValidation(
   validationFunction: () => void,
   delay: number = 300
 ): () => void {
-  let timeoutId: ReturnType<typeof setTimeout>;
-
+  let timeoutId: NodeJS.Timeout;
+  
   return () => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(validationFunction, delay);

@@ -1,15 +1,8 @@
 import { z } from 'zod';
-import { protectedProcedure, router } from '../../trpc';
-import { prisma } from '@/lib/prisma';
-import { UserRole, JobStatus, QuoteStatus, Prisma } from '@prisma/client';
-import { TRPCError } from '@trpc/server';
-import bcrypt from 'bcryptjs';
-import { requireRole } from '@/backend/middleware/auth';
-
-const adminProcedure = protectedProcedure.use(requireRole(UserRole.ADMIN));
+import { publicProcedure, router } from '../../trpc';
 
 export const adminRouter = router({
-  getAllUsers: adminProcedure
+  getAllUsers: publicProcedure
     .query(async () => {
       try {
         const users = await prisma.user.findMany({

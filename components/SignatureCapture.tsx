@@ -28,7 +28,7 @@ export function SignatureCapture({
 }: SignatureCaptureProps) {
   const [hasSignature, setHasSignature] = useState(false);
   const [customerName, setCustomerName] = useState('');
-  const [signaturePaths, setSignaturePaths] = useState<Array<{ x: number; y: number }[]>>([]);
+  const [signaturePaths, setSignaturePaths] = useState<{ x: number; y: number }[][]>([]);
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   
@@ -138,7 +138,7 @@ export function SignatureCapture({
     }
 
     // Production validation
-    if (PRODUCTION_CONFIG.requireSignature && !hasSignature) {
+    if (PRODUCTION_CONFIG.isProduction && !hasSignature) {
       Alert.alert(
         'Signature Required',
         'Customer signature is required to complete this job in production mode.',
@@ -233,7 +233,7 @@ export function SignatureCapture({
       <View style={styles.header}>
         <Text style={styles.title}>Customer Signature</Text>
         <Text style={styles.subtitle}>{jobTitle}</Text>
-        {PRODUCTION_CONFIG.requireSignature && (
+        {PRODUCTION_CONFIG.isProduction && (
           <View style={styles.requiredBadge}>
             <Text style={styles.requiredText}>REQUIRED</Text>
           </View>
@@ -328,7 +328,7 @@ export function SignatureCapture({
       </View>
 
       {/* Production Requirements */}
-      {PRODUCTION_CONFIG.requireSignature && (
+      {PRODUCTION_CONFIG.isProduction && (
         <View style={styles.requirementsCard}>
           <Icons.AlertCircle size={16} color={Colors.error} />
           <Text style={styles.requirementsText}>
@@ -353,7 +353,7 @@ export function SignatureCapture({
           disabled={!hasSignature || isUploading}
           style={[
             styles.completeButton,
-            (!hasSignature || isUploading) && styles.completeButtonDisabled
+            ...(!hasSignature ? [styles.completeButtonDisabled] : [])
           ]}
         />
       </View>

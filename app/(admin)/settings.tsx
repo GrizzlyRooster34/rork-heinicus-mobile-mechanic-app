@@ -6,12 +6,13 @@ import { useAdminSettingsStore } from '@/stores/admin-settings-store';
 import { useConfigStore } from '@/lib/configStore';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/Button';
+import { logger } from '@/utils/logger';
 import * as Icons from 'lucide-react-native';
 
 type ConfigKey = 'isProduction' | 'showVINDebug' | 'enableChatbot' | 'defaultLaborRate' | 'showScooterSupport' | 'showMotorcycleSupport' | 'enableVINCheck';
 
 export default function AdminSettingsScreen() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, getAllUsers } = useAuthStore();
   const {
     system,
     notifications,
@@ -32,11 +33,11 @@ export default function AdminSettingsScreen() {
   const { data: configData } = trpc.config.getAll.useQuery();
   const { data: usersData } = trpc.admin.getAllUsers.useQuery();
   const updateConfigMutation = trpc.admin.updateConfig.useMutation({
-    onSuccess: (data: unknown) => {
-      console.log('Config updated successfully:', data);
+    onSuccess: (data) => {
+      logger.info('Config updated successfully', 'AdminSettings', data);
     },
-    onError: (error: unknown) => {
-      console.error('Failed to update config:', error);
+    onError: (error) => {
+      logger.error('Failed to update config', 'AdminSettings', error);
       Alert.alert('Error', 'Failed to update setting. Please try again.');
     },
   });
@@ -89,9 +90,9 @@ export default function AdminSettingsScreen() {
         value: value
       });
       
-      console.log(`Config updated: ${key} = ${value}`);
+      logger.info(`Config updated: ${key} = ${value}`, 'AdminSettings');
     } catch (error) {
-      console.error('Failed to update config:', error);
+      logger.error('Failed to update config', 'AdminSettings', error);
       
       // Revert local state on error
       config.updateSetting(key, !value);

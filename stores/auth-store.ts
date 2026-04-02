@@ -5,9 +5,10 @@ import { User, AuthState } from '@/types/auth';
 import { MechanicVerificationStatus } from '@/types/service';
 import { trpcClient } from '@/lib/trpc';
 import { devMode, isDevCredentials, getDevUser } from '@/utils/dev';
-import { setAuthTokens, clearAuthTokens } from '@/lib/auth-token';
+import { withAsyncErrorHandling, withErrorHandling, logStoreAction } from './store-utils';
 
 interface AuthStore extends AuthState {
+  token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, firstName: string, lastName: string, phone?: string, role?: 'customer' | 'mechanic') => Promise<boolean>;
   logout: () => void;
@@ -62,6 +63,7 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       user: null,
+      token: null,
       isLoading: false,
       isAuthenticated: false,
       token: null,
@@ -83,7 +85,7 @@ export const useAuthStore = create<AuthStore>()(
             role: backendRole,
           });
           
-          if (result.success && result.user) {
+          if (result.success && 'user' in result && result.user) {
             console.log('Signup successful via TRPC:', { 
               userId: result.user.id, 
               email: result.user.email,
@@ -91,16 +93,17 @@ export const useAuthStore = create<AuthStore>()(
               timestamp: new Date().toISOString() 
             });
             
+            // Use the user object as returned from the backend
             const completeUser: User = {
               ...result.user,
-              phone: result.user.phone ?? undefined,
-              role: result.user.role.toLowerCase() as 'customer' | 'mechanic' | 'admin'
+              role: result.user.role as 'customer' | 'mechanic' | 'admin',
+              createdAt: new Date(result.user.createdAt)
             };
-            setAuthTokens(result.token ?? null, result.refreshToken ?? null);
             
             // Auto-login after successful signup
             set({ 
-              user: completeUser, 
+              user: completeUser,
+              token: 'token' in result ? result.token || null : null,
               isAuthenticated: true, 
               isLoading: false,
               token: result.token ?? null,
@@ -109,7 +112,7 @@ export const useAuthStore = create<AuthStore>()(
             
             return true;
           } else {
-            console.log('Signup failed via TRPC');
+            console.log('Signup failed via TRPC:', 'error' in result ? result.error : 'Unknown error');
             set({ isLoading: false });
             return false;
           }
@@ -166,22 +169,23 @@ export const useAuthStore = create<AuthStore>()(
               password,
             });
             
-            if (result.success && result.user) {
+            if (result.success && 'user' in result && result.user) {
               console.log('Login successful via TRPC:', { 
                 userId: result.user.id, 
                 role: result.user.role, 
                 timestamp: new Date().toISOString() 
               });
               
+              // Use the user object as returned from the backend
               const completeUser: User = {
                 ...result.user,
-                phone: result.user.phone ?? undefined,
-                role: result.user.role.toLowerCase() as 'customer' | 'mechanic' | 'admin'
+                role: result.user.role as 'customer' | 'mechanic' | 'admin',
+                createdAt: new Date(result.user.createdAt)
               };
-              setAuthTokens(result.token ?? null, result.refreshToken ?? null);
               
               set({ 
-                user: completeUser, 
+                user: completeUser,
+                token: 'token' in result ? result.token || null : null,
                 isAuthenticated: true, 
                 isLoading: false,
                 token: result.token ?? null,
@@ -190,7 +194,7 @@ export const useAuthStore = create<AuthStore>()(
               
               return true;
             } else {
-              console.log('Login failed via TRPC');
+              console.log('Login failed via TRPC:', 'error' in result ? result.error : 'Unknown error');
             }
           } catch (trpcError) {
             console.warn('TRPC login failed, trying dev fallback:', trpcError);
@@ -238,11 +242,9 @@ export const useAuthStore = create<AuthStore>()(
         clearAuthTokens();
         
         set({ 
-          user: null, 
-          isAuthenticated: false,
+          user: null,
           token: null,
-          refreshToken: null,
-          verificationStatus: null,
+          isAuthenticated: false 
         });
       },
 
@@ -331,7 +333,25 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'heinicus-auth-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => AsyncStorage, {
+        // Add error handling to prevent crashes if AsyncStorage fails
+        replacer: (key, value) => {
+          try {
+            return value;
+          } catch (error) {
+            console.warn('AsyncStorage serialization error for key:', key, error);
+            return null;
+          }
+        },
+        reviver: (key, value) => {
+          try {
+            return value;
+          } catch (error) {
+            console.warn('AsyncStorage deserialization error for key:', key, error);
+            return null;
+          }
+        },
+      }),
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
@@ -339,9 +359,12 @@ export const useAuthStore = create<AuthStore>()(
         refreshToken: state.refreshToken,
         verificationStatus: state.verificationStatus,
       }),
-      onRehydrateStorage: () => (state) => {
-        if (state?.token || state?.refreshToken) {
-          setAuthTokens(state.token ?? null, state.refreshToken ?? null);
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Auth store hydration failed:', error);
+          // Don't crash the app - just log the error and continue with default state
+        } else {
+          console.log('✅ Auth store hydrated successfully');
         }
       },
     }

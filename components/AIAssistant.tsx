@@ -67,10 +67,13 @@ export function AIAssistant({ vehicle, onDiagnosisComplete, initialSymptoms = ''
   });
 
   const diagnosisMutation = trpc.diagnosis.diagnose.useMutation({
-    onSuccess: (result) => {
-      const mappedResult = mapDiagnosisResult(result);
-      setDiagnosis(mappedResult);
-      onDiagnosisComplete?.(mappedResult);
+    onSuccess: (result: any) => {
+      const diagnosisResult: DiagnosticResult = {
+        ...result,
+        createdAt: new Date(result.createdAt)
+      };
+      setDiagnosis(diagnosisResult);
+      onDiagnosisComplete?.(diagnosisResult);
       setIsAnalyzing(false);
       
       // Generate cost estimate based on AI diagnosis

@@ -117,6 +117,9 @@ export function useFirebaseChat(serviceRequestId: string) {
       });
 
       return unsubscribe;
+    } else {
+      setLoading(false);
+      return () => {}; // Return empty cleanup function
     }
   }, [serviceRequestId]);
 

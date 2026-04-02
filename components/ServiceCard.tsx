@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { ServiceCategory } from '@/constants/services';
+import { withComponentErrorBoundary } from '@/components/error-boundaries/withErrorBoundary';
 import * as Icons from 'lucide-react-native';
 
 interface ServiceCardProps {
@@ -9,7 +10,7 @@ interface ServiceCardProps {
   onPress: () => void;
 }
 
-export function ServiceCard({ service, onPress }: ServiceCardProps) {
+function ServiceCard({ service, onPress }: ServiceCardProps) {
   const IconComponent = Icons[service.icon as keyof typeof Icons] as any;
   
   return (
@@ -79,3 +80,14 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 });
+
+// Export with error boundary
+export const ServiceCardWithErrorBoundary = withComponentErrorBoundary(
+  ServiceCard,
+  (error, errorInfo) => {
+    console.error('ServiceCard error:', error, errorInfo);
+  }
+);
+
+// Default export for backwards compatibility
+export { ServiceCardWithErrorBoundary as ServiceCard };

@@ -5,8 +5,10 @@ import { StatusBar } from 'expo-status-bar';
 import { Colors } from '@/constants/colors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc, trpcClient } from '@/lib/trpc';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { StripeProvider } from '@stripe/stripe-react-native';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { StoreProvider } from '@/stores/StoreProvider';
+import { mobileDB } from '@/lib/mobile-database';
+import { ensureStripeInitialized } from '@/lib/stripe-init';
 
 export const unstable_settings = {
   initialRouteName: 'auth',
@@ -28,14 +30,39 @@ function AppContent() {
   const [isReady, setIsReady] = useState(false);
   usePushNotifications();
 
+  const handleAppError = (error: Error, errorInfo: React.ErrorInfo) => {
+    // Log critical app-level errors
+    console.error('Critical App Error:', {
+      error: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      timestamp: new Date().toISOString(),
+    });
+
+    // In production, send to crash reporting service
+    if (process.env.NODE_ENV === 'production') {
+      // Would send to Sentry, Bugsnag, etc.
+    }
+  };
+
   useEffect(() => {
     async function prepare() {
       try {
-        // Simple preparation without fonts to avoid infinite loops
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Initialize app immediately without blocking
+        setIsReady(true);
+        SplashScreen.hideAsync();
+        
+        // Initialize database in background (non-blocking)
+        mobileDB.initializeIfNeeded().catch(e => 
+          console.warn('Background database init failed:', e)
+        );
+        
+        // Initialize Stripe in background (non-blocking)
+        ensureStripeInitialized().catch(e => 
+          console.warn('Background Stripe init failed:', e)
+        );
       } catch (e) {
         console.warn('App preparation failed:', e);
-      } finally {
         setIsReady(true);
         SplashScreen.hideAsync();
       }
@@ -49,7 +76,11 @@ function AppContent() {
   }
 
   return (
-    <>
+    <ErrorBoundary 
+      level="app" 
+      onError={handleAppError}
+      resetKeys={[isReady]}
+    >
       <StatusBar style="light" backgroundColor={Colors.background} />
       <Stack
         screenOptions={{
@@ -68,17 +99,21 @@ function AppContent() {
         <Stack.Screen name="(mechanic)" options={{ headerShown: false }} />
         <Stack.Screen name="(admin)" options={{ headerShown: false }} />
       </Stack>
-    </>
+    </ErrorBoundary>
   );
 }
 
 export default function RootLayout() {
-  const content = (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        <AppContent />
-      </QueryClientProvider>
-    </trpc.Provider>
+  return (
+    <ErrorBoundary>
+      <StoreProvider>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <AppContent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      </StoreProvider>
+    </ErrorBoundary>
   );
 
   const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;

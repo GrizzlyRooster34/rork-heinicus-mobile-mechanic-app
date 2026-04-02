@@ -7,11 +7,9 @@ import { quoteRouter } from './routes/quote/route';
 import { jobRouter } from './routes/job/route';
 import { configRouter } from './routes/config/route';
 import { vinRouter } from './routes/vin/route';
+import { diagnosisRouter } from './routes/diagnosis/route';
 import { mechanicRouter } from './routes/mechanic/route';
-import { chatRouter } from './routes/chat/route';
-import { customerRouter } from './routes/customer/route';
-import { photosRouter } from './routes/photos/route';
-import { paymentRouter } from './routes/payment/route';
+import { paymentsRouter } from './routes/payments/route';
 import { reviewsRouter } from './routes/reviews/route';
 import { notificationsRouter } from './routes/notifications/route';
 
@@ -26,11 +24,9 @@ export const appRouter = router({
   job: jobRouter,
   config: configRouter,
   vin: vinRouter,
+  diagnosis: diagnosisRouter,
   mechanic: mechanicRouter,
-  chat: chatRouter,
-  customer: customerRouter,
-  photos: photosRouter,
-  payment: paymentRouter,
+  payments: paymentsRouter,
   reviews: reviewsRouter,
   notifications: notificationsRouter,
 });

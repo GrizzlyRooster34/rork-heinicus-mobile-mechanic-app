@@ -54,13 +54,13 @@ interface PricingSettings {
 
 interface ToolsSettings {
   availableTools: { [toolId: string]: boolean };
-  customTools: Array<{
+  customTools: {
     id: string;
     name: string;
     category: string;
     required: boolean;
     description?: string;
-  }>;
+  }[];
   toolConditions: { [toolId: string]: 'excellent' | 'good' | 'fair' | 'needs_replacement' };
   toolNotes: { [toolId: string]: string };
 }

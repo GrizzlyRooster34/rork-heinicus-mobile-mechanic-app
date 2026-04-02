@@ -1,90 +1,115 @@
-import { TRPCError } from '@trpc/server';
-import { JobStatus, NotificationType } from '@prisma/client';
 import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
-import { protectedProcedure, publicProcedure, router } from '../../trpc';
+import { publicProcedure, router } from '../../trpc';
+import { prisma } from '../../../../lib/prisma';
+import * as jwt from 'jsonwebtoken';
 
-const reviewSortSchema = z.enum(['newest', 'oldest', 'rating_high', 'rating_low']);
-const reviewClient = prisma as typeof prisma & { review: any };
+// Helper function to get user from request
+async function getUserFromRequest(req: Request): Promise<{ id: string; role: string } | null> {
+  try {
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+    
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(
+      token,
+      process.env.NEXTAUTH_SECRET || 'default-secret'
+    ) as { userId: string; email: string; role: string };
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId }
+    });
+
+    if (!user || !user.isActive) {
+      return null;
+    }
+
+    return { id: user.id, role: user.role };
+  } catch (error) {
+    return null;
+  }
+}
 
 export const reviewsRouter = router({
-  submitReview: protectedProcedure
-    .input(
-      z.object({
-        jobId: z.string(),
-        rating: z.number().int().min(1).max(5),
-        comment: z.string().optional(),
-        photos: z.array(z.string().url()).optional(),
-        punctualityRating: z.number().int().min(1).max(5).optional(),
-        qualityRating: z.number().int().min(1).max(5).optional(),
-        communicationRating: z.number().int().min(1).max(5).optional(),
-        valueRating: z.number().int().min(1).max(5).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (!ctx.user) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required',
-        });
-      }
-
-      const job = await prisma.job.findUnique({
-        where: { id: input.jobId },
-        select: {
-          id: true,
-          status: true,
-          customerId: true,
-          mechanicId: true,
-        },
-      });
-
-      if (!job) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Job not found',
-        });
-      }
-
-      if (job.status !== JobStatus.COMPLETED) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Only completed jobs can be reviewed',
-        });
-      }
-
-      let revieweeId: string;
-      if (ctx.user.id === job.customerId) {
-        if (!job.mechanicId) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'This job has no assigned mechanic',
-          });
-        }
-        revieweeId = job.mechanicId;
-      } else if (ctx.user.id === job.mechanicId) {
-        revieweeId = job.customerId;
-      } else {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You are not allowed to review this job',
-        });
-      }
-
+  // Submit a review
+  submitReview: publicProcedure
+    .input(z.object({
+      jobId: z.string(),
+      rating: z.number().min(1).max(5),
+      comment: z.string().optional(),
+      photos: z.array(z.string()).optional(),
+      punctualityRating: z.number().min(1).max(5).optional(),
+      qualityRating: z.number().min(1).max(5).optional(),
+      communicationRating: z.number().min(1).max(5).optional(),
+      valueRating: z.number().min(1).max(5).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
       try {
-        const review = await reviewClient.review.create({
+        const user = await getUserFromRequest(ctx.req);
+        if (!user) {
+          throw new Error('Authentication required');
+        }
+
+        // Get job details
+        const job = await prisma.job.findUnique({
+          where: { id: input.jobId },
+          include: {
+            customer: true,
+            mechanic: true,
+          }
+        });
+
+        if (!job) {
+          throw new Error('Job not found');
+        }
+
+        // Verify job is completed
+        if (job.status !== 'COMPLETED') {
+          throw new Error('Can only review completed jobs');
+        }
+
+        // Determine reviewer and reviewee
+        let revieweeId: string;
+        if (user.id === job.customerId) {
+          // Customer reviewing mechanic
+          if (!job.mechanicId) {
+            throw new Error('No mechanic assigned to this job');
+          }
+          revieweeId = job.mechanicId;
+        } else if (user.id === job.mechanicId) {
+          // Mechanic reviewing customer
+          revieweeId = job.customerId;
+        } else {
+          throw new Error('You are not authorized to review this job');
+        }
+
+        // Check if review already exists
+        const existingReview = await prisma.review.findFirst({
+          where: {
+            jobId: input.jobId,
+            reviewerId: user.id,
+          }
+        });
+
+        if (existingReview) {
+          throw new Error('You have already reviewed this job');
+        }
+
+        // Create review
+        const review = await prisma.review.create({
           data: {
             jobId: input.jobId,
-            reviewerId: ctx.user.id,
-            revieweeId,
+            reviewerId: user.id,
+            revieweeId: revieweeId,
             rating: input.rating,
             comment: input.comment,
-            photos: input.photos ?? [],
+            photos: input.photos || [],
             punctualityRating: input.punctualityRating,
             qualityRating: input.qualityRating,
             communicationRating: input.communicationRating,
             valueRating: input.valueRating,
-            isVerified: true,
+            isVerified: true, // Mark as verified since it's from a completed job
           },
           include: {
             reviewer: {
@@ -93,7 +118,7 @@ export const reviewsRouter = router({
                 firstName: true,
                 lastName: true,
                 role: true,
-              },
+              }
             },
             reviewee: {
               select: {
@@ -101,72 +126,78 @@ export const reviewsRouter = router({
                 firstName: true,
                 lastName: true,
                 role: true,
-              },
-            },
-          },
+              }
+            }
+          }
         });
 
+        // Update mechanic profile rating if reviewing a mechanic
+        if (revieweeId === job.mechanicId) {
+          await updateMechanicRating(revieweeId);
+        }
+
+        // Create notification for reviewee
         await prisma.notification.create({
           data: {
             userId: revieweeId,
-            type: NotificationType.REVIEW_REQUEST,
+            type: 'REVIEW_REQUEST',
             title: 'New Review',
-            body: `You received a ${input.rating}-star review.`,
+            message: `You received a ${input.rating}-star review`,
             data: {
               reviewId: review.id,
               jobId: input.jobId,
               rating: input.rating,
-            },
-            jobId: input.jobId,
-          },
+            }
+          }
         });
 
         return {
           success: true,
-          review,
+          review: {
+            id: review.id,
+            rating: review.rating,
+            comment: review.comment,
+            createdAt: review.createdAt,
+            reviewer: review.reviewer,
+            reviewee: review.reviewee,
+          }
         };
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('Unique constraint')) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'You have already reviewed this job',
-          });
-        }
 
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to submit review',
-        });
+      } catch (error) {
+        console.error('Error submitting review:', error);
+        throw error;
       }
     }),
 
+  // Get reviews for a user (mechanic or customer)
   getUserReviews: publicProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-        limit: z.number().min(1).max(50).default(20),
-        offset: z.number().min(0).default(0),
-        sortBy: reviewSortSchema.default('newest'),
-      })
-    )
+    .input(z.object({
+      userId: z.string(),
+      limit: z.number().min(1).max(50).default(20),
+      offset: z.number().min(0).default(0),
+      sortBy: z.enum(['newest', 'oldest', 'rating_high', 'rating_low']).default('newest'),
+    }))
     .query(async ({ input }) => {
-      const orderBy =
-        input.sortBy === 'oldest'
-          ? { createdAt: 'asc' as const }
-          : input.sortBy === 'rating_high'
-            ? { rating: 'desc' as const }
-            : input.sortBy === 'rating_low'
-              ? { rating: 'asc' as const }
-              : { createdAt: 'desc' as const };
+      try {
+        // Build sort order
+        let orderBy: any = { createdAt: 'desc' };
+        switch (input.sortBy) {
+          case 'oldest':
+            orderBy = { createdAt: 'asc' };
+            break;
+          case 'rating_high':
+            orderBy = { rating: 'desc' };
+            break;
+          case 'rating_low':
+            orderBy = { rating: 'asc' };
+            break;
+        }
 
-      const where = {
-        revieweeId: input.userId,
-        isHidden: false,
-      };
-
-      const [reviews, total, stats] = await Promise.all([
-        reviewClient.review.findMany({
-          where,
+        const reviews = await prisma.review.findMany({
+          where: {
+            revieweeId: input.userId,
+            isHidden: false,
+          },
           include: {
             reviewer: {
               select: {
@@ -174,23 +205,35 @@ export const reviewsRouter = router({
                 firstName: true,
                 lastName: true,
                 role: true,
-              },
+              }
             },
             job: {
               select: {
                 id: true,
-                serviceType: true,
+                title: true,
+                category: true,
                 createdAt: true,
-              },
-            },
+              }
+            }
           },
           orderBy,
           take: input.limit,
           skip: input.offset,
-        }),
-        reviewClient.review.count({ where }),
-        reviewClient.review.aggregate({
-          where,
+        });
+
+        const total = await prisma.review.count({
+          where: {
+            revieweeId: input.userId,
+            isHidden: false,
+          }
+        });
+
+        // Calculate average ratings
+        const ratingStats = await prisma.review.aggregate({
+          where: {
+            revieweeId: input.userId,
+            isHidden: false,
+          },
           _avg: {
             rating: true,
             punctualityRating: true,
@@ -200,158 +243,309 @@ export const reviewsRouter = router({
           },
           _count: {
             rating: true,
-          },
-        }),
-      ]);
+          }
+        });
 
-      return {
-        reviews,
-        total,
-        hasMore: input.offset + input.limit < total,
-        stats: {
-          averageRating: stats._avg.rating ?? 0,
-          totalReviews: stats._count.rating,
-          averagePunctuality: stats._avg.punctualityRating ?? 0,
-          averageQuality: stats._avg.qualityRating ?? 0,
-          averageCommunication: stats._avg.communicationRating ?? 0,
-          averageValue: stats._avg.valueRating ?? 0,
-        },
-      };
+        return {
+          reviews: reviews.map(review => ({
+            id: review.id,
+            rating: review.rating,
+            comment: review.comment,
+            photos: review.photos,
+            createdAt: review.createdAt,
+            isVerified: review.isVerified,
+            punctualityRating: review.punctualityRating,
+            qualityRating: review.qualityRating,
+            communicationRating: review.communicationRating,
+            valueRating: review.valueRating,
+            reviewer: review.reviewer,
+            job: review.job,
+          })),
+          total,
+          hasMore: (input.offset + input.limit) < total,
+          stats: {
+            averageRating: ratingStats._avg.rating || 0,
+            totalReviews: ratingStats._count.rating || 0,
+            averagePunctuality: ratingStats._avg.punctualityRating || 0,
+            averageQuality: ratingStats._avg.qualityRating || 0,
+            averageCommunication: ratingStats._avg.communicationRating || 0,
+            averageValue: ratingStats._avg.valueRating || 0,
+          }
+        };
+
+      } catch (error) {
+        console.error('Error getting user reviews:', error);
+        throw error;
+      }
     }),
 
+  // Get review summary for a mechanic
   getMechanicReviewSummary: publicProcedure
-    .input(
-      z.object({
-        mechanicId: z.string(),
-      })
-    )
+    .input(z.object({
+      mechanicId: z.string(),
+    }))
     .query(async ({ input }) => {
-      const where = {
-        revieweeId: input.mechanicId,
-        isHidden: false,
-      };
+      try {
+        const mechanic = await prisma.user.findUnique({
+          where: { id: input.mechanicId },
+          include: {
+            mechanicProfile: true,
+          }
+        });
 
-      const [distributionRows, stats, recentReviews] = await Promise.all([
-        reviewClient.review.groupBy({
+        if (!mechanic || !mechanic.mechanicProfile) {
+          throw new Error('Mechanic not found');
+        }
+
+        // Get rating distribution
+        const ratingDistribution = await prisma.review.groupBy({
           by: ['rating'],
-          where,
-          _count: {
-            rating: true,
-          },
-        }),
-        reviewClient.review.aggregate({
-          where,
-          _avg: {
-            rating: true,
+          where: {
+            revieweeId: input.mechanicId,
+            isHidden: false,
           },
           _count: {
             rating: true,
+          }
+        });
+
+        // Convert to array with all ratings 1-5
+        const distribution = Array.from({ length: 5 }, (_, i) => {
+          const rating = i + 1;
+          const found = ratingDistribution.find(r => r.rating === rating);
+          return {
+            rating,
+            count: found?._count.rating || 0,
+          };
+        });
+
+        // Get recent reviews
+        const recentReviews = await prisma.review.findMany({
+          where: {
+            revieweeId: input.mechanicId,
+            isHidden: false,
           },
-        }),
-        reviewClient.review.findMany({
-          where,
           include: {
             reviewer: {
               select: {
                 firstName: true,
                 lastName: true,
-              },
+              }
             },
             job: {
               select: {
-                serviceType: true,
-              },
-            },
+                title: true,
+                category: true,
+              }
+            }
           },
-          orderBy: {
-            createdAt: 'desc',
-          },
+          orderBy: { createdAt: 'desc' },
           take: 5,
-        }),
-      ]);
+        });
 
-      const distribution = Array.from({ length: 5 }, (_, index) => {
-        const rating = index + 1;
-        const match = distributionRows.find(
-          (entry: { rating: number; _count: { rating: number } }) => entry.rating === rating
-        );
         return {
-          rating,
-          count: match?._count.rating ?? 0,
+          averageRating: mechanic.mechanicProfile.averageRating || 0,
+          totalReviews: mechanic.mechanicProfile.totalReviews || 0,
+          distribution,
+          recentReviews: recentReviews.map(review => ({
+            id: review.id,
+            rating: review.rating,
+            comment: review.comment,
+            createdAt: review.createdAt,
+            reviewer: {
+              name: `${review.reviewer.firstName} ${review.reviewer.lastName.charAt(0)}.`
+            },
+            job: review.job,
+          })),
         };
-      });
 
-      return {
-        averageRating: stats._avg.rating ?? 0,
-        totalReviews: stats._count.rating,
-        distribution,
-        recentReviews,
-      };
+      } catch (error) {
+        console.error('Error getting mechanic review summary:', error);
+        throw error;
+      }
     }),
 
-  getPendingReviews: protectedProcedure.query(async ({ ctx }) => {
-    if (!ctx.user) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        message: 'Authentication required',
-      });
-    }
+  // Report a review
+  reportReview: publicProcedure
+    .input(z.object({
+      reviewId: z.string(),
+      reason: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const user = await getUserFromRequest(ctx.req);
+        if (!user) {
+          throw new Error('Authentication required');
+        }
 
-    const jobs = await prisma.job.findMany({
-      where: {
-        status: JobStatus.COMPLETED,
-        OR: [
-          { customerId: ctx.user.id },
-          { mechanicId: ctx.user.id },
-        ],
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
+        const review = await prisma.review.findUnique({
+          where: { id: input.reviewId }
+        });
+
+        if (!review) {
+          throw new Error('Review not found');
+        }
+
+        // Increment report count
+        await prisma.review.update({
+          where: { id: input.reviewId },
+          data: {
+            reportCount: { increment: 1 }
+          }
+        });
+
+        // Create notification for admin review
+        await prisma.notification.create({
+          data: {
+            userId: 'admin', // Send to admin
+            type: 'SYSTEM_ALERT',
+            title: 'Review Reported',
+            message: `Review ${input.reviewId} has been reported: ${input.reason}`,
+            data: {
+              reviewId: input.reviewId,
+              reportReason: input.reason,
+              reportedBy: user.id,
+            }
+          }
+        });
+
+        return {
+          success: true,
+          message: 'Review reported successfully'
+        };
+
+      } catch (error) {
+        console.error('Error reporting review:', error);
+        throw error;
+      }
+    }),
+
+  // Get pending reviews for a user
+  getPendingReviews: publicProcedure
+    .query(async ({ ctx }) => {
+      try {
+        const user = await getUserFromRequest(ctx.req);
+        if (!user) {
+          throw new Error('Authentication required');
+        }
+
+        // Find completed jobs that haven't been reviewed yet
+        const completedJobs = await prisma.job.findMany({
+          where: {
+            OR: [
+              { customerId: user.id },
+              { mechanicId: user.id }
+            ],
+            status: 'COMPLETED',
+            // Check that user hasn't reviewed this job yet
+            NOT: {
+              reviews: {
+                some: {
+                  reviewerId: user.id
+                }
+              }
+            }
           },
-        },
-        mechanic: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
+          include: {
+            customer: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              }
+            },
+            mechanic: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              }
+            }
           },
-        },
-      },
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    });
+          orderBy: { updatedAt: 'desc' },
+          take: 10,
+        });
 
-    const existingReviews = await reviewClient.review.findMany({
-      where: {
-        reviewerId: ctx.user.id,
-        jobId: {
-          in: jobs.map((job) => job.id),
-        },
-      },
-      select: {
-        jobId: true,
-      },
-    });
+        return {
+          pendingReviews: completedJobs.map(job => ({
+            jobId: job.id,
+            title: job.title,
+            category: job.category,
+            completedAt: job.updatedAt,
+            reviewee: user.id === job.customerId ? job.mechanic : job.customer,
+          }))
+        };
 
-    const reviewedJobIds = new Set(
-      existingReviews.map((review: { jobId: string }) => review.jobId)
-    );
+      } catch (error) {
+        console.error('Error getting pending reviews:', error);
+        throw error;
+      }
+    }),
 
-    return {
-      pendingReviews: jobs
-        .filter((job) => !reviewedJobIds.has(job.id))
-        .slice(0, 10)
-        .map((job) => ({
-          jobId: job.id,
-          serviceType: job.serviceType,
-          completedAt: job.updatedAt,
-          reviewee: ctx.user?.id === job.customerId ? job.mechanic : job.customer,
-        })),
-    };
-  }),
+  // Admin: Hide/unhide review
+  moderateReview: publicProcedure
+    .input(z.object({
+      reviewId: z.string(),
+      isHidden: z.boolean(),
+      moderationNotes: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const user = await getUserFromRequest(ctx.req);
+        if (!user || user.role !== 'ADMIN') {
+          throw new Error('Admin access required');
+        }
+
+        await prisma.review.update({
+          where: { id: input.reviewId },
+          data: {
+            isHidden: input.isHidden,
+            // Could add moderationNotes field to schema if needed
+          }
+        });
+
+        // Update mechanic rating if review was hidden/unhidden
+        const review = await prisma.review.findUnique({
+          where: { id: input.reviewId },
+          include: { reviewee: true }
+        });
+
+        if (review && review.reviewee.role === 'MECHANIC') {
+          await updateMechanicRating(review.revieweeId);
+        }
+
+        return {
+          success: true,
+          message: `Review ${input.isHidden ? 'hidden' : 'unhidden'} successfully`
+        };
+
+      } catch (error) {
+        console.error('Error moderating review:', error);
+        throw error;
+      }
+    }),
 });
+
+// Helper function to update mechanic's average rating
+async function updateMechanicRating(mechanicId: string) {
+  const ratingStats = await prisma.review.aggregate({
+    where: {
+      revieweeId: mechanicId,
+      isHidden: false,
+    },
+    _avg: {
+      rating: true,
+    },
+    _count: {
+      rating: true,
+    }
+  });
+
+  await prisma.mechanicProfile.update({
+    where: { userId: mechanicId },
+    data: {
+      averageRating: ratingStats._avg.rating || 0,
+      totalReviews: ratingStats._count.rating || 0,
+    }
+  });
+}

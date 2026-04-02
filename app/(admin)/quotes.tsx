@@ -60,16 +60,20 @@ export default function AdminQuotesScreen() {
               return;
             }
 
-            try {
-              await createQuoteMutation.mutateAsync({
-                jobId,
-                description: `Professional ${getServiceTitle(job.serviceType)} service`,
-                laborCost: Number(totalCost) * 0.7,
-                partsCost: Number(totalCost) * 0.3,
-                totalCost: Number(totalCost),
-                estimatedDuration: 2,
-                validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-              });
+            const newQuote = {
+              id: `quote-${Date.now()}`,
+              serviceRequestId: requestId,
+              description: `Professional ${getServiceTitle(request.type)} service`,
+              laborCost: Number(totalCost) * 0.7,
+              partsCost: Number(totalCost) * 0.2,
+              travelCost: Number(totalCost) * 0.1,
+              totalCost: Number(totalCost),
+              estimatedDuration: 2,
+              validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+              status: 'pending' as const,
+              createdAt: new Date(),
+              createdBy: user?.id || 'admin',
+            };
 
               await utils.quote.listAll.invalidate();
               await utils.job.getAll.invalidate();
@@ -156,7 +160,7 @@ export default function AdminQuotesScreen() {
           <TouchableOpacity
             key={tab.key}
             style={[styles.tab, selectedTab === tab.key && styles.activeTab]}
-            onPress={() => setSelectedTab(tab.key as any)}
+            onPress={() => setSelectedTab(tab.key as 'pending' | 'accepted' | 'all')}
           >
             <Text style={[styles.tabText, selectedTab === tab.key && styles.activeTabText]}>
               {tab.label} ({tab.count})

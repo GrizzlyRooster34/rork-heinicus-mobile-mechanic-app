@@ -1,13 +1,8 @@
 import { z } from 'zod';
-import { protectedProcedure, router } from '../../trpc';
-import { prisma } from '@/lib/prisma';
-import { QuoteStatus, JobStatus, UserRole } from '@prisma/client';
-import { TRPCError } from '@trpc/server';
-
-const isAdminOrMechanic = (role: UserRole) => role === UserRole.ADMIN || role === UserRole.MECHANIC;
+import { publicProcedure, router } from '../../trpc';
 
 export const quoteRouter = router({
-  create: protectedProcedure
+  create: publicProcedure
     .input(z.object({
       jobId: z.string().optional(),
       description: z.string(),

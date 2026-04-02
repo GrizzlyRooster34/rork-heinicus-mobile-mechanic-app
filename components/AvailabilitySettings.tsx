@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { useSettingsStore } from '@/stores/settings-store';
 import * as Icons from 'lucide-react-native';
 
 interface AvailabilitySettingsProps {
@@ -29,26 +30,12 @@ interface AvailabilitySettings {
 }
 
 export function AvailabilitySettings({ onSettingsChange }: AvailabilitySettingsProps) {
-  const [settings, setSettings] = useState<AvailabilitySettings>({
-    isAvailable: true,
-    workingDays: {
-      monday: true,
-      tuesday: true,
-      wednesday: true,
-      thursday: true,
-      friday: true,
-      saturday: true,
-      sunday: false,
-    },
-    workingHours: {
-      start: '08:00',
-      end: '18:00',
-    },
-    emergencyAvailable: true,
-    maxJobsPerDay: 8,
-    travelRadius: 25,
-    autoAcceptJobs: false,
-  });
+  const { availability, updateAvailabilitySettings } = useSettingsStore();
+  const [settings, setSettings] = useState<AvailabilitySettings>(availability);
+
+  useEffect(() => {
+    setSettings(availability);
+  }, [availability]);
 
   const updateSetting = <K extends keyof AvailabilitySettings>(
     key: K,
@@ -56,12 +43,15 @@ export function AvailabilitySettings({ onSettingsChange }: AvailabilitySettingsP
   ) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
+    updateAvailabilitySettings({ [key]: value } as Partial<AvailabilitySettings>);
     onSettingsChange(newSettings);
   };
 
   const updateWorkingDay = (day: keyof AvailabilitySettings['workingDays'], value: boolean) => {
     const newWorkingDays = { ...settings.workingDays, [day]: value };
-    updateSetting('workingDays', newWorkingDays);
+    setSettings(prev => ({ ...prev, workingDays: newWorkingDays }));
+    updateAvailabilitySettings({ workingDays: newWorkingDays });
+    onSettingsChange({ ...settings, workingDays: newWorkingDays });
   };
 
   const daysOfWeek = [

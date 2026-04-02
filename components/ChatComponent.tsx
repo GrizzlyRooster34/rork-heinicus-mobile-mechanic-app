@@ -1,16 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { Colors } from '@/constants/colors';
+import { ChatMessage } from '@/types/service';
+import { useAppStore } from '@/stores/app-store';
+import { LoadingState } from '@/components/LoadingState';
+import { SkeletonList } from '@/components/LoadingSkeleton';
 import * as Icons from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { trpc } from '@/lib/trpc';
@@ -31,6 +25,8 @@ export function ChatComponent({
   currentUserType,
 }: ChatComponentProps) {
   const [newMessage, setNewMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
   const utils = trpc.useUtils();
   const chatQuery = trpc.chat.listByJob.useQuery(
@@ -63,23 +59,51 @@ export function ChatComponent({
   );
 
   useEffect(() => {
-    const hasUnreadMessagesFromOthers = liveMessages.some(
-      (message) => !message.isRead && message.senderId !== currentUserId
-    );
-
-    if (!hasUnreadMessagesFromOthers || markReadMutation.isPending) {
-      return;
-    }
-
-    markReadMutation.mutate(
-      { jobId: serviceRequestId },
-      {
-        onSuccess: () => {
-          void utils.chat.listByJob.invalidate({ jobId: serviceRequestId });
+    const loadMessages = async () => {
+      setIsLoadingMessages(true);
+      
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const mockMessages: ChatMessage[] = [
+        {
+          id: '1',
+          serviceRequestId,
+          senderId: 'mechanic-1',
+          senderName: 'Mike (Mechanic)',
+          senderType: 'mechanic',
+          message: 'Hi! I received your service request. I can be there within 2 hours. Does that work for you?',
+          timestamp: new Date(Date.now() - 3600000), // 1 hour ago
+          isRead: true,
         },
-      }
-    );
-  }, [currentUserId, liveMessages, markReadMutation, serviceRequestId, utils.chat.listByJob]);
+        {
+          id: '2',
+          serviceRequestId,
+          senderId: currentUserId,
+          senderName: currentUserName,
+          senderType: currentUserType,
+          message: 'Yes, that works perfectly! Thank you.',
+          timestamp: new Date(Date.now() - 3000000), // 50 minutes ago
+          isRead: true,
+        },
+        {
+          id: '3',
+          serviceRequestId,
+          senderId: 'mechanic-1',
+          senderName: 'Mike (Mechanic)',
+          senderType: 'mechanic',
+          message: 'Great! I am on my way. I will send you a message when I arrive.',
+          timestamp: new Date(Date.now() - 2400000), // 40 minutes ago
+          isRead: true,
+        },
+      ];
+      
+      setMessages(mockMessages);
+      setIsLoadingMessages(false);
+    };
+    
+    loadMessages();
+  }, [serviceRequestId, currentUserId, currentUserName, currentUserType]);
 
   const sendMessage = async () => {
     const trimmedMessage = newMessage.trim();
@@ -124,70 +148,61 @@ export function ChatComponent({
         <Text style={styles.headerTitle}>{headerTitle}</Text>
       </View>
 
-      {chatQuery.isLoading ? (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="small" color={Colors.primary} />
-          <Text style={styles.emptyStateText}>Loading messages...</Text>
-        </View>
-      ) : chatQuery.error ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>Unable to load chat messages.</Text>
-        </View>
-      ) : (
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.messagesContainer}
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-        >
-          {liveMessages.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No messages yet. Start the conversation.</Text>
-            </View>
-          ) : (
-            liveMessages.map((message) => (
-              <View
-                key={message.id}
-                style={[
-                  styles.messageWrapper,
-                  isMyMessage(message) ? styles.myMessageWrapper : styles.otherMessageWrapper,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.messageBubble,
-                    isMyMessage(message) ? styles.myMessage : styles.otherMessage,
-                  ]}
-                >
-                  {!isMyMessage(message) && <Text style={styles.senderName}>{message.senderName}</Text>}
-                  <Text
-                    style={[
-                      styles.messageText,
-                      isMyMessage(message) ? styles.myMessageText : styles.otherMessageText,
-                    ]}
-                  >
-                    {message.message}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.messageTime,
-                      isMyMessage(message) ? styles.myMessageTime : styles.otherMessageTime,
-                    ]}
-                  >
-                    {formatTime(message.timestamp)}
-                  </Text>
+      <ScrollView 
+        ref={scrollViewRef}
+        style={styles.messagesContainer}
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+      >
+        {isLoadingMessages ? (
+          <View style={styles.loadingContainer}>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <View key={index} style={styles.skeletonMessage}>
+                <View style={[
+                  styles.skeletonBubble,
+                  index % 2 === 0 ? styles.skeletonOther : styles.skeletonMy
+                ]}>
+                  <View style={styles.skeletonLine} />
+                  <View style={[styles.skeletonLine, { width: '70%' }]} />
                 </View>
               </View>
-            ))
-          )}
-          {isOtherUserTyping && (
-            <View style={styles.typingRow}>
-              <Icons.Ellipsis size={16} color={Colors.textMuted} />
-              <Text style={styles.typingText}>Typing...</Text>
+            ))}
+          </View>
+        ) : (
+          messages.map((message) => (
+            <View
+              key={message.id}
+              style={[
+                styles.messageWrapper,
+                isMyMessage(message) ? styles.myMessageWrapper : styles.otherMessageWrapper,
+              ]}
+            >
+              <View
+                style={[
+                  styles.messageBubble,
+                  isMyMessage(message) ? styles.myMessage : styles.otherMessage,
+                ]}
+              >
+                {!isMyMessage(message) && (
+                  <Text style={styles.senderName}>{message.senderName}</Text>
+                )}
+                <Text style={[
+                  styles.messageText,
+                  isMyMessage(message) ? styles.myMessageText : styles.otherMessageText,
+                ]}>
+                  {message.message}
+                </Text>
+                <Text style={[
+                  styles.messageTime,
+                  isMyMessage(message) ? styles.myMessageTime : styles.otherMessageTime,
+                ]}>
+                  {formatTime(message.timestamp)}
+                </Text>
+              </View>
             </View>
-          )}
-        </ScrollView>
-      )}
+          ))
+        )}
+      </ScrollView>
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -352,16 +367,32 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: Colors.surface,
   },
-  connectionStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingBottom: 12,
-    backgroundColor: Colors.card,
+  loadingContainer: {
+    padding: 16,
+    gap: 12,
   },
-  connectionStatusText: {
-    fontSize: 12,
-    color: Colors.textMuted,
+  skeletonMessage: {
+    marginBottom: 12,
+  },
+  skeletonBubble: {
+    padding: 12,
+    borderRadius: 16,
+    maxWidth: '80%',
+  },
+  skeletonOther: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.surface,
+    borderBottomLeftRadius: 4,
+  },
+  skeletonMy: {
+    alignSelf: 'flex-end',
+    backgroundColor: Colors.border,
+    borderBottomRightRadius: 4,
+  },
+  skeletonLine: {
+    height: 16,
+    backgroundColor: Colors.border,
+    borderRadius: 4,
+    marginBottom: 4,
   },
 });
