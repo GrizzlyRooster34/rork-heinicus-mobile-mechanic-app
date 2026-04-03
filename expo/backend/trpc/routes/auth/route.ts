@@ -5,7 +5,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { devMode, isDevCredentials, getDevUser } from '@/utils/dev';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'heinicus-mobile-mechanic-app-jwt-secret-key-2025-very-secure-and-long-at-least-64-chars';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is missing.');
+}
 const JWT_EXPIRES_IN = '7d'; // 7 days
 
 // Helper function to generate JWT token
