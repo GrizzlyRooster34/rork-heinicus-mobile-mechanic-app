@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, Image } from 'react-native';
+import { View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity, Modal, Image } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/auth-store';
 import { useAppStore } from '@/stores/app-store';
@@ -75,25 +75,30 @@ export default function AdminJobsScreen() {
         </Text>
       </View>
 
-      <ScrollView style={styles.jobsList} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          {serviceRequests.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Icons.Briefcase size={64} color={Colors.textMuted} />
-              <Text style={styles.emptyTitle}>No Jobs</Text>
-              <Text style={styles.emptyText}>
-                Service jobs will appear here once customers submit requests.
-              </Text>
-            </View>
-          ) : (
-            serviceRequests.map((job) => {
-              const jobQuote = quotes.find(q => q.serviceRequestId === job.id);
-              const jobPhotos = getJobPhotos(job.id);
-              const timeline = getJobTimeline(job.id);
-              
-              return (
-                <View key={job.id} style={styles.jobCard}>
-                  <View style={styles.jobHeader}>
+      <FlatList
+        data={serviceRequests}
+        extraData={{ quotes, getJobPhotos, getJobTimeline }}
+        keyExtractor={(item) => item.id}
+        style={styles.jobsList}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Icons.Briefcase size={64} color={Colors.textMuted} />
+            <Text style={styles.emptyTitle}>No Jobs</Text>
+            <Text style={styles.emptyText}>
+              Service jobs will appear here once customers submit requests.
+            </Text>
+          </View>
+        }
+        renderItem={({ item: job }) => {
+          const jobQuote = quotes.find(q => q.serviceRequestId === job.id);
+          const jobPhotos = getJobPhotos(job.id);
+          const timeline = getJobTimeline(job.id);
+
+          return (
+            <View style={styles.jobCard}>
+              <View style={styles.jobHeader}>
                     <Text style={styles.jobTitle}>
                       {getServiceTitle(job.type)}
                     </Text>
@@ -293,12 +298,10 @@ export default function AdminJobsScreen() {
                       </View>
                     </View>
                   ) : null}
-                </View>
-              );
-            })
-          )}
-        </View>
-      </ScrollView>
+            </View>
+          );
+        }}
+      />
 
       {/* Job Photos Modal */}
       {selectedJobPhotos && (
