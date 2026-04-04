@@ -1,8 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { TRPCError } from '@trpc/server';
 import { prisma } from '../../lib/prisma';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'heinicus-mobile-mechanic-app-jwt-secret-key-2025-very-secure-and-long-at-least-64-chars';
+import { validatedEnv } from '../env-validation';
 
 export interface JWTPayload {
   userId: string;
@@ -38,7 +37,7 @@ export function extractToken(authHeader?: string): string | null {
  */
 export function verifyJWTToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    const decoded = jwt.verify(token, validatedEnv.JWT_SECRET) as JWTPayload;
     return decoded;
   } catch (error) {
     console.error('JWT verification failed:', error);
@@ -153,7 +152,7 @@ export function generateAccessToken(payload: {
   email: string;
   role: string;
 }): string {
-  return jwt.sign(payload, JWT_SECRET, {
+  return jwt.sign(payload, validatedEnv.JWT_SECRET, {
     expiresIn: '7d', // 7 days
   });
 }
@@ -162,7 +161,7 @@ export function generateAccessToken(payload: {
  * Generate refresh token (longer expiration)
  */
 export function generateRefreshToken(userId: string): string {
-  return jwt.sign({ userId }, JWT_SECRET, {
+  return jwt.sign({ userId }, validatedEnv.JWT_SECRET, {
     expiresIn: '30d', // 30 days
   });
 }
@@ -176,7 +175,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
   error?: string;
 }> {
   try {
-    const decoded = jwt.verify(refreshToken, JWT_SECRET) as { userId: string };
+    const decoded = jwt.verify(refreshToken, validatedEnv.JWT_SECRET) as { userId: string };
 
     // Get user to generate new access token
     const user = await prisma.user.findUnique({

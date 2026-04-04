@@ -1,0 +1,4 @@
+## 2024-04-04 - Hardcoded JWT Secret Fallbacks
+**Vulnerability:** Found hardcoded fallback strings for `JWT_SECRET` in both the standard Express/Hono auth middleware and the tRPC auth routes (`process.env.JWT_SECRET || "fallback-string"`).
+**Learning:** This codebase previously allowed silent fallbacks for critical cryptographic keys. An attacker gaining access to the source code could use this fallback to forge valid JWTs and bypass authentication across all endpoints if the environment variable was missing.
+**Prevention:** Never use hardcoded fallback strings for cryptographic secrets or API keys. Centralize environment validation (e.g., using `expo/backend/env-validation.ts`) and enforce strict checks that crash the application early if critical secrets are missing, rather than silently degrading security.
