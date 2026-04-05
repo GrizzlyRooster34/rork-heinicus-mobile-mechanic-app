@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import * as crypto from 'crypto';
 import { publicProcedure, router } from '../../trpc';
 import {
   generateTOTPSecret,
@@ -201,8 +202,8 @@ export const twoFactorRouter = router({
       phoneNumber: z.string(),
     }))
     .mutation(async ({ input }) => {
-      // Generate a 6-digit code
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      // Generate a secure 6-digit code
+      const code = crypto.randomInt(100000, 1000000).toString();
 
       const result = await sendSMSCode(input.phoneNumber, code);
 
