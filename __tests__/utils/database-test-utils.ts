@@ -49,7 +49,7 @@ export const createTestUsers = () => [
   {
     id: 'test-admin',
     email: 'admin@test.com',
-    password: 'admin123!',
+    password: 'test-fixture-hash-admin',
     firstName: 'Admin',
     lastName: 'User',
     role: 'ADMIN',
@@ -59,7 +59,7 @@ export const createTestUsers = () => [
   {
     id: 'test-customer',
     email: 'customer@test.com',
-    password: 'customer123!',
+    password: 'test-fixture-hash-customer',
     firstName: 'Customer',
     lastName: 'User', 
     role: 'CUSTOMER',

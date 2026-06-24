@@ -35,7 +35,7 @@ describe('stripe service', () => {
   it('createPaymentIntent returns a clientSecret', async () => {
     mockPaymentIntentCreate.mockResolvedValue({
       id: 'pi_123',
-      client_secret: 'pi_123_secret_abc',
+      client_secret: 'mock_client_secret_test_value',
       status: 'requires_confirmation',
     });
     mockPrisma.payment.create.mockResolvedValue({
@@ -57,7 +57,7 @@ describe('stripe service', () => {
     expect(result).toEqual(
       expect.objectContaining({
         success: true,
-        clientSecret: 'pi_123_secret_abc',
+        clientSecret: 'mock_client_secret_test_value',
         paymentIntentId: 'pi_123',
       })
     );
