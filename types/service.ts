@@ -86,7 +86,6 @@ export type QuoteStatus =
   | 'approved'
   | 'declined'
   | 'rejected'
-  | 'declined'
   | 'expired'
   | 'deposit_paid'
   | 'paid';
@@ -166,7 +165,6 @@ export interface ServiceRequest {
   pausedAt?: Date;
   resumedAt?: Date;
   completedAt?: Date;
-  paidAt?: Date;
   eta?: Date;
   signatureUrl?: string;
   signatureCapturedAt?: Date;
@@ -211,11 +209,9 @@ export interface Quote {
   depositAmount?: number; // Deposit amount
   remainingBalance?: number; // Remaining balance after deposit
   finalAmount?: number; // Final amount paid
-  paymentMethod?: string; // Payment method used
   paymentIntentId?: string; // Stripe payment intent ID
   stripeCustomerId?: string; // Stripe customer ID
   notes?: string;
-  description?: string;
   breakdown?: {
     description: string;
     cost: number;
@@ -262,26 +258,6 @@ export interface DiagnosticResult {
   matchedServices: string[];
   recommendedServiceTypes?: string[];
   createdAt: Date;
-}
-
-export interface ChatMessage {
-  id: string;
-  serviceRequestId: string;
-  senderId: string;
-  senderName: string;
-  senderType: 'customer' | 'mechanic' | 'admin';
-  message: string;
-  timestamp: Date;
-  isRead: boolean;
-}
-
-export interface MaintenanceInterval {
-  serviceType: ServiceType;
-  intervalDays: number;
-  intervalMiles?: number;
-  description: string;
-  priority: 'low' | 'medium' | 'high';
-  category: 'routine' | 'preventive' | 'safety' | 'diagnostic';
 }
 
 export interface MaintenanceReminder {

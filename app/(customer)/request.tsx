@@ -13,13 +13,14 @@ import { useAuthStore } from '@/stores/auth-store';
 import { ServiceType, DiagnosticResult, Vehicle, VehicleType } from '@/types/service';
 import { ENV_CONFIG, logProductionEvent } from '@/utils/firebase-config';
 import { logger } from '@/utils/logger';
+import { trpc } from '@/lib/trpc';
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
 import { Car, Truck, Bike, MapPin, Camera, Bot, Shield, Brain, CheckCircle } from 'lucide-react-native';
 
 export default function CustomerRequestScreen() {
   const params = useLocalSearchParams();
-  const { addServiceRequest, addQuote, vehicles, currentLocation, setCurrentLocation, updateServiceRequest, addVehicle } = useAppStore();
+  const { currentLocation, setCurrentLocation, addVehicle } = useAppStore();
   const { user } = useAuthStore();
   const utils = trpc.useUtils();
   const createJobMutation = trpc.job.create.useMutation();

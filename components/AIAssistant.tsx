@@ -77,13 +77,13 @@ export function AIAssistant({ vehicle, onDiagnosisComplete, initialSymptoms = ''
       setIsAnalyzing(false);
       
       // Generate cost estimate based on AI diagnosis
-      if (mappedResult.recommendedServiceTypes && mappedResult.recommendedServiceTypes.length > 0) {
-        const serviceType = mappedResult.recommendedServiceTypes[0] as ServiceType;
+      if (diagnosisResult.recommendedServiceTypes && diagnosisResult.recommendedServiceTypes.length > 0) {
+        const serviceType = diagnosisResult.recommendedServiceTypes[0] as ServiceType;
         const mockQuote = generateSmartQuote('temp-id', {
           serviceType,
-          urgency: mappedResult.urgencyLevel as any,
+          urgency: diagnosisResult.urgencyLevel as any,
           description: symptoms.trim(),
-          aiDiagnosis: mappedResult,
+          aiDiagnosis: diagnosisResult,
           vehicle,
         });
         
