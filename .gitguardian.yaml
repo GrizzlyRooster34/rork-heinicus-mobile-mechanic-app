@@ -1,0 +1,7 @@
+version: 2
+
+# Exclude test fixtures and unit test files from secret scanning.
+# Values flagged in these paths are fake placeholders used in mocks and
+# test data factories, not real credentials.
+ignore-paths:
+  - __tests__/
